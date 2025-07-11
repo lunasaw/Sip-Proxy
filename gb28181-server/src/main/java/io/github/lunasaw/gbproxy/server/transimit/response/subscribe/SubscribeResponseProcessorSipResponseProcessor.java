@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +23,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Slf4j
-public class SubscribeResponseProcessor extends SipResponseProcessorAbstract {
+public class SubscribeResponseProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
 
     public static final String               METHOD = "SUBSCRIBE";
 
@@ -32,7 +32,7 @@ public class SubscribeResponseProcessor extends SipResponseProcessorAbstract {
     @Autowired
     private SubscribeResponseProcessorServer subscribeResponseProcessorServer;
 
-    public SubscribeResponseProcessor(SubscribeResponseProcessorServer subscribeResponseProcessorServer) {
+    public SubscribeResponseProcessorSipResponseProcessor(SubscribeResponseProcessorServer subscribeResponseProcessorServer) {
         this.subscribeResponseProcessorServer = subscribeResponseProcessorServer;
     }
 

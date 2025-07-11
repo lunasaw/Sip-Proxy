@@ -5,7 +5,7 @@ import javax.sip.ResponseEvent;
 import lombok.Data;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 
 /**
  * CANCEL响应处理器
@@ -14,7 +14,7 @@ import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessor
  */
 @Data
 @Component
-public class CancelResponseProcessor extends SipResponseProcessorAbstract {
+public class CancelResponseProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
 
     public static final String METHOD = "CANCEL";
 

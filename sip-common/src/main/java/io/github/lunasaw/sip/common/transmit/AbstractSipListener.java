@@ -46,13 +46,13 @@ public abstract class AbstractSipListener implements SipListener {
     protected final Map<String, List<SipRequestProcessor>> REQUEST_PROCESSOR_MAP = new ConcurrentHashMap<>();
     ;
     /**
-     * 处理接收IPCamera发来的SIP协议响应消息
+     * 处理接收SIP发来的SIP协议响应消息
      */
-    protected final Map<String, SipResponseProcessor> RESPONSE_PROCESSOR_MAP = new ConcurrentHashMap<>();
+    protected final Map<String, List<SipResponseProcessor>> RESPONSE_PROCESSOR_MAP = new ConcurrentHashMap<>();
     /**
      * 处理超时事件
      */
-    protected final Map<String, ITimeoutProcessor> TIMEOUT_PROCESSOR_MAP = new ConcurrentHashMap<>();
+    protected final Map<String, List<ITimeoutProcessor>> TIMEOUT_PROCESSOR_MAP = new ConcurrentHashMap<>();
 
     /**
      * SIP指标收集器
@@ -87,7 +87,14 @@ public abstract class AbstractSipListener implements SipListener {
      * @param processor 处理程序
      */
     public synchronized void addResponseProcessor(String method, SipResponseProcessor processor) {
-        RESPONSE_PROCESSOR_MAP.put(method, processor);
+        if (RESPONSE_PROCESSOR_MAP.containsKey(method)) {
+            List<SipResponseProcessor> processors = RESPONSE_PROCESSOR_MAP.get(method);
+            processors.add(processor);
+        } else {
+            List<SipResponseProcessor> processors = new ArrayList<>();
+            processors.add(processor);
+            RESPONSE_PROCESSOR_MAP.put(method, processors);
+        }
         log.debug("添加响应处理器: {} -> {}", method, processor.getClass().getSimpleName());
     }
 
@@ -98,7 +105,14 @@ public abstract class AbstractSipListener implements SipListener {
      * @param processor 处理程序
      */
     public synchronized void addTimeoutProcessor(String method, ITimeoutProcessor processor) {
-        TIMEOUT_PROCESSOR_MAP.put(method, processor);
+        if (TIMEOUT_PROCESSOR_MAP.containsKey(method)) {
+            List<ITimeoutProcessor> processors = TIMEOUT_PROCESSOR_MAP.get(method);
+            processors.add(processor);
+        } else {
+            List<ITimeoutProcessor> processors = new ArrayList<>();
+            processors.add(processor);
+            TIMEOUT_PROCESSOR_MAP.put(method, processors);
+        }
         log.debug("添加超时处理器: {} -> {}", method, processor.getClass().getSimpleName());
     }
 
@@ -122,21 +136,35 @@ public abstract class AbstractSipListener implements SipListener {
     /**
      * 移除响应处理器
      *
-     * @param method 方法名
+     * @param method    方法名
+     * @param processor 处理程序
      */
-    public synchronized void removeResponseProcessor(String method) {
-        RESPONSE_PROCESSOR_MAP.remove(method);
-        log.debug("移除响应处理器: {}", method);
+    public synchronized void removeResponseProcessor(String method, SipResponseProcessor processor) {
+        List<SipResponseProcessor> processors = RESPONSE_PROCESSOR_MAP.get(method);
+        if (processors != null) {
+            processors.remove(processor);
+            if (processors.isEmpty()) {
+                RESPONSE_PROCESSOR_MAP.remove(method);
+            }
+            log.debug("移除响应处理器: {} -> {}", method, processor.getClass().getSimpleName());
+        }
     }
 
     /**
      * 移除超时处理器
      *
-     * @param method 方法名
+     * @param method    方法名
+     * @param processor 处理程序
      */
-    public synchronized void removeTimeoutProcessor(String method) {
-        TIMEOUT_PROCESSOR_MAP.remove(method);
-        log.debug("移除超时处理器: {}", method);
+    public synchronized void removeTimeoutProcessor(String method, ITimeoutProcessor processor) {
+        List<ITimeoutProcessor> processors = TIMEOUT_PROCESSOR_MAP.get(method);
+        if (processors != null) {
+            processors.remove(processor);
+            if (processors.isEmpty()) {
+                TIMEOUT_PROCESSOR_MAP.remove(method);
+            }
+            log.debug("移除超时处理器: {} -> {}", method, processor.getClass().getSimpleName());
+        }
     }
 
     /**
@@ -150,22 +178,22 @@ public abstract class AbstractSipListener implements SipListener {
     }
 
     /**
-     * 获取响应处理器
+     * 获取响应处理器列表
      *
      * @param method 方法名
-     * @return 处理器
+     * @return 处理器列表
      */
-    public SipResponseProcessor getResponseProcessor(String method) {
+    public List<SipResponseProcessor> getResponseProcessors(String method) {
         return RESPONSE_PROCESSOR_MAP.get(method);
     }
 
     /**
-     * 获取超时处理器
+     * 获取超时处理器列表
      *
      * @param method 方法名
-     * @return 处理器
+     * @return 处理器列表
      */
-    public ITimeoutProcessor getTimeoutProcessor(String method) {
+    public List<ITimeoutProcessor> getTimeoutProcessors(String method) {
         return TIMEOUT_PROCESSOR_MAP.get(method);
     }
 
@@ -240,9 +268,13 @@ public abstract class AbstractSipListener implements SipListener {
                     sipMetrics.recordMethodCall(method + "_RESPONSE");
                 }
 
-                SipResponseProcessor sipResponseProcessor = RESPONSE_PROCESSOR_MAP.get(method);
-                if (sipResponseProcessor != null) {
-                    sipResponseProcessor.process(responseEvent);
+                List<SipResponseProcessor> sipResponseProcessors = RESPONSE_PROCESSOR_MAP.get(method);
+                if (CollectionUtils.isNotEmpty(sipResponseProcessors)) {
+                    for (SipResponseProcessor sipResponseProcessor : sipResponseProcessors) {
+                        if (sipResponseProcessor.isNeedProcess(responseEvent)) {
+                            sipResponseProcessor.process(responseEvent);
+                        }
+                    }
                 }
 
                 if (status != Response.UNAUTHORIZED && responseEvent.getResponse() != null && SipSubscribe.getOkSubscribesSize() > 0) {
@@ -307,6 +339,7 @@ public abstract class AbstractSipListener implements SipListener {
      */
     @Override
     public void processTimeout(TimeoutEvent timeoutEvent) {
+        Timer.Sample sample = sipMetrics != null ? sipMetrics.startTimer() : null;
         ClientTransaction clientTransaction = timeoutEvent.getClientTransaction();
 
         if (clientTransaction == null) {
@@ -318,15 +351,45 @@ public abstract class AbstractSipListener implements SipListener {
             return;
         }
 
-        CallIdHeader callIdHeader = (CallIdHeader) request.getHeader(CallIdHeader.NAME);
-        if (callIdHeader != null) {
-            Event subscribe = SipSubscribe.getErrorSubscribe(callIdHeader.getCallId());
-            EventResult eventResult = new EventResult(timeoutEvent);
-            if (subscribe != null) {
-                subscribe.response(eventResult);
+        try {
+            CSeqHeader cseqHeader = (CSeqHeader) request.getHeader(CSeqHeader.NAME);
+            String method = cseqHeader.getMethod();
+
+            if (sipMetrics != null) {
+                sipMetrics.recordMethodCall(method + "_TIMEOUT");
             }
-            SipSubscribe.removeOkSubscribe(callIdHeader.getCallId());
-            SipSubscribe.removeErrorSubscribe(callIdHeader.getCallId());
+
+            List<ITimeoutProcessor> timeoutProcessors = TIMEOUT_PROCESSOR_MAP.get(method);
+            if (CollectionUtils.isNotEmpty(timeoutProcessors)) {
+                for (ITimeoutProcessor timeoutProcessor : timeoutProcessors) {
+                    timeoutProcessor.process(timeoutEvent);
+                }
+            }
+
+            CallIdHeader callIdHeader = (CallIdHeader) request.getHeader(CallIdHeader.NAME);
+            if (callIdHeader != null) {
+                Event subscribe = SipSubscribe.getErrorSubscribe(callIdHeader.getCallId());
+                EventResult eventResult = new EventResult(timeoutEvent);
+                if (subscribe != null) {
+                    subscribe.response(eventResult);
+                }
+                SipSubscribe.removeOkSubscribe(callIdHeader.getCallId());
+                SipSubscribe.removeErrorSubscribe(callIdHeader.getCallId());
+            }
+
+            if (sipMetrics != null) {
+                sipMetrics.recordMessageProcessed("TIMEOUT", "SUCCESS");
+            }
+
+        } catch (Exception e) {
+            log.error("processTimeout error", e);
+            if (sipMetrics != null) {
+                sipMetrics.recordError("TIMEOUT_PROCESSING_ERROR", "TIMEOUT");
+            }
+        } finally {
+            if (sipMetrics != null && sample != null) {
+                sipMetrics.recordTimeoutProcessingTime(sample);
+            }
         }
     }
 
@@ -415,7 +478,19 @@ public abstract class AbstractSipListener implements SipListener {
      * @return 统计信息
      */
     public String getProcessorStats() {
-        return String.format("RequestProcessors: %d, ResponseProcessors: %d, TimeoutProcessors: %d",
-                REQUEST_PROCESSOR_MAP.size(), RESPONSE_PROCESSOR_MAP.size(), TIMEOUT_PROCESSOR_MAP.size());
+        int requestProcessorCount = REQUEST_PROCESSOR_MAP.values().stream()
+                .mapToInt(List::size)
+                .sum();
+        int responseProcessorCount = RESPONSE_PROCESSOR_MAP.values().stream()
+                .mapToInt(List::size)
+                .sum();
+        int timeoutProcessorCount = TIMEOUT_PROCESSOR_MAP.values().stream()
+                .mapToInt(List::size)
+                .sum();
+
+        return String.format("RequestProcessors: %d (methods: %d), ResponseProcessors: %d (methods: %d), TimeoutProcessors: %d (methods: %d)",
+                requestProcessorCount, REQUEST_PROCESSOR_MAP.size(),
+                responseProcessorCount, RESPONSE_PROCESSOR_MAP.size(),
+                timeoutProcessorCount, TIMEOUT_PROCESSOR_MAP.size());
     }
 }

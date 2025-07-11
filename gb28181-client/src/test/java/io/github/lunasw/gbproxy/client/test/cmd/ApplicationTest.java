@@ -10,8 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import io.github.lunasaw.gbproxy.client.Gb28181Client;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.response.register.RegisterResponseProcessor;
+import io.github.lunasaw.gbproxy.client.transmit.response.register.RegisterResponseProcessorSipResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.layer.SipLayer;
@@ -73,9 +72,9 @@ public class ApplicationTest {
         // 构造请求 fromDevice：当前发送的设备 toDevice 接收消息的设备
         Request registerRequest = SipRequestProvider.createRegisterRequest(fromDevice, toDevice, 300, callId);
         // 响应处理器
-        RegisterResponseProcessor responseProcessor = new RegisterResponseProcessor();
+        RegisterResponseProcessorSipResponseProcessor responseProcessor = new RegisterResponseProcessorSipResponseProcessor();
         // 添加响应处理器
-        CustomerSipListener.getInstance().addResponseProcessor(RegisterResponseProcessor.METHOD, responseProcessor);
+        CustomerSipListener.getInstance().addResponseProcessor(RegisterResponseProcessorSipResponseProcessor.METHOD, responseProcessor);
 
         SipSender.transmitRequestSuccess(fromDevice.getIp(), registerRequest, new Event() {
             @Override

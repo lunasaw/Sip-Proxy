@@ -1,7 +1,5 @@
 package io.github.lunasaw.gbproxy.client.config;
 
-import java.util.Map;
-
 import io.github.lunasaw.gbproxy.client.transmit.request.ack.AckRequestProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.request.ack.CustomAckRequestProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.request.bye.ByeProcessorClient;
@@ -10,14 +8,17 @@ import io.github.lunasaw.gbproxy.client.transmit.request.info.CustomInfoProcesso
 import io.github.lunasaw.gbproxy.client.transmit.request.info.InfoProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.request.invite.CustomInviteProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.request.invite.InviteProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.CustomMessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.ClientSubscribeRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.CustomSubscribeProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeClientHandlerAbstract;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.response.register.CustomRegisterProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.response.register.RegisterProcessorClient;
-import io.github.lunasaw.gbproxy.client.user.CustomSipUserGenerateClient;
-import io.github.lunasaw.gbproxy.client.user.SipUserGenerateClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -27,11 +28,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.ClientSubscribeRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeClientHandlerAbstract;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
 
 /**
  * @author luna
@@ -50,7 +47,7 @@ public class SipProxyClientAutoConfig implements InitializingBean, ApplicationCo
         clientMessageHandlerMap.forEach((k, v) -> ClientMessageRequestProcessor.addHandler(v));
 
         Map<String, SubscribeClientHandlerAbstract> clientSubscribeHandlerMap =
-            applicationContext.getBeansOfType(SubscribeClientHandlerAbstract.class);
+                applicationContext.getBeansOfType(SubscribeClientHandlerAbstract.class);
         clientSubscribeHandlerMap.forEach((k, v) -> ClientSubscribeRequestProcessor.addHandler(v));
     }
 
@@ -63,12 +60,6 @@ public class SipProxyClientAutoConfig implements InitializingBean, ApplicationCo
     @ConditionalOnMissingBean
     public MessageProcessorClient messageProcessorClient() {
         return new CustomMessageProcessorClient();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public SipUserGenerateClient sipUserGenerateClient() {
-        return new CustomSipUserGenerateClient();
     }
 
     @Bean

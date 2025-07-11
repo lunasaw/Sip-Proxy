@@ -6,7 +6,7 @@ import gov.nist.javax.sip.message.SIPResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import lombok.Data;
 
 /**
@@ -17,7 +17,7 @@ import lombok.Data;
 @Component
 @Data
 @Slf4j
-public class ByeResponseProcessor extends SipResponseProcessorAbstract {
+public class ByeResponseProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
 
     public static final String METHOD = "BYE";
 

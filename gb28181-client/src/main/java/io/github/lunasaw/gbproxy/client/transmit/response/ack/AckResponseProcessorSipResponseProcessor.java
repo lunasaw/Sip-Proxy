@@ -5,7 +5,7 @@ import javax.sip.header.CallIdHeader;
 
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @Data
-public class AckResponseProcessor extends SipResponseProcessorAbstract {
+public class AckResponseProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
 
     private static final String METHOD = "ACK";
 

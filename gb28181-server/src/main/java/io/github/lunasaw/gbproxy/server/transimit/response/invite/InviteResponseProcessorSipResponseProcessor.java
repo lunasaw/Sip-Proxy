@@ -17,7 +17,7 @@ import io.github.lunasaw.gbproxy.server.transimit.cmd.ServerSendCmd;
 import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter
 @Component
-public class InviteResponseProcessor extends SipResponseProcessorAbstract {
+public class InviteResponseProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
 
     private static final String           METHOD = "INVITE";
 

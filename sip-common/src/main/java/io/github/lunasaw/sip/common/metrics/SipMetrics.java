@@ -25,6 +25,7 @@ public class SipMetrics {
     private final Counter                    errorCounter;
     private final Timer                      requestTimer;
     private final Timer                      responseTimer;
+    private final Timer timeoutTimer;
     private final Gauge                      queueSizeGauge;
 
     // 标记是否启用监控
@@ -70,6 +71,11 @@ public class SipMetrics {
                 .description("SIP response processing time")
                 .register(meterRegistry);
 
+            // 超时处理时间
+            this.timeoutTimer = Timer.builder("sip.timeout.processing.time")
+                    .description("SIP timeout processing time")
+                    .register(meterRegistry);
+
             // 队列大小
             this.queueSizeGauge = Gauge.builder("sip.queue.size", this, SipMetrics::getCurrentQueueSize)
                 .description("Current message queue size")
@@ -84,6 +90,7 @@ public class SipMetrics {
             this.errorCounter = null;
             this.requestTimer = null;
             this.responseTimer = null;
+            this.timeoutTimer = null;
             this.queueSizeGauge = null;
             log.warn("SIP metrics initialized without MeterRegistry - metrics will be disabled");
         }
@@ -142,6 +149,15 @@ public class SipMetrics {
     public void recordResponseProcessingTime(Timer.Sample sample) {
         if (metricsEnabled && responseTimer != null && sample != null) {
             sample.stop(responseTimer);
+        }
+    }
+
+    /**
+     * 记录超时处理时间
+     */
+    public void recordTimeoutProcessingTime(Timer.Sample sample) {
+        if (metricsEnabled && timeoutTimer != null && sample != null) {
+            sample.stop(timeoutTimer);
         }
     }
 

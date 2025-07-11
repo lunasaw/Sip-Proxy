@@ -1,12 +1,10 @@
 package io.github.lunasaw.gbproxy.server.transimit.response.ack;
 
-import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-import javax.sip.RequestEvent;
 import javax.sip.ResponseEvent;
 
 /**
@@ -17,7 +15,7 @@ import javax.sip.ResponseEvent;
 @Component
 @Getter
 @Setter
-public class AckRequestProcessor extends SipResponseProcessorAbstract {
+public class AckRequestProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
 
     public static final String METHOD = "ACK";
 

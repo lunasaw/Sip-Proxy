@@ -73,17 +73,16 @@ public class SipConfigurationManager {
         StringBuilder summary = new StringBuilder();
         summary.append("=== SIP配置摘要 ===\n");
 
-        // GB28181配置摘要
-        summary.append("GB28181配置:\n");
-        summary.append(String.format("  服务器: %s:%d\n",
-            gb28181Properties.getServer().getIp(),
-            gb28181Properties.getServer().getPort()));
-        summary.append(String.format("  客户端ID: %s\n",
-            gb28181Properties.getClient().getClientId()));
+        // GB28181通用配置摘要
+        summary.append("GB28181通用配置:\n");
         summary.append(String.format("  异步处理: %s\n",
             gb28181Properties.isAsyncEnabled() ? "启用" : "禁用"));
         summary.append(String.format("  监控: %s\n",
             gb28181Properties.isMetricsEnabled() ? "启用" : "禁用"));
+        summary.append(String.format("  线程池大小: %d\n",
+                gb28181Properties.getPerformance().getThreadPoolSize()));
+        summary.append(String.format("  消息队列大小: %d\n",
+                gb28181Properties.getPerformance().getMessageQueueSize()));
 
         // 异步配置摘要
         summary.append("\n异步配置:\n");
