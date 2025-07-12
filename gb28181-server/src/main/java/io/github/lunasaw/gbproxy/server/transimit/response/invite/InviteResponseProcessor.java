@@ -25,7 +25,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 发起INVITE响应
+ * INVITE响应处理器
+ * 只负责SIP协议层面的处理，业务逻辑通过InviteResponseProcessorServer接口实现
  *
  * @author luna
  */
@@ -33,56 +34,69 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter
 @Component
-public class InviteResponseProcessorSipResponseProcessor extends AbstractSipResponseProcessor {
+public class InviteResponseProcessor extends AbstractSipResponseProcessor {
 
-    private static final String           METHOD = "INVITE";
+    public static final String METHOD = "INVITE";
 
-    private String                        method = METHOD;
+    private String method = METHOD;
 
     @Autowired
     private InviteResponseProcessorServer inviteResponseProcessorServer;
 
     @Autowired
-    private SipUserGenerateServer         sipUserGenerate;
+    private SipUserGenerateServer sipUserGenerate;
 
     /**
      * 处理invite响应
      *
      * @param evt 响应消息
-     * @throws ParseException
      */
     @Override
     public void process(ResponseEvent evt) {
         try {
             SIPResponse response = (SIPResponse)evt.getResponse();
+            String callId = response.getCallIdHeader().getCallId();
             int statusCode = response.getStatusCode();
-            if (statusCode == Response.TRYING) {
-                inviteResponseProcessorServer.responseTrying();
+
+            if (callId == null) {
+                log.warn("INVITE响应处理失败：callId为空");
+                return;
             }
 
-            if (statusCode == Response.OK) {
-                ResponseEventExt event = (ResponseEventExt)evt;
-                responseAck(event);
+            if (statusCode == Response.TRYING) {
+                inviteResponseProcessorServer.responseTrying();
+                log.debug("处理INVITE Trying响应：callId = {}", callId);
+            } else if (statusCode == Response.OK) {
+                inviteResponseProcessorServer.handleOkResponse(evt, callId);
+                log.info("处理INVITE OK响应：callId = {}", callId);
+                processOkResponse((ResponseEventExt)evt);
+            } else {
+                inviteResponseProcessorServer.handleFailureResponse(evt, callId, statusCode);
+                log.warn("处理INVITE失败响应：callId = {}, statusCode = {}", callId, statusCode);
             }
         } catch (Exception e) {
-            log.info("[点播回复ACK]，异常：", e);
+            log.error("处理INVITE响应异常：evt = {}", evt, e);
         }
     }
 
-    public void responseAck(ResponseEventExt evt) throws SdpParseException {
-        // 成功响应
+    /**
+     * 处理OK响应
+     *
+     * @param evt 响应事件
+     */
+    private void processOkResponse(ResponseEventExt evt) throws SdpParseException {
         SIPResponse response = (SIPResponse)evt.getResponse();
-
         FromDevice fromDevice = (FromDevice)sipUserGenerate.getFromDevice();
 
         String contentString = new String(response.getRawContent());
         SdpSessionDescription gb28181Sdp = SipUtils.parseSdp(contentString);
         SessionDescription sdp = gb28181Sdp.getBaseSdb();
 
-        SipURI requestUri = SipRequestUtils.createSipUri(sdp.getOrigin().getUsername(), evt.getRemoteIpAddress() + ":" + evt.getRemotePort());
+        SipURI requestUri = SipRequestUtils.createSipUri(sdp.getOrigin().getUsername(),
+            evt.getRemoteIpAddress() + ":" + evt.getRemotePort());
 
         // 回复ack
         ServerSendCmd.deviceAck(fromDevice, requestUri, response);
+        log.info("发送ACK响应：requestUri = {}", requestUri);
     }
-
 }

@@ -518,3 +518,56 @@ javax.sip (SIP协议栈)
 - **重要性**：确保SIP协议栈能够正确接收和处理消息，避免测试失败或消息丢失
 - **适用范围**：适用于所有涉及SIP消息发送、接收、处理的单元测试
 - **异常处理**：监听点设置失败时，必须记录详细错误日志并终止测试执行
+
+### 12. SIP处理器业务逻辑分离规范 (强制性要求)
+- **职责分离**：`AbstractSipXXXProcessor`的子类只负责SIP协议层面的处理，禁止包含业务逻辑
+- **业务逻辑接口**：业务逻辑必须通过`XXXProcessorHandler`接口实现，由业务接入方自己实现
+- **处理器职责**：
+  - 协议消息解析和验证
+  - 消息格式转换
+  - 调用业务处理器接口
+  - 响应消息构建和发送
+  - 异常处理和日志记录
+- **业务处理器职责**：
+  - 具体的业务逻辑处理
+  - 数据持久化操作
+  - 外部系统调用
+  - 业务规则验证
+  - 业务状态管理
+- **接口设计规范**：
+  - 处理器接口命名：`XXXProcessorHandler`
+  - 方法命名清晰表达业务意图
+  - 参数和返回值类型明确
+  - 提供默认实现处理常见场景
+- **代码示例**：
+  ```java
+  // 处理器接口定义
+  public interface RegisterProcessorHandler {
+      default Integer getExpire(String userId) {
+          return 3600;
+      }
+      void registerSuccess(String toUserId);
+  }
+
+  // 处理器实现
+  public class RegisterRequestProcessor extends AbstractSipRequestProcessor {
+      @Autowired
+      private RegisterProcessorHandler registerProcessorHandler;
+
+      @Override
+      protected void processInternal(RequestEvent requestEvent) {
+          // 协议层面处理
+          String userId = extractUserId(requestEvent);
+
+          // 调用业务处理器
+          registerProcessorHandler.registerSuccess(userId);
+
+          // 构建响应
+          buildResponse(requestEvent);
+      }
+  }
+  ```
+- **依赖注入**：业务处理器通过Spring的依赖注入机制进行管理
+- **扩展性**：业务接入方可以通过实现不同的处理器接口来定制业务逻辑
+- **测试友好**：业务逻辑与协议处理分离，便于单元测试和集成测试
+- **维护性**：协议变更不影响业务逻辑，业务变更不影响协议处理

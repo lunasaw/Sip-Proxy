@@ -1,5 +1,7 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.subscribe;
 
+import io.github.lunasaw.sip.common.service.DefaultDeviceSupplier;
+import io.github.lunasaw.sip.common.service.DeviceSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.RequestEvent;
 
@@ -33,11 +35,14 @@ public class ClientSubscribeRequestProcessor extends SipMessageRequestProcessorA
     private SubscribeProcessorClient subscribeProcessorClient;
 
     @Autowired
-    private SipUserGenerateClient    sipUserGenerateClient;
+    private DeviceSupplier deviceSupplier;
 
-    public ClientSubscribeRequestProcessor(SubscribeProcessorClient subscribeProcessorClient, SipUserGenerateClient sipUserGenerateClient) {
+    @Autowired
+    private DefaultDeviceSupplier deviceSupplier;
+
+    public ClientSubscribeRequestProcessor(SubscribeProcessorClient subscribeProcessorClient, DeviceSupplier deviceSupplier) {
         this.subscribeProcessorClient = subscribeProcessorClient;
-        this.sipUserGenerateClient = sipUserGenerateClient;
+        this.deviceSupplier = deviceSupplier;
     }
 
     /**

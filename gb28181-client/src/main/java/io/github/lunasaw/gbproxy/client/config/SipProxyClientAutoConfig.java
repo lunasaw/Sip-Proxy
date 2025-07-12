@@ -16,8 +16,6 @@ import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.ClientSubscri
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.CustomSubscribeProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeClientHandlerAbstract;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeProcessorClient;
-import io.github.lunasaw.gbproxy.client.transmit.response.register.CustomRegisterProcessorClient;
-import io.github.lunasaw.gbproxy.client.transmit.response.register.RegisterProcessorClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -90,12 +88,6 @@ public class SipProxyClientAutoConfig implements InitializingBean, ApplicationCo
     @ConditionalOnMissingBean
     public InviteProcessorClient inviteProcessorClient() {
         return new CustomInviteProcessorClient();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public RegisterProcessorClient registerProcessorClient() {
-        return new CustomRegisterProcessorClient();
     }
 
 }
