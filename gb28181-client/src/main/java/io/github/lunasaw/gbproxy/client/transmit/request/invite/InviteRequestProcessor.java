@@ -8,7 +8,6 @@ import javax.sip.message.Response;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.gbproxy.client.user.SipUserGenerateClient;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.GbSessionDescription;
@@ -39,9 +38,6 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
     @Autowired
     private InviteProcessorClient inviteProcessorClient;
 
-    @Autowired
-    private SipUserGenerateClient sipUserGenerate;
-
     /**
      * 收到Invite请求 处理
      *
@@ -49,25 +45,29 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
      */
     @Override
     public void process(RequestEvent evt) {
-        SIPRequest request = (SIPRequest)evt.getRequest();
+        try {
+            SIPRequest request = (SIPRequest) evt.getRequest();
 
-        if (!sipUserGenerate.checkDevice(evt)) {
-            return;
+            // 协议层面处理：解析SIP消息
+            String toUserId = SipUtils.getUserIdFromFromHeader(request);
+            String userId = SipUtils.getUserIdFromToHeader(request);
+            String callId = SipUtils.getCallId(request);
+
+            // 解析Sdp
+            GbSessionDescription sessionDescription = (GbSessionDescription) SipUtils.parseSdp(new String(request.getRawContent()));
+
+            // 调用业务处理器
+            inviteProcessorClient.inviteSession(callId, sessionDescription);
+            String content = inviteProcessorClient.getInviteResponse(userId, sessionDescription);
+
+            // 构建响应
+            ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();
+            ResponseCmd.doResponseCmd(Response.OK, "OK", content, contentTypeHeader, evt);
+
+        } catch (Exception e) {
+            log.error("处理INVITE请求时发生异常: evt = {}", evt, e);
+            // 发送500错误响应
+            ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, "Internal Server Error", evt);
         }
-        String toUserId = SipUtils.getUserIdFromFromHeader(request);
-        Device toDevice = sipUserGenerate.getToDevice(toUserId);
-        if (toDevice == null) {
-            return;
-        }
-
-        String userId = SipUtils.getUserIdFromToHeader(request);
-        String callId = SipUtils.getCallId(request);
-        // 解析Sdp
-        GbSessionDescription sessionDescription = (GbSessionDescription)SipUtils.parseSdp(new String(request.getRawContent()));
-        inviteProcessorClient.inviteSession(callId, sessionDescription);
-        String content = inviteProcessorClient.getInviteResponse(userId, sessionDescription);
-
-        ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();
-        ResponseCmd.doResponseCmd(Response.OK, "OK", content, contentTypeHeader, evt);
     }
 }

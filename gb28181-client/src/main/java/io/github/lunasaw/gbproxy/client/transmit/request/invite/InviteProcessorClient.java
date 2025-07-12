@@ -16,16 +16,30 @@ import javax.sdp.SessionDescription;
 import java.util.Vector;
 
 /**
+ * INVITE请求业务处理器接口
+ * 负责处理INVITE请求的业务逻辑
+ *
  * @author weidian
  */
 public interface InviteProcessorClient {
 
-
+    /**
+     * 处理INVITE会话
+     *
+     * @param callId             呼叫ID
+     * @param sessionDescription 会话描述
+     */
     void inviteSession(String callId, SdpSessionDescription sessionDescription);
 
+    /**
+     * 获取INVITE响应内容
+     *
+     * @param userId 用户ID
+     * @param sessionDescription 会话描述
+     * @return 响应内容
+     */
     @SneakyThrows
     default String getInviteResponse(String userId, GbSessionDescription sessionDescription) {
-
         SessionDescription baseSdb = sessionDescription.getBaseSdb();
         String address = baseSdb.getOrigin().getAddress();
         String sessionName = baseSdb.getSessionName().getValue();
@@ -47,14 +61,11 @@ public interface InviteProcessorClient {
             }
         }
 
-
         if (InviteSessionNameEnum.PLAY_BACK.getType().equals(sessionName)) {
-
             Vector timeDescriptions = baseSdb.getTimeDescriptions(false);
             if (CollectionUtils.isEmpty(timeDescriptions)) {
                 return InviteResponseEntity.getAckPlayBody(userId, address,
                         port, sessionDescription.getSsrc()).toString();
-
             }
             TimeDescriptionImpl timeDescription = (TimeDescriptionImpl) timeDescriptions.get(0);
             TimeField startTimeFiled = (TimeField) timeDescription.getTime();
