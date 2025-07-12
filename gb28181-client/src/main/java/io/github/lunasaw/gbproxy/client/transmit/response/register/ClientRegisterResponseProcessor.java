@@ -2,9 +2,10 @@ package io.github.lunasaw.gbproxy.client.transmit.response.register;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.client.config.Gb28181ClientProperties;
+import io.github.lunasaw.gbproxy.client.config.ClientProperties;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
 import io.github.lunasaw.sip.common.service.DefaultDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
@@ -41,10 +42,10 @@ public class ClientRegisterResponseProcessor extends AbstractSipResponseProcesso
     private String method = METHOD;
 
     @Autowired
-    private DefaultDeviceSupplier deviceSupplier;
+    private ClientDeviceSupplier deviceSupplier;
 
     @Autowired
-    private Gb28181ClientProperties gb28181ClientProperties;
+    private ClientProperties clientProperties;
 
     @Autowired
     private RegisterProcessorHandler registerProcessorHandler;
@@ -115,7 +116,7 @@ public class ClientRegisterResponseProcessor extends AbstractSipResponseProcesso
         SIPResponse response = (SIPResponse) evt.getResponse();
         CallIdHeader callIdHeader = response.getCallIdHeader();
 
-        String clientId = gb28181ClientProperties.getClientId();
+        String clientId = clientProperties.getAuth().getDeviceId();
         FromDevice fromDevice = (FromDevice) deviceSupplier.getDevice(clientId);
         ToDevice toDevice = (ToDevice) deviceSupplier.getDevice(toUserId);
 

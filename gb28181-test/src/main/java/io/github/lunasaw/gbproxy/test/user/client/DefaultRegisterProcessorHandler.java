@@ -1,6 +1,6 @@
 package io.github.lunasaw.gbproxy.test.user.client;
 
-import io.github.lunasaw.gbproxy.client.config.Gb28181ClientProperties;
+import io.github.lunasaw.gbproxy.client.config.ClientProperties;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
 import io.github.lunasaw.gbproxy.client.transmit.response.register.RegisterProcessorHandler;
 import io.github.lunasaw.sip.common.entity.Device;
@@ -33,7 +33,7 @@ public class DefaultRegisterProcessorHandler implements RegisterProcessorHandler
     private DefaultDeviceSupplier deviceSupplier;
 
     @Autowired
-    private Gb28181ClientProperties gb28181ClientProperties;
+    private ClientProperties clientProperties;
 
     @Override
     public Integer getExpire(String userId) {
