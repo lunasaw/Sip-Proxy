@@ -7,7 +7,7 @@ import javax.sip.ResponseEvent;
  *
  * @author luna
  */
-public interface AckProcessorHandler {
+public interface ClientAckProcessorHandler {
 
     /**
      * 处理ACK响应

@@ -7,7 +7,7 @@ import javax.sip.ResponseEvent;
  *
  * @author luna
  */
-public interface ByeProcessorHandler {
+public interface ClientByeProcessorHandler {
 
     /**
      * 处理BYE响应

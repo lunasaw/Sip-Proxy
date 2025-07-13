@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class DefaultByeProcessorHandler implements ByeProcessorHandler {
+public class DefaultClientByeProcessorHandler implements ClientByeProcessorHandler {
 
     @Override
     public void handleByeResponse(String callId, int statusCode, ResponseEvent evt) {

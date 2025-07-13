@@ -1,6 +1,6 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.bye;
 
-import io.github.lunasaw.gbproxy.client.transmit.response.bye.ByeProcessorHandler;
+import io.github.lunasaw.gbproxy.client.transmit.response.bye.ClientByeProcessorHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.Dialog;
 import javax.sip.RequestEvent;
@@ -33,7 +33,7 @@ public class ByeRequestProcessorClient extends SipRequestProcessorAbstract {
     private String method = METHOD;
 
     @Autowired
-    private ByeProcessorHandler byeProcessorHandler;
+    private ClientByeProcessorHandler clientByeProcessorHandler;
 
     /**
      * 收到Bye请求 处理
@@ -59,7 +59,7 @@ public class ByeRequestProcessorClient extends SipRequestProcessorAbstract {
             Dialog dialog = evt.getDialog();
             if (dialog != null) {
                 // 调用业务处理器关闭流
-                byeProcessorHandler.closeStream(dialog.getCallId().getCallId());
+                clientByeProcessorHandler.closeStream(dialog.getCallId().getCallId());
             }
 
         } catch (Exception e) {

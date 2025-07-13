@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.client.transmit.response.register;
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
 import io.github.lunasaw.gbproxy.client.config.ClientProperties;
+import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
@@ -35,7 +36,7 @@ import javax.sip.message.Response;
 @Getter
 @Setter
 @Component
-public class ClientRegisterResponseProcessor extends AbstractSipResponseProcessor {
+public class ClientRegisterResponseProcessor extends ClientAbstractSipResponseProcessor {
 
     public static final String METHOD = "REGISTER";
 

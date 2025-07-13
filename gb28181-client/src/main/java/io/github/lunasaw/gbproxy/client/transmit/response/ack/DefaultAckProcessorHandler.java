@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class DefaultAckProcessorHandler implements AckProcessorHandler {
+public class DefaultAckProcessorHandler implements ClientAckProcessorHandler {
 
     @Override
     public void handleAckResponse(String callId, ResponseEvent evt) {

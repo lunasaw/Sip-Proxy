@@ -1,15 +1,14 @@
 package io.github.lunasaw.gbproxy.client.transmit.response.cancel;
 
-import javax.sip.ResponseEvent;
-
 import gov.nist.javax.sip.message.SIPResponse;
+import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
+import javax.sip.ResponseEvent;
 
 /**
  * CANCEL响应处理器
@@ -21,7 +20,7 @@ import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseP
 @Getter
 @Setter
 @Component
-public class CancelResponseProcessor extends AbstractSipResponseProcessor {
+public class CancelResponseProcessor extends ClientAbstractSipResponseProcessor {
 
     public static final String METHOD = "CANCEL";
 

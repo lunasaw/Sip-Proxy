@@ -1,6 +1,6 @@
-package io.github.lunasaw.gbproxy.client.transmit.response.ack;
+package io.github.lunasaw.gbproxy.server.transimit.response.ack;
 
-import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
+
+import gov.nist.javax.sip.message.SIPResponse;
 
 /**
  * ACK响应处理器
@@ -20,14 +22,14 @@ import javax.sip.header.CallIdHeader;
 @Getter
 @Setter
 @Component
-public class AckResponseProcessor extends ClientAbstractSipResponseProcessor {
+public class AckResponseProcessor extends AbstractSipResponseProcessor {
 
     public static final String METHOD = "ACK";
 
     private String method = METHOD;
 
     @Autowired
-    private ClientAckProcessorHandler ackProcessorHandler;
+    private AckProcessorHandler ackProcessorHandler;
 
     /**
      * 处理ACK响应
@@ -37,12 +39,14 @@ public class AckResponseProcessor extends ClientAbstractSipResponseProcessor {
     @Override
     public void process(ResponseEvent evt) {
         try {
-            CallIdHeader callIdHeader = (CallIdHeader) evt.getResponse().getHeader(CallIdHeader.NAME);
+            SIPResponse response = (SIPResponse) evt.getResponse();
+            CallIdHeader callIdHeader = (CallIdHeader) response.getHeader(CallIdHeader.NAME);
             String callId = callIdHeader != null ? callIdHeader.getCallId() : null;
+            int statusCode = response.getStatusCode();
 
             if (callId != null) {
-                ackProcessorHandler.handleAckResponse(callId, evt);
-                log.debug("处理ACK响应：callId = {}", callId);
+                ackProcessorHandler.handleAckResponse(callId, statusCode, evt);
+                log.debug("处理ACK响应：callId = {}, statusCode = {}", callId, statusCode);
             } else {
                 log.warn("ACK响应处理失败：callId为空");
             }

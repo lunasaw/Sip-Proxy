@@ -2,7 +2,7 @@ package io.github.lunasaw.gbproxy.client.config;
 
 import io.github.lunasaw.gbproxy.client.transmit.request.ack.AckRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.ack.DefaultAckRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.bye.DefaultByeProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.bye.DefaultClientByeProcessorClient;
 import io.github.lunasaw.gbproxy.client.transmit.request.info.CustomInfoRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.info.InfoRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.invite.DefaultInviteRequestHandler;
@@ -15,7 +15,7 @@ import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.DefaultSubscr
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeHandlerAbstract;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.response.bye.ByeProcessorHandler;
+import io.github.lunasaw.gbproxy.client.transmit.response.bye.ClientByeProcessorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -62,8 +62,8 @@ public class SipProxyClientAutoConfig implements InitializingBean, ApplicationCo
 
     @Bean
     @ConditionalOnMissingBean
-    public ByeProcessorHandler byeProcessorHandler() {
-        return new DefaultByeProcessorClient();
+    public ClientByeProcessorHandler byeProcessorHandler() {
+        return new DefaultClientByeProcessorClient();
     }
 
     @Bean

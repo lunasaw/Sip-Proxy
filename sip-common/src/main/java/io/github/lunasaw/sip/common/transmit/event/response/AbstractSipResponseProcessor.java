@@ -2,7 +2,6 @@ package io.github.lunasaw.sip.common.transmit.event.response;
 
 
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.sip.common.entity.FromDevice;
 import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
