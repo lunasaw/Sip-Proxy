@@ -19,13 +19,12 @@ import com.luna.common.date.DateUtils;
 
 import gov.nist.javax.sip.header.SIPDateHeader;
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
+import io.github.lunasaw.gbproxy.server.transimit.request.ServerAbstractSipRequestProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.GbSipDate;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
-import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -33,7 +32,8 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * SIP命令类型： REGISTER请求
+ * Server模块REGISTER请求处理器
+ * 只负责SIP协议层面的处理，业务逻辑通过ServerRegisterProcessorHandler接口实现
  *
  * @author luna
  */
@@ -41,117 +41,137 @@ import lombok.extern.slf4j.Slf4j;
 @Setter
 @Component
 @Slf4j
-public class ServerRegisterRequestProcessor extends SipRequestProcessorAbstract {
+public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProcessor {
 
-    public final String             METHOD = "REGISTER";
+    public static final String METHOD = "REGISTER";
 
-    private String                  method = METHOD;
-
-    @Autowired
-    private RegisterProcessorServer registerProcessorServer;
+    private String method = METHOD;
 
     @Autowired
-    private SipUserGenerateServer   sipUserGenerate;
+    private ServerRegisterProcessorHandler serverRegisterProcessorHandler;
 
     /**
-     * 收到注册请求 处理
+     * 处理REGISTER请求
+     * 只负责SIP协议层面的处理，业务逻辑通过ServerRegisterProcessorHandler接口实现
      *
-     * @param evt
+     * @param evt 请求事件
      */
     @Override
     public void process(RequestEvent evt) {
         try {
             SIPRequest request = (SIPRequest)evt.getRequest();
-            // 注册/注销
+            // 解析协议层面的信息
             int expires = request.getExpires().getExpires();
-            boolean registerFlag = expires > 0;
-
+            boolean isRegister = expires > 0;
             String userId = SipUtils.getUserIdFromFromHeader(request);
 
-            FromDevice fromDevice = (FromDevice)sipUserGenerate.getFromDevice();
-            if (fromDevice == null) {
-                return;
-            }
-            // 设备接收到的IP地址，有可能是Nat之后的, 本地回复直接使用这个地址即可
-            String receiveIp = request.getLocalAddress().getHostAddress();
-            // 设备发送请求的地址。主动发送需要nat转换后的地址
-            RemoteAddressInfo remoteAddressInfo = SipUtils.getRemoteAddressFromRequest(request);
-            String requestAddress = remoteAddressInfo.getIp() + ":" + remoteAddressInfo.getPort();
+            log.debug("处理{}请求：用户ID = {}, 过期时间 = {}", isRegister ? "注册" : "注销", userId, expires);
 
-            String title = registerFlag ? "[注册请求]" : "[注销请求]";
-            log.info("{}设备：{}, 开始处理: {}", title, userId, requestAddress);
-
-            SipTransaction transaction = registerProcessorServer.getTransaction(userId);
-
-            RegisterInfo registerInfo = new RegisterInfo();
-            registerInfo.setExpire(expires);
-            registerInfo.setRegisterTime(DateUtils.getCurrentDate());
-            // 判断TCP还是UDP
-            ViaHeader reqViaHeader = (ViaHeader)request.getHeader(ViaHeader.NAME);
-            String transport = reqViaHeader.getTransport();
-            registerInfo.setTransport("TCP".equalsIgnoreCase(transport) ? "TCP" : "UDP");
-            registerInfo.setLocalIp(receiveIp);
-            registerInfo.setRemotePort(remoteAddressInfo.getPort());
-            registerInfo.setRemoteIp(remoteAddressInfo.getIp());
-
+            // 构建注册信息
+            RegisterInfo registerInfo = buildRegisterInfo(request, expires);
             SipTransaction sipTransaction = SipUtils.getSipTransaction(request);
-            if (!registerFlag) {
-                log.info("{}设备：{}, 设备注销: {}", title, userId, expires);
-                registerProcessorServer.deviceOffLine(userId, registerInfo, sipTransaction);
+
+            // 处理注销请求
+            if (!isRegister) {
+                serverRegisterProcessorHandler.handleDeviceOffline(userId, registerInfo, sipTransaction, evt);
                 return;
             }
 
-            String callId = SipUtils.getCallId(request);
-            List<Header> okHeaderList = getRegisterOkHeaderList(request);
+            // 处理注册请求
+            processRegisterRequest(evt, request, userId, registerInfo, sipTransaction);
 
-            if (transaction != null && callId.equals(transaction.getCallId())) {
-                log.info("{}设备：{}, 注册续订: {}", title, userId, expires);
-
-                ResponseCmd.doResponseCmd(Response.OK, "OK", evt, okHeaderList);
-                registerProcessorServer.updateSipTransaction(userId, sipTransaction);
-                return;
-            }
-
-            String password = StringUtils.EMPTY;
-            if (StringUtils.isNotBlank(fromDevice.getPassword())) {
-                password = fromDevice.getPassword();
-            }
-
-            AuthorizationHeader authHead = (AuthorizationHeader)request.getHeader(AuthorizationHeader.NAME);
-            if (authHead == null && StringUtils.isNotBlank(password)) {
-
-                // 认证密码不是空, 但是请求头中没有AuthorizationHeader
-                log.info("{} 设备：{}, 回复401: {}", title, userId, requestAddress);
-
-                String nonce = DigestServerAuthenticationHelper.generateNonce();
-                WWWAuthenticateHeader wwwAuthenticateHeader =
-                    SipRequestUtils.createWWWAuthenticateHeader(DigestServerAuthenticationHelper.DEFAULT_SCHEME, fromDevice.getRealm(), nonce,
-                        DigestServerAuthenticationHelper.DEFAULT_ALGORITHM);
-
-                ResponseCmd.doResponseCmd(Response.UNAUTHORIZED, "Unauthorized", evt, wwwAuthenticateHeader);
-                registerProcessorServer.responseUnauthorized(userId);
-                return;
-            }
-
-            // 校验密码是否正确
-            boolean passwordCorrect = ObjectUtils.isEmpty(password) ||
-                DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword(request, password);
-
-            if (!passwordCorrect) {
-                // 注册失败
-                log.info("{} 设备：{}, 密码/SIP服务器ID错误, 回复403: {}", title, userId, requestAddress);
-                ResponseCmd.doResponseCmd(Response.FORBIDDEN, "wrong password", evt);
-                return;
-            }
-
-            // 携带授权头并且密码正确
-            ResponseCmd.doResponseCmd(Response.OK, "OK", evt, okHeaderList);
-            // 注册成功
-            registerProcessorServer.updateRegisterInfo(userId, registerInfo);
-            registerProcessorServer.updateSipTransaction(userId, sipTransaction);
         } catch (Exception e) {
-            log.error("未处理的异常 ", e);
+            log.error("处理REGISTER请求异常：evt = {}", evt, e);
         }
+    }
+
+    /**
+     * 处理注册请求
+     */
+    private void processRegisterRequest(RequestEvent evt, SIPRequest request, String userId, RegisterInfo registerInfo, SipTransaction sipTransaction) {
+        // 检查是否为续订请求
+        SipTransaction existingTransaction = serverRegisterProcessorHandler.getDeviceTransaction(userId);
+        String callId = SipUtils.getCallId(request);
+
+        if (existingTransaction != null && callId.equals(existingTransaction.getCallId())) {
+            // 续订请求，直接响应成功
+            List<Header> okHeaderList = getRegisterOkHeaderList(request);
+            ResponseCmd.doResponseCmd(Response.OK, "OK", evt, okHeaderList);
+            serverRegisterProcessorHandler.handleDeviceOnline(userId, sipTransaction, evt);
+            return;
+        }
+
+        // 处理首次注册认证
+        AuthorizationHeader authHead = (AuthorizationHeader) request.getHeader(AuthorizationHeader.NAME);
+        if (authHead == null) {
+            // 发送401认证挑战
+            sendAuthChallenge(evt, userId);
+            return;
+        }
+
+        // 验证密码
+        if (!serverRegisterProcessorHandler.validatePassword(userId, extractPassword(request), evt)) {
+            // 密码验证失败，返回403
+            log.warn("REGISTER请求密码验证失败：用户ID = {}", userId);
+            ResponseCmd.doResponseCmd(Response.FORBIDDEN, "wrong password", evt);
+            return;
+        }
+
+        // 注册成功
+        List<Header> okHeaderList = getRegisterOkHeaderList(request);
+        ResponseCmd.doResponseCmd(Response.OK, "OK", evt, okHeaderList);
+        serverRegisterProcessorHandler.handleRegisterInfoUpdate(userId, registerInfo, evt);
+        serverRegisterProcessorHandler.handleDeviceOnline(userId, sipTransaction, evt);
+    }
+
+    /**
+     * 发送认证挑战
+     */
+    private void sendAuthChallenge(RequestEvent evt, String userId) {
+        try {
+            String nonce = DigestServerAuthenticationHelper.generateNonce();
+            WWWAuthenticateHeader wwwAuthenticateHeader =
+                    SipRequestUtils.createWWWAuthenticateHeader(DigestServerAuthenticationHelper.DEFAULT_SCHEME,
+                            "3402000000", nonce, DigestServerAuthenticationHelper.DEFAULT_ALGORITHM);
+
+            ResponseCmd.doResponseCmd(Response.UNAUTHORIZED, "Unauthorized", evt, wwwAuthenticateHeader);
+            serverRegisterProcessorHandler.handleUnauthorized(userId, evt);
+        } catch (Exception e) {
+            log.error("发送认证挑战失败：用户ID = {}", userId, e);
+        }
+    }
+
+    /**
+     * 从请求中提取密码信息
+     */
+    private String extractPassword(SIPRequest request) {
+        // 这里可以从请求中提取密码相关信息
+        // 具体实现根据实际需求确定
+        return "";
+    }
+
+    /**
+     * 构建注册信息
+     */
+    private RegisterInfo buildRegisterInfo(SIPRequest request, int expires) {
+        RegisterInfo registerInfo = new RegisterInfo();
+        registerInfo.setExpire(expires);
+        registerInfo.setRegisterTime(DateUtils.getCurrentDate());
+
+        // 获取传输协议
+        ViaHeader reqViaHeader = (ViaHeader) request.getHeader(ViaHeader.NAME);
+        String transport = reqViaHeader.getTransport();
+        registerInfo.setTransport("TCP".equalsIgnoreCase(transport) ? "TCP" : "UDP");
+
+        // 获取地址信息
+        String receiveIp = request.getLocalAddress().getHostAddress();
+        RemoteAddressInfo remoteAddressInfo = SipUtils.getRemoteAddressFromRequest(request);
+
+        registerInfo.setLocalIp(receiveIp);
+        registerInfo.setRemotePort(remoteAddressInfo.getPort());
+        registerInfo.setRemoteIp(remoteAddressInfo.getIp());
+
+        return registerInfo;
     }
 
     private List<Header> getRegisterOkHeaderList(Request request) {

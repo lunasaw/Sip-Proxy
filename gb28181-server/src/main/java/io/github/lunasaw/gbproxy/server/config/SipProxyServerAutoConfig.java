@@ -1,23 +1,21 @@
 package io.github.lunasaw.gbproxy.server.config;
 
-import io.github.lunasaw.gbproxy.server.transimit.request.bye.ByeProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.bye.CustomByeProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.info.CustomInfoProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.info.InfoProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.CustomMessageProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageProcessorServer;
+import io.github.lunasaw.gbproxy.server.transimit.request.bye.DefaultServerByeProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.bye.ServerByeProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.info.DefaultServerInfoProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.info.ServerInfoProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.DefaultServerMessageProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.server.transimit.request.notify.CustomNotifyProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.notify.NotifyProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.register.CustomRegisterProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.register.RegisterProcessorServer;
+import io.github.lunasaw.gbproxy.server.transimit.request.notify.DefaultServerNotifyProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.notify.ServerNotifyProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.register.DefaultServerRegisterProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.register.ServerRegisterProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.response.invite.DefaultInviteResponseProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.response.invite.InviteResponseProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.DefaultSubscribeResponseProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.SubscribeResponseProcessorHandler;
-import io.github.lunasaw.gbproxy.server.user.CustomSipUserGenerateServer;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -54,38 +52,33 @@ public class SipProxyServerAutoConfig implements InitializingBean, ApplicationCo
 
     @Bean
     @ConditionalOnMissingBean
-    public MessageProcessorServer messageProcessorServer() {
-        return new CustomMessageProcessorServer();
+    public ServerMessageProcessorHandler messageProcessorServer() {
+        return new DefaultServerMessageProcessorHandler();
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ServerByeProcessorHandler byeProcessorServer() {
+        return new DefaultServerByeProcessorHandler();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SipUserGenerateServer sipUserGenerateServer() {
-        return new CustomSipUserGenerateServer();
+    public ServerInfoProcessorHandler infoProcessorServer() {
+        return new DefaultServerInfoProcessorHandler();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ByeProcessorServer byeProcessorServer() {
-        return new CustomByeProcessorServer();
+    public ServerNotifyProcessorHandler notifyProcessorServer() {
+        return new DefaultServerNotifyProcessorHandler();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public InfoProcessorServer infoProcessorServer() {
-        return new CustomInfoProcessorServer();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public NotifyProcessorServer notifyProcessorServer() {
-        return new CustomNotifyProcessorServer();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public RegisterProcessorServer registerProcessorServer() {
-        return new CustomRegisterProcessorServer();
+    public ServerRegisterProcessorHandler registerProcessorServer() {
+        return new DefaultServerRegisterProcessorHandler();
     }
 
     @Bean
@@ -98,6 +91,38 @@ public class SipProxyServerAutoConfig implements InitializingBean, ApplicationCo
     @ConditionalOnMissingBean
     public SubscribeResponseProcessorHandler subscribeResponseProcessorHandler() {
         return new DefaultSubscribeResponseProcessorHandler();
+    }
+
+    // ==================== Request Handler Bean配置 ====================
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ServerRegisterProcessorHandler serverRegisterProcessorHandler() {
+        return new DefaultServerRegisterProcessorHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ServerInfoProcessorHandler serverInfoProcessorHandler() {
+        return new DefaultServerInfoProcessorHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ServerMessageProcessorHandler serverMessageProcessorHandler() {
+        return new DefaultServerMessageProcessorHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ServerNotifyProcessorHandler serverNotifyProcessorHandler() {
+        return new DefaultServerNotifyProcessorHandler();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ServerByeProcessorHandler serverByeProcessorHandler() {
+        return new DefaultServerByeProcessorHandler();
     }
 
 }

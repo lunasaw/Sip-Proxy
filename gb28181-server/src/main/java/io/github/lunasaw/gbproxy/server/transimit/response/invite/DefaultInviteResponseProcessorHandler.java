@@ -3,9 +3,9 @@ package io.github.lunasaw.gbproxy.server.transimit.response.invite;
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
 import io.github.lunasaw.gbproxy.server.transimit.cmd.ServerSendCmd;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import javax.sip.address.SipURI;
 public class DefaultInviteResponseProcessorHandler implements InviteResponseProcessorHandler {
 
     @Autowired
-    private SipUserGenerateServer sipUserGenerate;
+    private ServerDeviceSupplier serverDeviceSupplier;
 
     @Override
     public void handleTryingResponse(ResponseEvent evt, String callId) {
@@ -46,7 +46,7 @@ public class DefaultInviteResponseProcessorHandler implements InviteResponseProc
     public void processOkResponse(ResponseEventExt evt, String callId) {
         try {
             SIPResponse response = (SIPResponse) evt.getResponse();
-            FromDevice fromDevice = (FromDevice) sipUserGenerate.getFromDevice();
+            FromDevice fromDevice = (FromDevice) serverDeviceSupplier.getServerFromDevice();
 
             String contentString = new String(response.getRawContent());
             SdpSessionDescription gb28181Sdp = SipUtils.parseSdp(contentString);

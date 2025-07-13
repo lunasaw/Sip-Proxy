@@ -1,17 +1,14 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.notify;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import javax.sip.RequestEvent;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Data;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * @author luna
@@ -20,20 +17,17 @@ import lombok.Data;
 @Component
 public abstract class NotifyServerHandlerAbstract extends MessageHandlerAbstract {
 
-    @Autowired
-    public NotifyProcessorServer    notifyProcessorServer;
+    public ServerDeviceSupplier serverDeviceSupplier;
 
-    @Autowired
-    protected SipUserGenerateServer sipUserGenerate;
+    public ServerNotifyProcessorHandler serverNotifyProcessorHandler;
 
-    @Autowired
-    public void setNotifyProcessorServer(NotifyProcessorServer notifyProcessorServer) {
-        this.notifyProcessorServer = notifyProcessorServer;
+    public NotifyServerHandlerAbstract(ServerDeviceSupplier serverDeviceSupplier, ServerNotifyProcessorHandler serverNotifyProcessorHandler) {
+        this.serverDeviceSupplier = serverDeviceSupplier;
+        this.serverNotifyProcessorHandler = serverNotifyProcessorHandler;
     }
 
-    @Autowired
-    public void setSipUserGenerate(SipUserGenerateServer sipUserGenerate) {
-        this.sipUserGenerate = sipUserGenerate;
+    public NotifyServerHandlerAbstract(ServerDeviceSupplier serverDeviceSupplier) {
+        this.serverDeviceSupplier = serverDeviceSupplier;
     }
 
     @Override
@@ -42,7 +36,7 @@ public abstract class NotifyServerHandlerAbstract extends MessageHandlerAbstract
     }
 
     public DeviceSession getDeviceSession(RequestEvent event) {
-        SIPRequest sipRequest = (SIPRequest)event.getRequest();
+        SIPRequest sipRequest = (SIPRequest) event.getRequest();
 
         // 客户端发送的userId
         String userId = SipUtils.getUserIdFromFromHeader(sipRequest);

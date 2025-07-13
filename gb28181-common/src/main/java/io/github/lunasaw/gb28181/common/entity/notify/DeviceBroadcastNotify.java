@@ -1,5 +1,6 @@
 package io.github.lunasaw.gb28181.common.entity.notify;
 
+import io.github.lunasaw.gb28181.common.entity.base.DeviceBase;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -20,7 +21,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @XmlRootElement(name = "Notify")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DeviceBroadcastNotify extends XmlBean {
+public class DeviceBroadcastNotify extends DeviceBase {
     @XmlElement(name = "CmdType")
     public String cmdType;
 
@@ -34,4 +35,9 @@ public class DeviceBroadcastNotify extends XmlBean {
     public String targetId;
 
 
+    public DeviceBroadcastNotify(String type, String fromUserId, String toUserId) {
+        this.cmdType = type;
+        this.sourceId = fromUserId;
+        this.targetId = toUserId;
+    }
 }

@@ -57,6 +57,11 @@ public class DeviceAlarmQuery extends XmlBean {
     @XmlElement(name = "AlarmType")
     public String alarmType;
 
+    @XmlElement(name = "AlarmMethod")
+    public String alarmMethod;
+
+
+
     public DeviceAlarmQuery() {}
 
     public DeviceAlarmQuery(String cmdType, String sn, String deviceId) {

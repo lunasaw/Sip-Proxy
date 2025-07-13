@@ -1,18 +1,17 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.message;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import javax.sip.RequestEvent;
-
-import io.github.lunasaw.sip.common.entity.DeviceSession;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
-
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
+import io.github.lunasaw.sip.common.entity.Device;
+import io.github.lunasaw.sip.common.entity.DeviceSession;
+import io.github.lunasaw.sip.common.entity.FromDevice;
+import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Data;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * @author luna
@@ -21,16 +20,13 @@ import lombok.Data;
 @Component
 public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstract {
 
-    @Autowired
-    @Lazy
-    public MessageProcessorServer   messageProcessorServer;
+    public ServerMessageProcessorHandler serverMessageProcessorHandler;
 
-    @Autowired
-    protected SipUserGenerateServer sipUserGenerate;
+    public ServerDeviceSupplier serverDeviceSupplier;
 
-    public MessageServerHandlerAbstract(MessageProcessorServer messageProcessorServer, SipUserGenerateServer sipUserGenerate) {
-        this.messageProcessorServer = messageProcessorServer;
-        this.sipUserGenerate = sipUserGenerate;
+    public MessageServerHandlerAbstract(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+        this.serverMessageProcessorHandler = serverMessageProcessorHandler;
+        this.serverDeviceSupplier = serverDeviceSupplier;
     }
 
     @Override
@@ -39,7 +35,7 @@ public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstrac
     }
 
     public DeviceSession getDeviceSession(RequestEvent event) {
-        SIPRequest sipRequest = (SIPRequest)event.getRequest();
+        SIPRequest sipRequest = (SIPRequest) event.getRequest();
 
         // 客户端发送的userId
         String userId = SipUtils.getUserIdFromFromHeader(sipRequest);
@@ -51,13 +47,13 @@ public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstrac
     }
 
     public boolean preCheck(RequestEvent event) {
-        if (!sipUserGenerate.checkDevice(event)) {
+        if (!serverDeviceSupplier.checkDevice(event)) {
             return false;
         }
         DeviceSession deviceSession = getDeviceSession(event);
         String userId = deviceSession.getUserId();
         // 设备查询
-        ToDevice toDevice = (ToDevice)sipUserGenerate.getToDevice(userId);
+        Device toDevice = serverDeviceSupplier.getDevice(userId);
         if (toDevice == null) {
             // 未注册的设备不做处理
             return false;

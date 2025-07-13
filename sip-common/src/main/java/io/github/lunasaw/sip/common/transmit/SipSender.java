@@ -42,9 +42,10 @@ public class SipSender {
     /**
      * 发送SUBSCRIBE请求
      */
-    public static String doSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content) {
+    public static String doSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo) {
         return request(fromDevice, toDevice, "SUBSCRIBE")
                 .content(content)
+                .subscribeInfo(subscribeInfo)
                 .send();
     }
 

@@ -1,24 +1,22 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.message.notify;
 
-import javax.sip.RequestEvent;
-
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
-
-import org.springframework.stereotype.Component;
-
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageProcessorServer;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
+import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * 处理设备告警信息
- * 
+ *
  * @author luna
  * @date 2023/10/19
  */
@@ -30,10 +28,9 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
     public static final String CMD_TYPE = "Alarm";
 
-    public AlarmNotifyMessageHandler(MessageProcessorServer messageProcessorServer, SipUserGenerateServer sipUserGenerate) {
-        super(messageProcessorServer, sipUserGenerate);
+    public AlarmNotifyMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+        super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
-
 
     @Override
     public String getRootType() {
@@ -42,13 +39,13 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
     @Override
     public void handForEvt(RequestEvent event) {
-        if (!sipUserGenerate.checkDevice(event)) {
+        if (!serverDeviceSupplier.checkDevice(event)) {
             return;
         }
         DeviceSession deviceSession = getDeviceSession(event);
         String userId = deviceSession.getUserId();
         // 设备查询
-        ToDevice toDevice = (ToDevice)sipUserGenerate.getToDevice(userId);
+        Device toDevice = serverDeviceSupplier.getDevice(userId);
         if (toDevice == null) {
             // 未注册的设备不做处理
             return;
@@ -56,7 +53,7 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
         DeviceAlarmNotify deviceAlarmNotify = parseXml(DeviceAlarmNotify.class);
 
-        messageProcessorServer.updateDeviceAlarm(deviceAlarmNotify);
+        serverMessageProcessorHandler.updateDeviceAlarm(deviceAlarmNotify);
     }
 
     @Override
