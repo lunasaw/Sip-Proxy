@@ -2,7 +2,6 @@ package io.github.lunasaw.gbproxy.client.transmit.cmd.strategy;
 
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 
 /**
@@ -35,17 +34,6 @@ public interface ClientCommandStrategy {
      * @return callId
      */
     String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Object... params);
-
-    /**
-     * 执行命令（带订阅信息）
-     *
-     * @param fromDevice    发送设备
-     * @param toDevice      接收设备
-     * @param subscribeInfo 订阅信息
-     * @param params        命令参数
-     * @return callId
-     */
-    String executeWithSubscribe(FromDevice fromDevice, ToDevice toDevice, SubscribeInfo subscribeInfo, Object... params);
 
     /**
      * 获取命令类型

@@ -243,8 +243,7 @@ public class SipRequestProvider {
      * @param callId     callId
      * @return Request
      */
-    public static Request createSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId) {
-        Assert.notNull(subscribeInfo, "subscribeInfo is null");
+    public static Request createSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
         SipMessage sipMessage = SipMessage.getSubscribeBody();
         sipMessage.setMethod(Request.SUBSCRIBE);
         sipMessage.setContent(content);
@@ -252,11 +251,10 @@ public class SipRequestProvider {
 
         UserAgentHeader userAgentHeader = SipRequestUtils.createUserAgentHeader(fromDevice.getAgent());
         ContactHeader contactHeader = SipRequestUtils.createContactHeader(fromDevice.getUserId(), fromDevice.getHostAddress());
-        EventHeader eventHeader = SipRequestUtils.createEventHeader(subscribeInfo.getEventType(), subscribeInfo.getEventId());
 
-        sipMessage.addHeader(userAgentHeader).addHeader(contactHeader).addHeader(eventHeader);
+        sipMessage.addHeader(userAgentHeader).addHeader(contactHeader);
 
-        return createSipRequest(fromDevice, toDevice, sipMessage, subscribeInfo);
+        return createSipRequest(fromDevice, toDevice, sipMessage);
     }
 
     /**
@@ -342,10 +340,11 @@ public class SipRequestProvider {
      *
      * @param fromDevice 发送设备
      * @param toDevice   发送目的设备
+     * @param content    内容
      * @param callId     callId
      * @return Request
      */
-    public static Request createNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId) {
+    public static Request createNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
         SipMessage sipMessage = SipMessage.getNotifyBody();
         sipMessage.setMethod(Request.NOTIFY);
         sipMessage.setCallId(callId);
@@ -355,6 +354,6 @@ public class SipRequestProvider {
         ContactHeader contactHeader = SipRequestUtils.createContactHeader(fromDevice.getUserId(), fromDevice.getHostAddress());
         sipMessage.addHeader(userAgentHeader).addHeader(contactHeader);
 
-        return createSipRequest(fromDevice, toDevice, sipMessage, subscribeInfo);
+        return createSipRequest(fromDevice, toDevice, sipMessage);
     }
 }

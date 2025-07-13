@@ -2,6 +2,7 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
 import javax.sip.RequestEvent;
 
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
@@ -11,7 +12,7 @@ import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
 
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +34,8 @@ public class AlarmQueryMessageClientHandler extends MessageClientHandlerAbstract
 
     private String cmdType = CMD_TYPE;
 
-    public AlarmQueryMessageClientHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public AlarmQueryMessageClientHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
@@ -56,11 +57,11 @@ public class AlarmQueryMessageClientHandler extends MessageClientHandlerAbstract
             String sn = deviceAlarmQuery.getSn();
 
             // 调用业务处理器获取设备告警信息
-            DeviceAlarmNotify deviceAlarmNotify = messageProcessorClient.getDeviceAlarmNotify(deviceAlarmQuery);
+            DeviceAlarmNotify deviceAlarmNotify = messageRequestHandler.getDeviceAlarmNotify(deviceAlarmQuery);
             deviceAlarmNotify.setSn(sn);
 
             // 发送响应
-            ClientSendCmd.deviceAlarmNotify(userId, sipId, deviceAlarmNotify);
+            ClientCommandSender.sendAlarmCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceAlarmNotify);
 
         } catch (Exception e) {
             log.error("处理设备告警查询时发生异常: event = {}", event, e);

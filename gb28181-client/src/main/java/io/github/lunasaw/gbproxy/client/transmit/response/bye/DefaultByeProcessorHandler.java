@@ -19,4 +19,9 @@ public class DefaultByeProcessorHandler implements ByeProcessorHandler {
         log.debug("处理BYE响应：callId = {}, statusCode = {}", callId, statusCode);
         // 默认实现为空，业务方可以根据需要重写此方法
     }
+
+    @Override
+    public void closeStream(String callId) {
+
+    }
 }

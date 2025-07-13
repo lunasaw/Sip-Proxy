@@ -9,7 +9,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +31,8 @@ public class BroadcastNotifyMessageHandler extends MessageClientHandlerAbstract 
 
     private String cmdType = CMD_TYPE;
 
-    public BroadcastNotifyMessageHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public BroadcastNotifyMessageHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class BroadcastNotifyMessageHandler extends MessageClientHandlerAbstract 
             DeviceBroadcastNotify broadcastNotify = parseXml(DeviceBroadcastNotify.class);
 
             // 调用业务处理器处理广播通知
-            messageProcessorClient.broadcastNotify(broadcastNotify);
+            messageRequestHandler.broadcastNotify(broadcastNotify);
 
         } catch (Exception e) {
             log.error("处理广播通知时发生异常: event = {}", event, e);

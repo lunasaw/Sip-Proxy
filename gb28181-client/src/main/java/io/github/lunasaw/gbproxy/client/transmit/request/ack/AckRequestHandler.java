@@ -8,7 +8,7 @@ import javax.sip.RequestEvent;
  *
  * @author weidian
  */
-public interface AckRequestProcessorClient {
+public interface AckRequestHandler {
 
     /**
      * 处理ACK请求

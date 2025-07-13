@@ -1,18 +1,21 @@
 package io.github.lunasaw.gbproxy.client.transmit.cmd.strategy;
 
-import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.AlarmCommandStrategy;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.CatalogCommandStrategy;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.KeepaliveCommandStrategy;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.RegisterCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.MessageCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.SubscribeCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.NotifyCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.InviteCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.ByeCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.AckCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.InfoCommandStrategy;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 客户端命令策略工厂
- * 管理和获取不同类型的命令策略
+ * 客户端SIP消息类型策略工厂
+ * 管理和获取不同类型的SIP消息处理策略
+ * 符合SIP协议架构要求，处理MESSAGE、SUBSCRIBE、NOTIFY、INVITE、BYE、ACK等SIP消息类型
  *
  * @author luna
  * @date 2024/01/01
@@ -23,96 +26,54 @@ public class ClientCommandStrategyFactory {
     private static final Map<String, ClientCommandStrategy> STRATEGY_MAP = new ConcurrentHashMap<>();
 
     static {
-        // 初始化默认策略
-        STRATEGY_MAP.put(CmdTypeEnum.ALARM.getType(), new AlarmCommandStrategy());
-        STRATEGY_MAP.put(CmdTypeEnum.CATALOG.getType(), new CatalogCommandStrategy());
-        STRATEGY_MAP.put(CmdTypeEnum.KEEPALIVE.getType(), new KeepaliveCommandStrategy());
-        STRATEGY_MAP.put(CmdTypeEnum.REGISTER.getType(), new RegisterCommandStrategy());
+        // 只保留SIP基础协议的消息类型策略
+        STRATEGY_MAP.put("MESSAGE", new MessageCommandStrategy());
+        STRATEGY_MAP.put("SUBSCRIBE", new SubscribeCommandStrategy());
+        STRATEGY_MAP.put("NOTIFY", new NotifyCommandStrategy());
+        STRATEGY_MAP.put("INVITE", new InviteCommandStrategy());
+        STRATEGY_MAP.put("BYE", new ByeCommandStrategy());
+        STRATEGY_MAP.put("ACK", new AckCommandStrategy());
+        STRATEGY_MAP.put("INFO", new InfoCommandStrategy());
 
-
-        log.info("客户端命令策略工厂初始化完成，已注册策略: {}", STRATEGY_MAP.keySet());
+        log.info("客户端SIP消息类型策略工厂初始化完成，已注册策略: {}", STRATEGY_MAP.keySet());
     }
 
-    /**
-     * 获取命令策略
-     *
-     * @param commandType 命令类型
-     * @return 命令策略
-     */
-    public static ClientCommandStrategy getStrategy(String commandType) {
-        ClientCommandStrategy strategy = STRATEGY_MAP.get(commandType);
+    // 只保留基础SIP方法的获取接口
+    public static ClientCommandStrategy getStrategy(String sipMethod) {
+        ClientCommandStrategy strategy = STRATEGY_MAP.get(sipMethod);
         if (strategy == null) {
-            throw new IllegalArgumentException("未找到命令策略: " + commandType);
+            throw new IllegalArgumentException("未找到SIP消息类型策略: " + sipMethod);
         }
         return strategy;
     }
 
-    /**
-     * 获取告警命令策略
-     *
-     * @return 告警命令策略
-     */
-    public static ClientCommandStrategy getAlarmStrategy() {
-        return getStrategy(CmdTypeEnum.ALARM.getType());
+    public static ClientCommandStrategy getMessageStrategy() {
+        return getStrategy("MESSAGE");
     }
 
-    /**
-     * 获取心跳命令策略
-     *
-     * @return 心跳命令策略
-     */
-    public static ClientCommandStrategy getKeepaliveStrategy() {
-        return getStrategy(CmdTypeEnum.KEEPALIVE.getType());
+    public static ClientCommandStrategy getSubscribeStrategy() {
+        return getStrategy("SUBSCRIBE");
     }
 
-    /**
-     * 获取注册命令策略
-     *
-     * @return 注册命令策略
-     */
-    public static ClientCommandStrategy getRegisterStrategy() {
-        return getStrategy("REGISTER");
+    public static ClientCommandStrategy getNotifyStrategy() {
+        return getStrategy("NOTIFY");
     }
 
-    /**
-     * 注册自定义策略
-     *
-     * @param commandType 命令类型
-     * @param strategy    策略实现
-     */
-    public static void registerStrategy(String commandType, ClientCommandStrategy strategy) {
-        STRATEGY_MAP.put(commandType, strategy);
-        log.info("注册客户端命令策略: {} -> {}", commandType, strategy.getClass().getSimpleName());
+    public static ClientCommandStrategy getInviteStrategy() {
+        return getStrategy("INVITE");
     }
 
-    /**
-     * 移除策略
-     *
-     * @param commandType 命令类型
-     */
-    public static void removeStrategy(String commandType) {
-        ClientCommandStrategy removed = STRATEGY_MAP.remove(commandType);
-        if (removed != null) {
-            log.info("移除客户端命令策略: {} -> {}", commandType, removed.getClass().getSimpleName());
-        }
+    public static ClientCommandStrategy getByeStrategy() {
+        return getStrategy("BYE");
     }
 
-    /**
-     * 获取所有已注册的策略类型
-     *
-     * @return 策略类型集合
-     */
-    public static java.util.Set<String> getRegisteredCommandTypes() {
-        return STRATEGY_MAP.keySet();
+    public static ClientCommandStrategy getAckStrategy() {
+        return getStrategy("ACK");
     }
 
-    /**
-     * 检查策略是否存在
-     *
-     * @param commandType 命令类型
-     * @return 是否存在
-     */
-    public static boolean hasStrategy(String commandType) {
-        return STRATEGY_MAP.containsKey(commandType);
+    public static ClientCommandStrategy getInfoStrategy() {
+        return getStrategy("INFO");
     }
+
+    // 删除自定义注册、移除、查询等非必要方法，只保留基础功能
 }

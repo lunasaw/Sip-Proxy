@@ -2,7 +2,6 @@ package io.github.lunasaw.sip.common.transmit.strategy;
 
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 
 /**
@@ -25,23 +24,6 @@ public interface SipRequestStrategy {
      * @return 呼叫ID
      */
     String sendRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId, Event errorEvent, Event okEvent);
-
-    /**
-     * 发送带订阅信息的请求
-     *
-     * @param fromDevice 发送方设备
-     * @param toDevice 接收方设备
-     * @param content 请求内容
-     * @param subscribeInfo 订阅信息
-     * @param callId 呼叫ID
-     * @param errorEvent 错误事件处理器
-     * @param okEvent 成功事件处理器
-     * @return 呼叫ID
-     */
-    default String sendRequestWithSubscribe(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId,
-        Event errorEvent, Event okEvent) {
-        return sendRequest(fromDevice, toDevice, content, callId, errorEvent, okEvent);
-    }
 
     /**
      * 发送带主题的请求

@@ -14,7 +14,7 @@ import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
  * @author luna
  * @date 2023/10/18
  */
-public interface MessageProcessorClient {
+public interface MessageRequestHandler {
 
     /**
      * 获取设备录像信息

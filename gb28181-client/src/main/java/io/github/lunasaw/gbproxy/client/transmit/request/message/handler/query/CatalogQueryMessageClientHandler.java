@@ -3,13 +3,14 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 import javax.sip.RequestEvent;
 
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
 import lombok.Getter;
@@ -32,8 +33,8 @@ public class CatalogQueryMessageClientHandler extends MessageClientHandlerAbstra
 
     private String cmdType = CMD_TYPE;
 
-    public CatalogQueryMessageClientHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public CatalogQueryMessageClientHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
@@ -55,11 +56,11 @@ public class CatalogQueryMessageClientHandler extends MessageClientHandlerAbstra
             String sn = deviceQuery.getSn();
 
             // 调用业务处理器获取设备目录信息
-            DeviceResponse deviceResponse = messageProcessorClient.getDeviceItem(userId);
+            DeviceResponse deviceResponse = messageRequestHandler.getDeviceItem(userId);
             deviceResponse.setSn(sn);
 
             // 发送响应
-            ClientSendCmd.deviceChannelCatalogResponse(userId, sipId, deviceResponse);
+            ClientCommandSender.sendCatalogCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceResponse);
 
         } catch (Exception e) {
             log.error("处理设备目录查询时发生异常: event = {}", event, e);

@@ -36,7 +36,6 @@ public class SipSender {
         private final String     method;
         private String           content;
         private String           subject;
-        private SubscribeInfo    subscribeInfo;
         private Integer          expires;
         private Event            errorEvent;
         private Event            okEvent;
@@ -60,11 +59,6 @@ public class SipSender {
 
         public SipRequestBuilder subject(String subject) {
             this.subject = subject;
-            return this;
-        }
-
-        public SipRequestBuilder subscribeInfo(SubscribeInfo subscribeInfo) {
-            this.subscribeInfo = subscribeInfo;
             return this;
         }
 
@@ -98,8 +92,6 @@ public class SipSender {
 
             if ("REGISTER".equalsIgnoreCase(method)) {
                 return strategy.sendRequest(fromDevice, toDevice, content, callId, errorEvent, okEvent);
-            } else if ("SUBSCRIBE".equalsIgnoreCase(method) && subscribeInfo != null) {
-                return strategy.sendRequestWithSubscribe(fromDevice, toDevice, content, subscribeInfo, callId, errorEvent, okEvent);
             } else if ("INVITE".equalsIgnoreCase(method) && subject != null) {
                 return strategy.sendRequestWithSubject(fromDevice, toDevice, content, subject, callId, errorEvent, okEvent);
             } else {
@@ -132,18 +124,16 @@ public class SipSender {
     /**
      * 发送SUBSCRIBE请求
      */
-    public static String doSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo) {
+    public static String doSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content) {
         return request(fromDevice, toDevice, "SUBSCRIBE")
             .content(content)
-            .subscribeInfo(subscribeInfo)
             .send();
     }
 
-    public static String doSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, Event errorEvent,
+    public static String doSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent,
         Event okEvent) {
         return request(fromDevice, toDevice, "SUBSCRIBE")
             .content(content)
-            .subscribeInfo(subscribeInfo)
             .errorEvent(errorEvent)
             .okEvent(okEvent)
             .send();
@@ -172,7 +162,6 @@ public class SipSender {
     public static String doNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo) {
         return request(fromDevice, toDevice, "NOTIFY")
             .content(content)
-            .subscribeInfo(subscribeInfo)
             .send();
     }
 
@@ -180,7 +169,6 @@ public class SipSender {
         Event okEvent) {
         return request(fromDevice, toDevice, "NOTIFY")
             .content(content)
-            .subscribeInfo(subscribeInfo)
             .errorEvent(errorEvent)
             .okEvent(okEvent)
             .send();

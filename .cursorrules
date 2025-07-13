@@ -2,7 +2,7 @@
 你是一个资深的Java架构师，精通Spring Boot、微服务架构和分布式系统设计，擅长代码重构和性能优化，对代码规范和最佳实践有深入理解
 
 ## 项目概述
-这是一个基于Spring Boot + SIP通信框架 + GB28181写的SIP代理项目，采用多模块架构设计，提供完整的SIP协议通信能力。
+这是一个基于Spring Boot + SIP通信框架 + GB28181 GB28181-2016.pdf 这个协议 写的SIP代理项目，采用多模块架构设计，提供完整的SIP协议通信能力。
 
 ## 项目架构
 
@@ -72,23 +72,6 @@
 - 被动消息处理器：各种`XXXRequestProcessor`和`XXXResponseProcessor`
 - 设备配置和用户管理
 
-**向外暴露的主动服务**：
-- `ClientSendCmd.deviceRegister()`：设备注册
-- `ClientSendCmd.deviceAlarmNotify()`：告警上报
-- `ClientSendCmd.deviceKeepLiveNotify()`：心跳状态上报
-- `ClientSendCmd.deviceChannelCatalogResponse()`：设备目录响应
-- `ClientSendCmd.deviceInfoResponse()`：设备信息响应
-- `ClientSendCmd.deviceStatusResponse()`：设备状态响应
-- `ClientSendCmd.deviceBye()`：发送BYE请求
-- `ClientSendCmd.deviceAck()`：发送ACK响应
-
-**被动消息处理器**：
-- `ClientMessageRequestProcessor`：处理MESSAGE请求
-- `ClientSubscribeRequestProcessor`：处理SUBSCRIBE请求
-- `InviteRequestProcessor`：处理INVITE请求
-- `ByeResponseProcessor`：处理BYE响应
-- 各种消息处理器：注册、控制、查询、告警等
-
 **使用场景**：
 - 模拟GB28181设备进行测试
 - 构建设备端应用
@@ -111,24 +94,6 @@
 - `ServerSendCmd`：**向外暴露的主动服务接口**，提供各种SIP命令发送方法
 - 被动消息处理器：各种`XXXRequestProcessor`和`XXXResponseProcessor`
 - 设备会话管理
-
-**向外暴露的主动服务**：
-- `ServerSendCmd.deviceInfo()`：设备信息查询
-- `ServerSendCmd.devicePresetQuery()`：设备预设位置查询
-- `ServerSendCmd.deviceControlPtzCmd()`：云台控制命令
-- `ServerSendCmd.deviceControlRecordCmd()`：录像控制命令
-- `ServerSendCmd.deviceInvite()`：设备实时流点播
-- `ServerSendCmd.deviceInvitePlayBack()`：设备回放点播
-- `ServerSendCmd.deviceInvitePlayBackControl()`：回放控制
-- `ServerSendCmd.deviceBye()`：发送BYE请求
-- `ServerSendCmd.deviceAck()`：发送ACK响应
-
-**被动消息处理器**：
-- `ServerMessageRequestProcessor`：处理MESSAGE请求
-- `ServerNotifyRequestProcessor`：处理NOTIFY请求
-- `ByeRequestProcessorServer`：处理BYE请求
-- `SubscribeResponseProcessor`：处理SUBSCRIBE响应
-- 各种消息处理器：注册、控制、查询、点播等
 
 **使用场景**：
 - 构建GB28181平台服务
@@ -571,3 +536,160 @@ javax.sip (SIP协议栈)
 - **扩展性**：业务接入方可以通过实现不同的处理器接口来定制业务逻辑
 - **测试友好**：业务逻辑与协议处理分离，便于单元测试和集成测试
 - **维护性**：协议变更不影响业务逻辑，业务变更不影响协议处理
+
+### 13. SIP消息处理分层架构规范 (强制性要求)
+- **分层架构设计**：SIP消息处理采用四层架构设计，确保职责清晰和代码可维护性
+- **第零层：SIP监听器层**：`AbstractSipListener`统一调度，负责SIP事件的接收和分发到具体的消息类型处理器
+- **第一层：SIP协议层**：`SipRequest`处理，负责SIP协议层面的消息接收和分发
+- **第二层：消息类型层**：`XXXRequestProcessor`处理，负责不同SIP消息类型的处理（如MESSAGE、INVITE、SUBSCRIBE等）
+- **第三层：业务子类型层**：`XXXRequestSubProcessor`处理，负责同一消息类型下不同业务子类型的处理（如MESSAGE消息下的cmdType区分）
+- **第四层：业务逻辑层**：`XXXHandler`处理，负责具体的业务逻辑实现
+
+#### 最上层SIP消息类型定义
+以下是最上层的SIP消息类型，这些是SIP协议框架定义的标准消息类型：
+- `Request.INVITE` - 邀请请求
+- `Request.BYE` - 结束会话请求
+- `Request.CANCEL` - 取消请求
+- `Request.ACK` - 确认请求
+- `Request.PRACK` - 临时响应确认
+- `Request.INFO` - 信息请求
+- `Request.MESSAGE` - 消息请求
+- `Request.NOTIFY` - 通知请求
+- `Request.OPTIONS` - 选项请求
+- `Request.PUBLISH` - 发布请求
+- `Request.REFER` - 引用请求
+- `Request.REGISTER` - 注册请求
+- `Request.SUBSCRIBE` - 订阅请求
+- `Request.UPDATE` - 更新请求
+
+#### 处理器命名规范
+- **最上层消息处理器**：`XXXRequestProcessor`（如`InviteRequestProcessor`、`MessageRequestProcessor`）
+  - 继承`SipRequestProcessorAbstract`
+  - 只负责SIP协议层面的消息处理
+  - 不包含业务逻辑
+- **业务逻辑处理器**：`XXXRequestHandler`（如`InviteRequestHandler`、`MessageRequestHandler`）
+  - 负责具体的业务逻辑实现
+  - 通过依赖注入方式与Processor关联
+- **业务子类型处理器**：`XXXRequestSubProcessor`（如`CatalogQuerySubProcessor`、`DeviceControlSubProcessor`）
+  - 处理同一消息类型下的不同业务子类型
+  - 例如：MESSAGE消息下的cmdType区分
+
+#### 架构层次关系
+```
+AbstractSipListener (监听器层) - 统一调度SIP事件
+    ↓
+SipRequest (协议层) - 协议层面处理
+    ↓
+XXXRequestProcessor (消息类型层) - 处理最上层SIP消息类型
+    ↓
+XXXRequestSubProcessor (业务子类型层) - 处理cmdType等子类型区分
+    ↓
+XXXRequestHandler (业务逻辑层) - 具体业务实现
+```
+
+#### 职责分工
+- **AbstractSipListener**：负责SIP事件的统一接收和分发，管理所有Processor
+- **XXXRequestProcessor**：负责SIP消息类型的分发和基础协议处理，不包含业务逻辑
+- **XXXRequestSubProcessor**：负责业务子类型的识别和路由（如MESSAGE下的cmdType）
+- **XXXRequestHandler**：负责具体业务逻辑的实现
+
+#### 代码示例
+```java
+// 第零层：SIP监听器层
+public class AbstractSipListener {
+    public void processRequest(RequestEvent event) {
+        String method = event.getRequest().getMethod();
+        List<SipRequestProcessor> processors = REQUEST_PROCESSOR_MAP.get(method);
+        for (SipRequestProcessor processor : processors) {
+            processor.process(event);
+        }
+    }
+}
+
+// 第二层：消息类型层 - 最上层SIP消息处理
+public class InviteRequestProcessor extends SipRequestProcessorAbstract {
+    @Autowired
+    private InviteRequestHandler inviteRequestHandler;
+
+    @Override
+    protected void processInternal(RequestEvent event) {
+        // 协议层面处理
+        String userId = extractUserId(event);
+
+        // 调用业务处理器
+        inviteRequestHandler.handleInvite(event, userId);
+
+        // 构建响应
+        buildResponse(event);
+    }
+}
+
+// 第三层：业务子类型层 - 处理MESSAGE下的cmdType
+public class MessageRequestProcessor extends SipRequestProcessorAbstract {
+    @Autowired
+    private MessageRequestHandler messageRequestHandler;
+
+    @Autowired
+    private CatalogQuerySubProcessor catalogQuerySubProcessor;
+
+    @Autowired
+    private DeviceControlSubProcessor deviceControlSubProcessor;
+
+    @Override
+    protected void processInternal(RequestEvent event) {
+        // 解析消息体，获取cmdType
+        String cmdType = extractCmdType(event);
+
+        // 根据cmdType分发到不同的SubProcessor
+        switch (cmdType) {
+            case "Catalog":
+                catalogQuerySubProcessor.process(event);
+                break;
+            case "DeviceControl":
+                deviceControlSubProcessor.process(event);
+                break;
+            default:
+                // 默认处理
+                messageRequestHandler.handleMessage(event);
+                break;
+        }
+    }
+}
+
+// 第三层：业务子类型层
+public class CatalogQuerySubProcessor {
+    @Autowired
+    private MessageRequestHandler messageRequestHandler;
+
+    public void process(RequestEvent event) {
+        // 业务子类型处理
+        messageRequestHandler.handleCatalogQuery(event);
+    }
+}
+
+// 第四层：业务逻辑层
+public class InviteRequestHandler {
+    public void handleInvite(RequestEvent event, String userId) {
+        // 具体业务逻辑实现
+        // 邀请请求业务处理
+    }
+}
+
+public class MessageRequestHandler {
+    public void handleMessage(RequestEvent event) {
+        // 默认消息处理
+    }
+
+    public void handleCatalogQuery(RequestEvent event) {
+        // 目录查询业务处理
+    }
+}
+```
+
+#### 重要规范
+- **Processor与Handler一一对应**：每个`XXXRequestProcessor`都有对应的`XXXRequestHandler`
+- **Processor职责**：只负责SIP协议层面的消息处理，不包含业务逻辑
+- **Handler职责**：负责具体的业务逻辑实现
+- **子类型路由**：对于有子类型的消息（如MESSAGE的cmdType），通过SubProcessor进行路由，但最终都落到对应的Handler
+- **扩展性**：新增业务子类型时，只需添加对应的SubProcessor，Handler可以复用
+- **维护性**：各层职责清晰，便于独立测试和维护

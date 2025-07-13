@@ -1,6 +1,5 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.subscribe;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.RequestEvent;
 
 import org.springframework.stereotype.Component;
@@ -22,14 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter
 @Slf4j
-public class ClientSubscribeRequestProcessor extends SipMessageRequestProcessorAbstract {
+public class SubscribeRequestProcessor extends SipMessageRequestProcessorAbstract {
 
     public static final String       METHOD = "SUBSCRIBE";
 
     private String                   method = METHOD;
-
-    @Autowired
-    private SubscribeProcessorClient subscribeProcessorClient;
 
     /**
      * 收到SUBSCRIBE请求 处理

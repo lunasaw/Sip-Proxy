@@ -27,9 +27,6 @@ public class ClientMessageRequestProcessor extends SipMessageRequestProcessorAbs
 
     public static final String     METHOD = "MESSAGE";
 
-    @Autowired
-    private MessageProcessorClient messageProcessorClient;
-
     private String                 method = METHOD;
 
     @Override

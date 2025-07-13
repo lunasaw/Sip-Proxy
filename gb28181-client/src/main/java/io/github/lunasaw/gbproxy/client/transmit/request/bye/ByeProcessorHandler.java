@@ -6,7 +6,7 @@ package io.github.lunasaw.gbproxy.client.transmit.request.bye;
  *
  * @author luna
  */
-public interface ByeProcessorClient {
+public interface ByeProcessorHandler {
 
     /**
      * 关闭流

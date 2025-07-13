@@ -446,4 +446,74 @@ public class ClientSendCmd {
     public static String deviceUnRegister(FromDevice fromDevice, ToDevice toDevice) {
         return SipSender.doRegisterRequest(fromDevice, toDevice, 0);
     }
+
+    /**
+     * 使用SIP消息类型策略发送MESSAGE请求
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param content    XML内容
+     * @return callId
+     */
+    public static String sendMessageUsingStrategy(FromDevice fromDevice, ToDevice toDevice, String content) {
+        return ClientCommandStrategyFactory.getMessageStrategy().execute(fromDevice, toDevice, content);
+    }
+
+    /**
+     * 使用SIP消息类型策略发送NOTIFY请求
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param content    XML内容
+     * @return callId
+     */
+    public static String sendNotifyUsingStrategy(FromDevice fromDevice, ToDevice toDevice, String content) {
+        return ClientCommandStrategyFactory.getNotifyStrategy().execute(fromDevice, toDevice, content);
+    }
+
+    /**
+     * 使用SIP消息类型策略发送INVITE请求
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param sdpContent SDP内容
+     * @return callId
+     */
+    public static String sendInviteUsingStrategy(FromDevice fromDevice, ToDevice toDevice, String sdpContent) {
+        return ClientCommandStrategyFactory.getInviteStrategy().execute(fromDevice, toDevice, sdpContent);
+    }
+
+    /**
+     * 使用SIP消息类型策略发送BYE请求
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @return callId
+     */
+    public static String sendByeUsingStrategy(FromDevice fromDevice, ToDevice toDevice) {
+        return ClientCommandStrategyFactory.getByeStrategy().execute(fromDevice, toDevice);
+    }
+
+    /**
+     * 使用SIP消息类型策略发送ACK请求
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @return callId
+     */
+    public static String sendAckUsingStrategy(FromDevice fromDevice, ToDevice toDevice) {
+        return ClientCommandStrategyFactory.getAckStrategy().execute(fromDevice, toDevice);
+    }
+
+    /**
+     * 使用SIP消息类型策略发送INFO请求
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param content    XML内容
+     * @return callId
+     */
+    public static String sendInfoUsingStrategy(FromDevice fromDevice, ToDevice toDevice, String content) {
+        return ClientCommandStrategyFactory.getInfoStrategy().execute(fromDevice, toDevice, content);
+    }
 }

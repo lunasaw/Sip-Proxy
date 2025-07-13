@@ -16,4 +16,12 @@ public class DeviceSession {
     String userId;
     String sipId;
 
+    public DeviceSession(String userId, String sipId) {
+        this.userId = userId;
+        this.sipId = sipId;
+    }
+
+    private FromDevice fromDevice;
+
+    private ToDevice toDevice;
 }

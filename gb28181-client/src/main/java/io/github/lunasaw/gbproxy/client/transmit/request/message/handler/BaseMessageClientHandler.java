@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -27,8 +27,8 @@ public class BaseMessageClientHandler extends MessageClientHandlerAbstract {
 
     private String cmdType = CMD_TYPE;
 
-    public BaseMessageClientHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public BaseMessageClientHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override

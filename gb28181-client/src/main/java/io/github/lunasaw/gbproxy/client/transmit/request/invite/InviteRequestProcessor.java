@@ -8,8 +8,6 @@ import javax.sip.message.Response;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.sip.common.entity.Device;
-import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.GbSessionDescription;
 import io.github.lunasaw.sip.common.enums.ContentTypeEnum;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
@@ -36,7 +34,7 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
     private String                method = METHOD;
 
     @Autowired
-    private InviteProcessorClient inviteProcessorClient;
+    private InviteRequestHandler inviteRequestHandler;
 
     /**
      * 收到Invite请求 处理
@@ -57,8 +55,8 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
             GbSessionDescription sessionDescription = (GbSessionDescription) SipUtils.parseSdp(new String(request.getRawContent()));
 
             // 调用业务处理器
-            inviteProcessorClient.inviteSession(callId, sessionDescription);
-            String content = inviteProcessorClient.getInviteResponse(userId, sessionDescription);
+            inviteRequestHandler.inviteSession(callId, sessionDescription);
+            String content = inviteRequestHandler.getInviteResponse(userId, sessionDescription);
 
             // 构建响应
             ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();

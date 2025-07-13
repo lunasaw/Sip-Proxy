@@ -19,4 +19,6 @@ public interface ByeProcessorHandler {
     default void handleByeResponse(String callId, int statusCode, ResponseEvent evt) {
         // 默认实现为空，由业务方根据需要实现
     }
+
+    void closeStream(String callId);
 }

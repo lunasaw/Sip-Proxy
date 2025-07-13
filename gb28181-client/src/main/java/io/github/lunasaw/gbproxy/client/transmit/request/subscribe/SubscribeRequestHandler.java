@@ -12,7 +12,7 @@ import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
  * @version 1.0
  * @date 2023/12/11
  */
-public interface SubscribeProcessorClient {
+public interface SubscribeRequestHandler {
 
     /**
      * 添加订阅信息

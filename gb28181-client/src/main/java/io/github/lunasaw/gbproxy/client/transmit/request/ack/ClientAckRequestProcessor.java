@@ -32,7 +32,7 @@ public class ClientAckRequestProcessor extends SipRequestProcessorAbstract {
     private String method = METHOD;
 
     @Autowired
-    private AckRequestProcessorClient ackRequestProcessorClient;
+    private AckRequestHandler ackRequestHandler;
 
     /**
      * 处理 ACK请求
@@ -62,7 +62,7 @@ public class ClientAckRequestProcessor extends SipRequestProcessorAbstract {
                 SipSubscribe.publishAckEvent(evt);
 
                 // 调用业务处理器
-                ackRequestProcessorClient.processAck(evt);
+                ackRequestHandler.processAck(evt);
             }
 
         } catch (Exception e) {

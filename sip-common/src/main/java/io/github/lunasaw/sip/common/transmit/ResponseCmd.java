@@ -409,11 +409,8 @@ public class ResponseCmd {
                 .send();
     }
 
-    /**
-     * @deprecated 使用 {@link #sendResponse(int, String, ContentTypeHeader, RequestEvent)} 替代
-     */
-    @Deprecated
-    public static void doResponseCmd(int statusCode, String content, ContentTypeHeader contentTypeHeader, RequestEvent event, Header... headers) {
+
+    public static void sendResponse(int statusCode, String content, ContentTypeHeader contentTypeHeader, RequestEvent event, Header... headers) {
         response(statusCode)
                 .content(content)
                 .contentType(contentTypeHeader)
@@ -422,10 +419,6 @@ public class ResponseCmd {
                 .send();
     }
 
-    /**
-     * @deprecated 使用 {@link #response(int)} 替代
-     */
-    @Deprecated
     public static void doResponseCmd(int statusCode, String phrase, String content, ContentTypeHeader contentTypeHeader, RequestEvent event,
         List<Header> headers) {
         response(statusCode)
@@ -437,10 +430,6 @@ public class ResponseCmd {
                 .send();
     }
 
-    /**
-     * @deprecated 使用 {@link #response(int)} 替代
-     */
-    @Deprecated
     public static void doResponseCmd(int statusCode, String phrase, String content, ContentTypeHeader contentTypeHeader, String ip, Request request, List<Header> headers) {
         response(statusCode)
                 .phrase(phrase)

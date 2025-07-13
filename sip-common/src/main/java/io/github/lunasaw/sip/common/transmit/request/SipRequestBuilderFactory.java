@@ -129,9 +129,8 @@ public class SipRequestBuilderFactory {
     /**
      * 创建SUBSCRIBE请求
      */
-    public static Request createSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo,
-        String callId) {
-        return SUBSCRIBE_BUILDER.buildSubscribeRequest(fromDevice, toDevice, content, subscribeInfo, callId);
+    public static Request createSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
+        return SUBSCRIBE_BUILDER.buildSubscribeRequest(fromDevice, toDevice, content, null, callId);
     }
 
     /**
@@ -158,8 +157,8 @@ public class SipRequestBuilderFactory {
     /**
      * 创建NOTIFY请求
      */
-    public static Request createNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId) {
-        return NOTIFY_BUILDER.buildNotifyRequest(fromDevice, toDevice, content, subscribeInfo, callId);
+    public static Request createNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
+        return NOTIFY_BUILDER.buildNotifyRequest(fromDevice, toDevice, content, null, callId);
     }
 
     /**

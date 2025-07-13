@@ -2,6 +2,7 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
 import javax.sip.RequestEvent;
 
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
 import lombok.Getter;
@@ -9,7 +10,7 @@ import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
@@ -31,8 +32,8 @@ public class DeviceInfoQueryMessageClientHandler extends MessageClientHandlerAbs
 
     private String cmdType = CMD_TYPE;
 
-    public DeviceInfoQueryMessageClientHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public DeviceInfoQueryMessageClientHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
@@ -54,11 +55,11 @@ public class DeviceInfoQueryMessageClientHandler extends MessageClientHandlerAbs
             String sn = deviceQuery.getSn();
 
             // 调用业务处理器获取设备信息
-            DeviceInfo deviceInfo = messageProcessorClient.getDeviceInfo(userId);
+            DeviceInfo deviceInfo = messageRequestHandler.getDeviceInfo(userId);
             deviceInfo.setSn(sn);
 
             // 发送响应
-            ClientSendCmd.deviceInfoResponse(userId, sipId, deviceInfo);
+            ClientCommandSender.sendDeviceInfoCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceInfo);
 
         } catch (Exception e) {
             log.error("处理设备信息查询时发生异常: event = {}", event, e);

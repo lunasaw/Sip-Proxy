@@ -1,20 +1,18 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
-import javax.sip.RequestEvent;
-
-import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
-import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceConfigDownload;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
-
-import org.springframework.stereotype.Component;
-
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
+import io.github.lunasaw.sip.common.entity.DeviceSession;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * 设备配置下载消息处理器
@@ -33,8 +31,8 @@ public class ConfigDownloadMessageHandler extends MessageClientHandlerAbstract {
 
     private String cmdType = CMD_TYPE;
 
-    public ConfigDownloadMessageHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public ConfigDownloadMessageHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
@@ -55,11 +53,11 @@ public class ConfigDownloadMessageHandler extends MessageClientHandlerAbstract {
             DeviceConfigDownload deviceConfigDownload = parseXml(DeviceConfigDownload.class);
 
             // 调用业务处理器获取设备配置
-            DeviceConfigResponse deviceConfigResponse = messageProcessorClient.getDeviceConfigResponse(deviceConfigDownload);
+            DeviceConfigResponse deviceConfigResponse = messageRequestHandler.getDeviceConfigResponse(deviceConfigDownload);
             deviceConfigResponse.setSn(deviceConfigDownload.getSn());
 
             // 发送响应
-            ClientSendCmd.deviceConfigResponse(userId, sipId, deviceConfigResponse);
+            ClientCommandSender.sendDeviceConfigCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceConfigResponse);
 
         } catch (Exception e) {
             log.error("处理设备配置下载时发生异常: event = {}", event, e);

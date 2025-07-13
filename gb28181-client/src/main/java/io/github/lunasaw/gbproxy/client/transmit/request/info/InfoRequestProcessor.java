@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 客户端INFO请求处理器
  * 负责处理客户端收到的INFO请求，专注于协议层面处理
+ * 按照SIP处理器业务逻辑分离规范，只负责SIP协议层面的处理，不包含业务逻辑
  *
  * @author luna
  * @date 2023/10/18
@@ -25,19 +26,20 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter
 @Slf4j
-public class ClientInfoRequestProcessor extends SipRequestProcessorAbstract {
+public class InfoRequestProcessor extends SipRequestProcessorAbstract {
 
     public static final String METHOD = "INFO";
 
     private String method = METHOD;
 
     @Autowired
-    private InfoProcessorClient infoProcessorClient;
+    private InfoRequestHandler infoRequestHandler;
 
     /**
      * 收到Info请求 处理
+     * 专注于协议层面处理：消息解析、参数提取、调用业务处理器、响应构建
      *
-     * @param evt
+     * @param evt INFO请求事件
      */
     @Override
     public void process(RequestEvent evt) {
@@ -54,8 +56,8 @@ public class ClientInfoRequestProcessor extends SipRequestProcessorAbstract {
             String userId = toUserId;
             String content = new String(request.getRawContent());
 
-            // 调用业务处理器
-            infoProcessorClient.receiveInfo(userId, content);
+            // 调用业务处理器接口，不包含具体业务逻辑
+            infoRequestHandler.receiveInfo(userId, content);
 
             // 发送200 OK响应
             ResponseCmd.doResponseCmd(Response.OK, evt);

@@ -1,57 +1,44 @@
-package io.github.lunasaw.gbproxy.client.transmit.request.message;
+package io.github.lunasaw.gbproxy.client.transmit.request.subscribe;
 
-import javax.sip.RequestEvent;
-
+import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.sip.common.entity.Device;
+import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
-
-import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
-import lombok.Getter;
+import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
- * 客户端消息处理器抽象基类
- * 提供客户端消息处理的通用功能
- *
  * @author luna
  */
-@Getter
+@Data
 @Component
-@ConditionalOnBean(MessageRequestHandler.class)
-public abstract class MessageClientHandlerAbstract extends MessageHandlerAbstract {
+public abstract class SubscribeHandlerAbstract extends MessageHandlerAbstract {
 
     @Autowired
-    public MessageRequestHandler messageRequestHandler;
+    protected SubscribeRequestHandler subscribeRequestHandler;
 
     @Autowired
-    private ClientDeviceSupplier clientDeviceSupplier;
+    protected ClientDeviceSupplier clientDeviceSupplier;
 
-    public MessageClientHandlerAbstract(@Lazy MessageRequestHandler messageRequestHandler) {
-        this.messageRequestHandler = messageRequestHandler;
+    public SubscribeHandlerAbstract(SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
+        this.subscribeRequestHandler = subscribeRequestHandler;
+        this.clientDeviceSupplier = deviceSupplier;
     }
 
     @Override
     public String getRootType() {
-        return "Root";
+        return SubscribeRequestProcessor.METHOD + "Root";
     }
 
-    /**
-     * 获取设备会话信息
-     * 客户端收到消息时，fromHeader是服务端，toHeader是客户端
-     *
-     * @param event 请求事件
-     * @return DeviceSession 设备会话信息
-     */
     public DeviceSession getDeviceSession(RequestEvent event) {
-        SIPRequest sipRequest = (SIPRequest)event.getRequest();
+        SIPRequest sipRequest = (SIPRequest) event.getRequest();
 
         // 特别注意：客户端收到消息，fromHeader是服务端，toHeader是客户端
         String userId = SipUtils.getUserIdFromToHeader(sipRequest);
@@ -70,4 +57,5 @@ public abstract class MessageClientHandlerAbstract extends MessageHandlerAbstrac
         }
         return deviceSession;
     }
+
 }

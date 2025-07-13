@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.service;
 
 import io.github.lunasaw.sip.common.entity.Device;
+import io.github.lunasaw.sip.common.entity.ToDevice;
 
 import java.util.List;
 
@@ -64,5 +65,22 @@ public interface DeviceSupplier {
      */
     default String getName() {
         return this.getClass().getSimpleName();
+    }
+
+    default ToDevice getToDevice(Device device) {
+        if (device == null) {
+            return null;
+        }
+        ToDevice toDevice = new ToDevice();
+        toDevice.setHostAddress(device.getHostAddress());
+        toDevice.setUserId(device.getUserId());
+        toDevice.setRealm(device.getRealm());
+        toDevice.setTransport(device.getTransport());
+        toDevice.setStreamMode(device.getStreamMode());
+        toDevice.setIp(device.getIp());
+        toDevice.setPort(device.getPort());
+        toDevice.setPassword(device.getPassword());
+        toDevice.setCharset(device.getCharset());
+        return toDevice;
     }
 }

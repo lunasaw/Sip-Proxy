@@ -2,7 +2,7 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.contro
 
 import javax.sip.RequestEvent;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -34,8 +34,8 @@ public class DeviceControlMessageHandler extends MessageClientHandlerAbstract {
     @Autowired
     private SpringBeanFactory springBeanFactory;
 
-    public DeviceControlMessageHandler(MessageProcessorClient messageProcessorClient) {
-        super(messageProcessorClient);
+    public DeviceControlMessageHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
