@@ -18,6 +18,6 @@ public class NotifyRequestStrategy extends AbstractSipRequestStrategy {
 
     @Override
     protected Request buildRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
-        return SipRequestBuilderFactory.createNotifyRequest(fromDevice, toDevice, content, null, callId);
+        return SipRequestBuilderFactory.createNotifyRequest(fromDevice, toDevice, content, callId);
     }
 }
