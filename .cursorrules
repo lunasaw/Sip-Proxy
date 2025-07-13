@@ -545,6 +545,26 @@ javax.sip (SIP协议栈)
 - **第三层：业务子类型层**：`XXXRequestSubProcessor`处理，负责同一消息类型下不同业务子类型的处理（如MESSAGE消息下的cmdType区分）
 - **第四层：业务逻辑层**：`XXXHandler`处理，负责具体的业务逻辑实现
 
+### 14. SIP响应处理器继承规范 (强制性要求)
+- **Server模块继承规范**：所有server模块的SIP响应处理器必须继承`ServerAbstractSipResponseProcessor`，禁止直接继承`AbstractSipResponseProcessor`
+- **Client模块继承规范**：所有client模块的SIP响应处理器必须继承`ClientAbstractSipResponseProcessor`，禁止直接继承`AbstractSipResponseProcessor`
+- **模块隔离**：通过中间抽象类实现server和client模块的SIP响应处理器隔离，便于各模块独立扩展和维护
+- **统一管理**：中间抽象类可以提供各模块特有的通用功能和配置，避免重复代码
+- **代码示例**：
+  ```java
+  // Server模块正确继承方式
+  public class ServerInviteResponseProcessor extends ServerAbstractSipResponseProcessor {
+      // server模块的INVITE响应处理
+  }
+
+  // Client模块正确继承方式
+  public class ClientInviteResponseProcessor extends ClientAbstractSipResponseProcessor {
+      // client模块的INVITE响应处理
+  }
+  ```
+- **重要性**：确保server和client模块的SIP响应处理器架构统一，便于代码维护和功能扩展
+- **一致性**：所有新增的SIP响应处理器都必须遵循此继承规范，保持代码架构的一致性
+
 #### 最上层SIP消息类型定义
 以下是最上层的SIP消息类型，这些是SIP协议框架定义的标准消息类型：
 - `Request.INVITE` - 邀请请求

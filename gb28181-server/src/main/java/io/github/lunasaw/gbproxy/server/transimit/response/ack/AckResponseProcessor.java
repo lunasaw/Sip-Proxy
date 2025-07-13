@@ -1,6 +1,7 @@
 package io.github.lunasaw.gbproxy.server.transimit.response.ack;
 
-import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
+import gov.nist.javax.sip.message.SIPResponse;
+import io.github.lunasaw.gbproxy.server.transimit.response.ServerAbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -9,8 +10,6 @@ import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
-
-import gov.nist.javax.sip.message.SIPResponse;
 
 /**
  * ACK响应处理器
@@ -22,14 +21,14 @@ import gov.nist.javax.sip.message.SIPResponse;
 @Getter
 @Setter
 @Component
-public class AckResponseProcessor extends AbstractSipResponseProcessor {
+public class AckResponseProcessor extends ServerAbstractSipResponseProcessor {
 
     public static final String METHOD = "ACK";
 
     private String method = METHOD;
 
     @Autowired
-    private AckProcessorHandler ackProcessorHandler;
+    private ServerAckProcessorHandler serverAckProcessorHandler;
 
     /**
      * 处理ACK响应
@@ -45,7 +44,7 @@ public class AckResponseProcessor extends AbstractSipResponseProcessor {
             int statusCode = response.getStatusCode();
 
             if (callId != null) {
-                ackProcessorHandler.handleAckResponse(callId, statusCode, evt);
+                serverAckProcessorHandler.handleAckResponse(callId, statusCode, evt);
                 log.debug("处理ACK响应：callId = {}, statusCode = {}", callId, statusCode);
             } else {
                 log.warn("ACK响应处理失败：callId为空");

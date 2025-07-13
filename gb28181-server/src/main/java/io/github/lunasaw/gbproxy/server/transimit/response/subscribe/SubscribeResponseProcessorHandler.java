@@ -8,7 +8,7 @@ import javax.sip.ResponseEvent;
  *
  * @author luna
  */
-public interface SubscribeResponseProcessorServer {
+public interface SubscribeResponseProcessorHandler {
 
     /**
      * 处理订阅成功响应

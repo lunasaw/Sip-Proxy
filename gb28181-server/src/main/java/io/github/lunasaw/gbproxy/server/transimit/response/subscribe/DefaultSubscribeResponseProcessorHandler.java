@@ -11,7 +11,7 @@ import javax.sip.ResponseEvent;
  * @author luna
  */
 @Slf4j
-public class CustomSubscribeResponseProcessorServer implements SubscribeResponseProcessorServer {
+public class DefaultSubscribeResponseProcessorHandler implements SubscribeResponseProcessorHandler {
 
     @Override
     public void responseSubscribe(DeviceSubscribe deviceSubscribe) {

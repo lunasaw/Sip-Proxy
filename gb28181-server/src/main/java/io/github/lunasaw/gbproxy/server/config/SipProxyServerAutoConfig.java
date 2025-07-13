@@ -1,7 +1,5 @@
 package io.github.lunasaw.gbproxy.server.config;
 
-import java.util.Map;
-
 import io.github.lunasaw.gbproxy.server.transimit.request.bye.ByeProcessorServer;
 import io.github.lunasaw.gbproxy.server.transimit.request.bye.CustomByeProcessorServer;
 import io.github.lunasaw.gbproxy.server.transimit.request.info.CustomInfoProcessorServer;
@@ -14,12 +12,13 @@ import io.github.lunasaw.gbproxy.server.transimit.request.notify.CustomNotifyPro
 import io.github.lunasaw.gbproxy.server.transimit.request.notify.NotifyProcessorServer;
 import io.github.lunasaw.gbproxy.server.transimit.request.register.CustomRegisterProcessorServer;
 import io.github.lunasaw.gbproxy.server.transimit.request.register.RegisterProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.response.invite.CustomInviteResponseProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.response.invite.InviteResponseProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.CustomSubscribeResponseProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.SubscribeResponseProcessorServer;
+import io.github.lunasaw.gbproxy.server.transimit.response.invite.DefaultInviteResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.response.invite.InviteResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.DefaultSubscribeResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.SubscribeResponseProcessorHandler;
 import io.github.lunasaw.gbproxy.server.user.CustomSipUserGenerateServer;
 import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -29,8 +28,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.event.message.MessageHandler;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
 
 /**
  * @author luna
@@ -92,14 +90,14 @@ public class SipProxyServerAutoConfig implements InitializingBean, ApplicationCo
 
     @Bean
     @ConditionalOnMissingBean
-    public InviteResponseProcessorServer inviteResponseProcessorServer() {
-        return new CustomInviteResponseProcessorServer();
+    public InviteResponseProcessorHandler inviteResponseProcessorHandler() {
+        return new DefaultInviteResponseProcessorHandler();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SubscribeResponseProcessorServer subscribeResponseProcessorServer() {
-        return new CustomSubscribeResponseProcessorServer();
+    public SubscribeResponseProcessorHandler subscribeResponseProcessorHandler() {
+        return new DefaultSubscribeResponseProcessorHandler();
     }
 
 }
