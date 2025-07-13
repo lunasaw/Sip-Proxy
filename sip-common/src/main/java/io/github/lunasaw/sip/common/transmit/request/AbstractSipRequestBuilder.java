@@ -90,18 +90,6 @@ public abstract class AbstractSipRequestBuilder {
             .map(CallIdHeader::getCallId)
             .ifPresent(sipMessage::setCallId);
 
-        // 设置FromTag和ToTag
-        Optional.ofNullable(subscribeInfo.getResponse())
-            .map(SIPResponse::getToTag)
-            .ifPresent(tag -> {
-                // 这里需要从外部传入fromDevice，暂时跳过
-            });
-
-        Optional.ofNullable(subscribeInfo.getRequest())
-            .map(SIPRequest::getFromTag)
-            .ifPresent(tag -> {
-                // 这里需要从外部传入toDevice，暂时跳过
-            });
 
         // 添加过期时间头部
         if (subscribeInfo.getExpires() > 0) {

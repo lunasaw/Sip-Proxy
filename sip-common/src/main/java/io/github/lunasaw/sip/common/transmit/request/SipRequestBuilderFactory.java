@@ -129,8 +129,8 @@ public class SipRequestBuilderFactory {
     /**
      * 创建SUBSCRIBE请求
      */
-    public static Request createSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
-        return SUBSCRIBE_BUILDER.buildSubscribeRequest(fromDevice, toDevice, content, null, callId);
+    public static Request createSubscribeRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId) {
+        return SUBSCRIBE_BUILDER.buildSubscribeRequest(fromDevice, toDevice, content, subscribeInfo, callId);
     }
 
     /**

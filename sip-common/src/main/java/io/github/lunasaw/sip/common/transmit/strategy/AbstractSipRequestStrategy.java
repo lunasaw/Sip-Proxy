@@ -2,11 +2,12 @@ package io.github.lunasaw.sip.common.transmit.strategy;
 
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.SipMessageTransmitter;
 import io.github.lunasaw.sip.common.transmit.event.Event;
-import io.github.lunasaw.sip.common.transmit.request.SipRequestBuilderFactory;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.sip.message.Request;
 
@@ -20,15 +21,32 @@ import javax.sip.message.Request;
 public abstract class AbstractSipRequestStrategy implements SipRequestStrategy {
 
     @Override
+    public String sendRequest(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
+        // 生成一个唯一的呼叫ID
+        return sendRequest(fromDevice, toDevice, content, SipRequestUtils.getNewCallId(), errorEvent, okEvent);
+    }
+
+    @Override
     public String sendRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId, Event errorEvent, Event okEvent) {
+        if (StringUtils.isBlank(callId)) {
+            callId = SipRequestUtils.getNewCallId();
+        }
         Request request = buildRequest(fromDevice, toDevice, content, callId);
         SipMessageTransmitter.transmitMessage(fromDevice.getIp(), request, errorEvent, okEvent);
         return callId;
     }
 
     @Override
+    public String sendRequestWithSubscribe(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId, Event errorEvent, Event okEvent) {
+        Request request = buildRequestWithSubscribe(fromDevice, toDevice, content, subscribeInfo, callId);
+        SipMessageTransmitter.transmitMessage(fromDevice.getIp(), request, errorEvent, okEvent);
+        return callId;
+    }
+
+
+    @Override
     public String sendRequestWithSubject(FromDevice fromDevice, ToDevice toDevice, String content, String subject, String callId, Event errorEvent,
-        Event okEvent) {
+                                         Event okEvent) {
         Request request = buildRequestWithSubject(fromDevice, toDevice, content, subject, callId);
         SipMessageTransmitter.transmitMessage(fromDevice.getIp(), request, errorEvent, okEvent);
         return callId;
@@ -38,9 +56,9 @@ public abstract class AbstractSipRequestStrategy implements SipRequestStrategy {
      * 构建基础请求
      *
      * @param fromDevice 发送方设备
-     * @param toDevice 接收方设备
-     * @param content 请求内容
-     * @param callId 呼叫ID
+     * @param toDevice   接收方设备
+     * @param content    请求内容
+     * @param callId     呼叫ID
      * @return 构建的请求
      */
     protected abstract Request buildRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId);
@@ -49,13 +67,27 @@ public abstract class AbstractSipRequestStrategy implements SipRequestStrategy {
      * 构建带主题的请求
      *
      * @param fromDevice 发送方设备
-     * @param toDevice 接收方设备
-     * @param content 请求内容
-     * @param subject 主题
-     * @param callId 呼叫ID
+     * @param toDevice   接收方设备
+     * @param content    请求内容
+     * @param subject    主题
+     * @param callId     呼叫ID
      * @return 构建的请求
      */
     protected Request buildRequestWithSubject(FromDevice fromDevice, ToDevice toDevice, String content, String subject, String callId) {
+        return buildRequest(fromDevice, toDevice, content, callId);
+    }
+
+    /**
+     * 构建带订阅信息的请求
+     *
+     * @param fromDevice    发送方设备
+     * @param toDevice      接收方设备
+     * @param content       请求内容
+     * @param subscribeInfo 订阅信息
+     * @param callId        呼叫ID
+     * @return 构建的请求
+     */
+    protected Request buildRequestWithSubscribe(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, String callId) {
         return buildRequest(fromDevice, toDevice, content, callId);
     }
 }

@@ -1,25 +1,21 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
-import javax.sip.RequestEvent;
-
-import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
-import io.github.lunasaw.sip.common.entity.Device;
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
+import io.github.lunasaw.sip.common.entity.DeviceSession;
+import io.github.lunasaw.sip.common.entity.FromDevice;
+import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * 设备状态查询消息处理器

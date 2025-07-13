@@ -128,27 +128,6 @@ public class ClientCommandSender {
         return sendCommand("MESSAGE", fromDevice, toDevice, deviceKeepLiveNotify);
     }
 
-
-    /**
-     * 发送心跳命令（带事件）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param status     状态信息
-     * @param errorEvent 错误事件
-     * @param okEvent    成功事件
-     * @return callId
-     */
-    public static String sendKeepaliveCommand(FromDevice fromDevice, ToDevice toDevice, String status,
-                                              Event errorEvent, Event okEvent) {
-        DeviceKeepLiveNotify keepLiveNotify = new DeviceKeepLiveNotify(
-                CmdTypeEnum.KEEPALIVE.getType(),
-                RandomStrUtil.getValidationCode(),
-                fromDevice.getUserId()
-        );
-        return sendCommand("MESSAGE", fromDevice, toDevice, errorEvent, okEvent, keepLiveNotify);
-    }
-
     // ==================== 设备目录相关命令 ====================
 
     /**
