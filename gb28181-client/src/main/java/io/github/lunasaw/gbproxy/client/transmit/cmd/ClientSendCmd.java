@@ -221,7 +221,7 @@ public class ClientSendCmd {
             mobilePositionNotify.setSn(RandomStrUtil.getValidationCode());
         }
         mobilePositionNotify.setDeviceId(fromDevice.getUserId());
-        return SipSender.doNotifyRequest(fromDevice, toDevice, mobilePositionNotify.toString(), subscribeInfo);
+        return SipSender.doNotifyRequest(fromDevice, toDevice, mobilePositionNotify.toString(), subscribeInfo, null, null);
     }
 
     // ==================== 设备更新相关命令 ====================
@@ -244,7 +244,7 @@ public class ClientSendCmd {
         );
         deviceUpdateNotify.setSumNum(deviceItems.size());
         deviceUpdateNotify.setDeviceItemList(deviceItems);
-        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo);
+        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo, null, null);
     }
 
     /**
@@ -265,7 +265,7 @@ public class ClientSendCmd {
         );
         deviceUpdateNotify.setSumNum(deviceItems.size());
         deviceUpdateNotify.setDeviceItemList(deviceItems);
-        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo);
+        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo, null, null);
     }
 
     // ==================== 录像相关命令 ====================

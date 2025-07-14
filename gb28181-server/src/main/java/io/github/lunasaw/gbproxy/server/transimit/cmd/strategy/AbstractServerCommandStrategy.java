@@ -31,14 +31,34 @@ public abstract class AbstractServerCommandStrategy implements ServerCommandStra
             Assert.notNull(toDevice, "接收设备不能为空");
             log.debug("执行命令: {}, 发送设备: {}, 接收设备: {}", getCommandType(), fromDevice.getUserId(), toDevice.getUserId());
 
+            // 构建请求对象
+            ServerCommandStrategyReq req = ServerCommandStrategyReq.builder()
+                    .fromDevice(fromDevice)
+                    .toDevice(toDevice)
+                    .errorEvent(errorEvent)
+                    .okEvent(okEvent)
+                    .build();
+
+            // 将参数放入paramMap，第一个参数作为"content"，其他参数按索引命名
+            if (params != null && params.length > 0) {
+                for (int i = 0; i < params.length; i++) {
+                    if (i == 0) {
+                        req.getParamMap().put("content", params[i]);
+                    } else {
+                        req.getParamMap().put("param" + i, params[i]);
+                    }
+                }
+            }
+
             // 参数校验
-            validateParams(fromDevice, toDevice, params);
+            validateParams(req);
 
             // 构建命令内容
-            String content = buildCommandContent(fromDevice, toDevice, params);
+            String content = buildCommandContent(req);
+            req.setContent(content);
 
             // 发送命令
-            String callId = sendCommand(fromDevice, toDevice, content, errorEvent, okEvent);
+            String callId = sendCommand(req);
 
             log.debug("命令执行成功: {}, callId: {}", getCommandType(), callId);
             return callId;
@@ -52,39 +72,38 @@ public abstract class AbstractServerCommandStrategy implements ServerCommandStra
     /**
      * 参数校验
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param params     参数
+     * @param req 命令请求参数
      */
-    protected void validateParams(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        Assert.notNull(fromDevice, "发送设备不能为空");
-        Assert.notNull(toDevice, "接收设备不能为空");
-        Assert.notNull(fromDevice.getUserId(), "发送设备ID不能为空");
-        Assert.notNull(toDevice.getUserId(), "接收设备ID不能为空");
+    protected void validateParams(ServerCommandStrategyReq req) {
+        Assert.notNull(req.getFromDevice(), "发送设备不能为空");
+        Assert.notNull(req.getToDevice(), "接收设备不能为空");
+        Assert.notNull(req.getFromDevice().getUserId(), "发送设备ID不能为空");
+        Assert.notNull(req.getToDevice().getUserId(), "接收设备ID不能为空");
     }
 
     /**
      * 构建命令内容
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param params     参数
+     * @param req 命令请求参数
      * @return 命令内容
      */
-    protected abstract String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params);
+    protected String buildCommandContent(ServerCommandStrategyReq req) {
+        // 默认实现：从paramMap中获取content参数
+        Object content = req.getParamMap().get("content");
+        if (content instanceof String) {
+            return (String) content;
+        }
+        return null;
+    }
 
     /**
      * 发送命令
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param content    命令内容
-     * @param errorEvent 错误事件
-     * @param okEvent    成功事件
+     * @param req 命令请求参数
      * @return callId
      */
-    protected String sendCommand(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
-        return SipSender.doMessageRequest(fromDevice, toDevice, content, errorEvent, okEvent);
+    protected String sendCommand(ServerCommandStrategyReq req) {
+        return SipSender.doMessageRequest(req.getFromDevice(), req.getToDevice(), req.getContent(), req.getErrorEvent(), req.getOkEvent());
     }
 
     /**

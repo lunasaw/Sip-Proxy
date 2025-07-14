@@ -1,11 +1,11 @@
 package io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.impl;
 
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.AbstractServerCommandStrategy;
-import io.github.lunasaw.sip.common.transmit.event.Event;
+import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.ServerCommandStrategyReq;
+import io.github.lunasaw.sip.common.transmit.SipSender;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 /**
  * REGISTER消息类型策略实现
@@ -18,12 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 public class RegisterCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // REGISTER命令通常不需要内容
-        return null;
-    }
-
-    @Override
     public String getCommandType() {
         return "REGISTER";
     }
@@ -34,14 +28,9 @@ public class RegisterCommandStrategy extends AbstractServerCommandStrategy {
     }
 
     @Override
-    protected String sendCommand(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
+    protected String sendCommand(ServerCommandStrategyReq req) {
         // 发送REGISTER请求
-        return SipSender.doRegisterRequest(fromDevice, toDevice, errorEvent, okEvent);
-    }
-
-    @Override
-    protected void validateParams(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        super.validateParams(fromDevice, toDevice, params);
-        // REGISTER命令不需要特殊参数验证
+        Integer expire = Optional.ofNullable(req.getParamMap().get("expire")).map(Object::toString).map(Integer::valueOf).orElse(32);
+        return SipSender.doRegisterRequest(req.getFromDevice(), req.getToDevice(), expire, req.getContent(), req.getErrorEvent(), req.getOkEvent());
     }
 }
