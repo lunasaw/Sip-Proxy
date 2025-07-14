@@ -6,7 +6,7 @@
 
     <groupId>io.github.lunasaw</groupId>
     <artifactId>sip-proxy</artifactId>
-    <version>1.2.4</version>
+    <version>1.2.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>sip-common</module>
@@ -28,8 +28,8 @@
         <app.profiles>${project.name}</app.profiles>
         <sip.version>1.3.0-91</sip.version>
         <dom4j.version>2.1.4</dom4j.version>
-        <sip-proxy-common.version>1.2.4</sip-proxy-common.version>
-        <gb28181-proxy.version>1.2.4</gb28181-proxy.version>
+        <sip-proxy-common.version>1.2.5-SNAPSHOT</sip-proxy-common.version>
+        <gb28181-proxy.version>1.2.5-SNAPSHOT</gb28181-proxy.version>
         <skywalking.version>9.1.0</skywalking.version>
         <guava.version>32.1.3-jre</guava.version>
         <caffeine.version>3.1.8</caffeine.version>
@@ -191,11 +191,11 @@
             <distributionManagement>
                 <repository>
                     <id>ossrh</id>
-                    <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                    <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
                 </repository>
                 <snapshotRepository>
                     <id>ossrh</id>
-                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+                    <url>https://ossrh-staging-api.central.sonatype.com/content/repositories/snapshots</url>
                 </snapshotRepository>
             </distributionManagement>
             <activation>
@@ -211,7 +211,7 @@
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
                             <!--自动释放，deploy就不需要在仓库中在操作部署了-->
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
                             <goal>deploy</goal>

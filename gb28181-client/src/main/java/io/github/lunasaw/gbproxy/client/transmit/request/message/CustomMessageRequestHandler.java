@@ -1,0 +1,66 @@
+package io.github.lunasaw.gbproxy.client.transmit.request.message;
+
+import io.github.lunasaw.gb28181.common.entity.response.*;
+import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
+import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
+import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
+import io.github.lunasaw.gb28181.common.entity.query.DeviceConfigDownload;
+import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * MESSAGE请求业务处理器默认实现
+ * 提供默认的业务逻辑处理实现
+ *
+ * @author luna
+ * @date 2023/10/18
+ */
+@Slf4j
+public class CustomMessageRequestHandler implements MessageRequestHandler {
+
+    @Override
+    public DeviceRecord getDeviceRecord(DeviceRecordQuery deviceRecordQuery) {
+        log.info("获取设备录像信息: {}", deviceRecordQuery);
+        return new DeviceRecord();
+    }
+
+    @Override
+    public DeviceStatus getDeviceStatus(String userId) {
+        log.info("获取设备状态信息: {}", userId);
+        return new DeviceStatus();
+    }
+
+    @Override
+    public DeviceInfo getDeviceInfo(String userId) {
+        log.info("获取设备信息: {}", userId);
+        return new DeviceInfo();
+    }
+
+    @Override
+    public DeviceResponse getDeviceItem(String userId) {
+        log.info("获取设备通道信息: {}", userId);
+        return new DeviceResponse();
+    }
+
+    @Override
+    public void broadcastNotify(DeviceBroadcastNotify broadcastNotify) {
+        log.info("处理语音广播通知: {}", broadcastNotify);
+    }
+
+    @Override
+    public DeviceAlarmNotify getDeviceAlarmNotify(DeviceAlarmQuery deviceAlarmQuery) {
+        log.info("获取设备告警通知: {}", deviceAlarmQuery);
+        return new DeviceAlarmNotify();
+    }
+
+    @Override
+    public DeviceConfigResponse getDeviceConfigResponse(DeviceConfigDownload deviceConfigDownload) {
+        log.info("获取设备配置响应: {}", deviceConfigDownload);
+        return new DeviceConfigResponse();
+    }
+
+    @Override
+    public <T> void deviceControl(T deviceControlBase) {
+        log.info("处理设备控制命令: {}", deviceControlBase);
+    }
+}

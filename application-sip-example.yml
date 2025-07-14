@@ -1,0 +1,88 @@
+# SIP配置示例文件
+# 复制此文件到你的项目中，并根据需要修改配置
+
+# GB28181配置
+sip:
+  gb28181:
+    server:
+      ip: "0.0.0.0"
+      port: 5060
+      maxDevices: 10000
+      deviceTimeout: 5m
+      enableTcp: true
+      enableUdp: true
+      domain: "34020000002000000001"
+      serverId: "34020000002000000001"
+      serverName: "GB28181-Server"
+
+    client:
+      keepAliveInterval: 1m
+      maxRetries: 3
+      retryDelay: 5s
+      registerExpires: 3600
+      clientId: "34020000001320000001"
+      clientName: "GB28181-Client"
+      username: "admin"
+      password: "123456"
+
+    performance:
+      messageQueueSize: 1000
+      threadPoolSize: 200
+      enableMetrics: true
+      enableAsync: true
+      batchSize: 100
+      processingTimeoutMs: 5000
+      slowQueryThresholdMs: 100
+
+    cache:
+      deviceMaxSize: 50000
+      deviceExpireAfterWrite: 2h
+      deviceExpireAfterAccess: 30m
+      subscribeMaxSize: 5000
+      subscribeExpireAfterWrite: 5m
+      subscribeExpireAfterAccess: 2m
+      transactionMaxSize: 2000
+      transactionExpireAfterWrite: 1m
+      messageMaxSize: 10000
+      messageExpireAfterWrite: 30m
+      messageExpireAfterAccess: 15m
+      enableStats: true
+
+  # 异步处理配置
+  async:
+    enabled: true
+    corePoolSize: 4
+    maxPoolSize: 8
+    keepAliveSeconds: 60
+    queueCapacity: 1000
+    threadNamePrefix: "sip-async-"
+    timeoutMillis: 30000
+    waitForTasksToCompleteOnShutdown: true
+    awaitTerminationSeconds: 10
+    callerRunsPolicy: true
+
+  # 连接池配置
+  pool:
+    enabled: true
+    maxConnections: 100
+    coreConnections: 10
+    maxIdleConnections: 5
+    connectionTimeoutMillis: 30000
+    idleTimeoutMillis: 300000
+    validationIntervalMillis: 60000
+    testOnBorrow: true
+    testOnReturn: false
+    testWhileIdle: true
+    cleanupIntervalMillis: 120000
+    enableStatistics: true
+    forceCleanupOnShutdown: true
+    maxWaitMillis: 10000
+    validationQuery: "OPTIONS"
+
+# 日志配置
+logging:
+  level:
+    io.github.lunasaw.sip: DEBUG
+    io.github.lunasaw.gb28181: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

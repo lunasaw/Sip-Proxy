@@ -1,20 +1,18 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.message.notify;
 
-import javax.sip.RequestEvent;
-
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
-
-import org.springframework.stereotype.Component;
-
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.notify.MediaStatusNotify;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
+import io.github.lunasaw.sip.common.entity.Device;
+import io.github.lunasaw.sip.common.entity.DeviceSession;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * @author luna
@@ -28,12 +26,11 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
 
     public static final String CMD_TYPE = "MediaStatus";
 
-    private String             cmdType  = CMD_TYPE;
+    private String cmdType = CMD_TYPE;
 
-    public MediaStatusNotifyMessageHandler(MessageProcessorServer messageProcessorServer, SipUserGenerateServer sipUserGenerate) {
-        super(messageProcessorServer, sipUserGenerate);
+    public MediaStatusNotifyMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+        super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
-
 
     @Override
     public String getRootType() {
@@ -48,15 +45,15 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
         String userId = deviceSession.getUserId();
 
         // 设备查询
-        ToDevice toDevice = (ToDevice)sipUserGenerate.getToDevice(userId);
-        if (toDevice == null) {
+        Device device = serverDeviceSupplier.getDevice(userId);
+        if (device == null) {
             // 未注册的设备不做处理
             return;
         }
 
         MediaStatusNotify mediaStatusNotify = parseXml(MediaStatusNotify.class);
 
-        messageProcessorServer.updateMediaStatus(mediaStatusNotify);
+        serverMessageProcessorHandler.updateMediaStatus(mediaStatusNotify);
     }
 
     @Override

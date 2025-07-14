@@ -6,7 +6,6 @@ import javax.sip.RequestEvent;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.gbproxy.client.user.SipUserGenerateClient;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.transmit.event.message.SipMessageRequestProcessorAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
@@ -15,6 +14,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 客户端MESSAGE请求处理器
+ * 负责处理客户端收到的MESSAGE请求，专注于协议层面处理
+ *
  * @author luna
  */
 @Component
@@ -25,21 +27,24 @@ public class ClientMessageRequestProcessor extends SipMessageRequestProcessorAbs
 
     public static final String     METHOD = "MESSAGE";
 
-    @Autowired
-    private MessageProcessorClient messageProcessorClient;
-
     private String                 method = METHOD;
-
-    @Autowired
-    private SipUserGenerateClient  sipUserGenerate;
 
     @Override
     public void process(RequestEvent evt) {
-        if (!sipUserGenerate.checkDevice(evt)) {
-            // 如果是客户端收到的userId，一定是和自己的userId一致
-            return;
-        }
+        try {
+            SIPRequest request = (SIPRequest) evt.getRequest();
 
-        doMessageHandForEvt(evt, (FromDevice)sipUserGenerate.getFromDevice());
+            // 协议层面处理：解析SIP消息
+            String fromUserId = SipUtils.getUserIdFromFromHeader(request);
+            String toUserId = SipUtils.getUserIdFromToHeader(request);
+
+            log.debug("收到MESSAGE请求: from={}, to={}", fromUserId, toUserId);
+
+            // 调用消息处理框架
+            doMessageHandForEvt(evt, null);
+
+        } catch (Exception e) {
+            log.error("处理MESSAGE请求时发生异常: evt = {}", evt, e);
+        }
     }
 }

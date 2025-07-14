@@ -7,7 +7,7 @@ package io.github.lunasaw.gb28181.common.entity.enums;
 public enum CmdTypeEnum {
 
     /**
-     * 请求类型
+     * server请求类型
      */
     DEVICE_INFO("DeviceInfo", "查询设备信息"),
     DEVICE_STATUS("DeviceStatus", "查询设备状态"),
@@ -24,6 +24,11 @@ public enum CmdTypeEnum {
 
     KEEPALIVE("Keepalive", "心跳"),
 
+
+    // client
+
+
+    REGISTER("REGISTER", "注册"),
     ;
 
     private final String type;

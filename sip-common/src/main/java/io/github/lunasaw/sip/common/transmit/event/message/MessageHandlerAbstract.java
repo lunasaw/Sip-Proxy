@@ -17,9 +17,12 @@ import io.github.lunasaw.sip.common.utils.XmlUtils;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * @author weidian
+ */
 @Getter
 @Setter
-public class MessageHandlerAbstract implements MessageHandler {
+public abstract class MessageHandlerAbstract implements MessageHandler {
 
     private String xmlStr;
 

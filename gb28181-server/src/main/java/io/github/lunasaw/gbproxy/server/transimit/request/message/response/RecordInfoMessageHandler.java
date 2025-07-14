@@ -1,19 +1,17 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.message.response;
 
-import javax.sip.RequestEvent;
-
+import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
+import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
-import org.springframework.stereotype.Component;
-
-import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageProcessorServer;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
-import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
  * @author luna
@@ -27,10 +25,10 @@ public class RecordInfoMessageHandler extends MessageServerHandlerAbstract {
 
     public static final String CMD_TYPE = "RecordInfo";
 
-    private String             cmdType  = CMD_TYPE;
+    private String cmdType = CMD_TYPE;
 
-    public RecordInfoMessageHandler(MessageProcessorServer messageProcessorServer, SipUserGenerateServer sipUserGenerate) {
-        super(messageProcessorServer, sipUserGenerate);
+    public RecordInfoMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+        super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
 
     @Override
@@ -40,14 +38,14 @@ public class RecordInfoMessageHandler extends MessageServerHandlerAbstract {
 
     @Override
     public void handForEvt(RequestEvent event) {
-        if (!preCheck(event)){
+        if (!preCheck(event)) {
             return;
         }
         DeviceSession deviceSession = getDeviceSession(event);
         String userId = deviceSession.getUserId();
 
         DeviceRecord deviceRecord = parseXml(DeviceRecord.class);
-        messageProcessorServer.updateDeviceRecord(userId, deviceRecord);
+        serverMessageProcessorHandler.updateDeviceRecord(userId, deviceRecord);
     }
 
     @Override

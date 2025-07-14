@@ -3,20 +3,21 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.notify
 import javax.sip.RequestEvent;
 
 import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.client.user.SipUserGenerateClient;
-import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
 
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 广播通知消息处理器
+ * 负责处理广播通知请求
+ *
  * @author luna
  * @date 2023/10/19
  */
@@ -30,30 +31,33 @@ public class BroadcastNotifyMessageHandler extends MessageClientHandlerAbstract 
 
     private String cmdType = CMD_TYPE;
 
-    public BroadcastNotifyMessageHandler(MessageProcessorClient messageProcessorClient, SipUserGenerateClient sipUserGenerateClient) {
-        super(messageProcessorClient, sipUserGenerateClient);
+    public BroadcastNotifyMessageHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
-
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + NOTIFY;
+        return ClientMessageRequestProcessor.METHOD + "Notify";
     }
 
     @Override
     public void handForEvt(RequestEvent event) {
-        DeviceSession deviceSession = getDeviceSession(event);
-        String userId = deviceSession.getUserId();
+        try {
+            DeviceSession deviceSession = getDeviceSession(event);
+            String userId = deviceSession.getUserId();
+            String sipId = deviceSession.getSipId();
 
-        // 设备查询
-        FromDevice fromDevice = (FromDevice)sipUserGenerate.getFromDevice();
-        if (fromDevice == null || !fromDevice.getUserId().equals(userId)) {
-            throw new RuntimeException("查询设备失败");
+            log.debug("处理广播通知: userId={}, sipId={}", userId, sipId);
+
+            // 解析广播通知
+            DeviceBroadcastNotify broadcastNotify = parseXml(DeviceBroadcastNotify.class);
+
+            // 调用业务处理器处理广播通知
+            messageRequestHandler.broadcastNotify(broadcastNotify);
+
+        } catch (Exception e) {
+            log.error("处理广播通知时发生异常: event = {}", event, e);
         }
-
-        DeviceBroadcastNotify broadcastNotify = parseXml(DeviceBroadcastNotify.class);
-
-        messageProcessorClient.broadcastNotify(broadcastNotify);
     }
 
     @Override

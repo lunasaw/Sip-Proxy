@@ -1,12 +1,13 @@
 package io.github.lunasaw.gbproxy.test.user.server.user;
 
+import io.github.lunasaw.gbproxy.test.config.TestDeviceSupplier;
+import io.github.lunasaw.sip.common.entity.FromDevice;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
-import io.github.lunasaw.gbproxy.test.config.DeviceConfig;
 import io.github.lunasaw.sip.common.entity.Device;
+import io.github.lunasaw.sip.common.service.DeviceSupplier;
 
 /**
  * @author luna
@@ -16,16 +17,19 @@ import io.github.lunasaw.sip.common.entity.Device;
 public class DefaultSipUserGenerateServer implements SipUserGenerateServer {
 
     @Autowired
-    @Qualifier("serverFrom")
-    private Device fromDevice;
+    private TestDeviceSupplier deviceSupplier;
 
     @Override
     public Device getToDevice(String userId) {
-        return DeviceConfig.DEVICE_SERVER_VIEW_MAP.get(userId);
+        Device device = deviceSupplier.getDevice(userId);
+        if (device instanceof FromDevice) {
+            return device;
+        }
+        return deviceSupplier.createToDevice(device);
     }
 
     @Override
     public Device getFromDevice() {
-        return fromDevice;
+        return deviceSupplier.getServerFromDevice();
     }
 }

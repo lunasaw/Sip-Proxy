@@ -8,7 +8,6 @@ import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceConfigDownload;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
 import io.github.lunasaw.gb28181.common.entity.response.*;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
 import lombok.extern.slf4j.Slf4j;
 

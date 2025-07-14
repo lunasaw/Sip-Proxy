@@ -1,6 +1,6 @@
 package io.github.lunasaw.gb28181.common.entity.response;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 import io.github.lunasaw.gb28181.common.entity.enums.DeviceGbType;
 import org.apache.commons.lang3.StringUtils;

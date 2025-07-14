@@ -6,54 +6,69 @@ import javax.sip.RequestEvent;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
+import io.github.lunasaw.gbproxy.server.transimit.request.ServerAbstractSipRequestProcessor;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * SIP命令类型： 收到info请求
+ * Server模块INFO请求处理器
+ * 只负责SIP协议层面的处理，业务逻辑通过ServerInfoProcessorHandler接口实现
  *
  * @author luna
  */
 @Component
 @Getter
 @Setter
-public class ServerInfoRequestProcessor extends SipRequestProcessorAbstract {
+@Slf4j
+public class ServerInfoRequestProcessor extends ServerAbstractSipRequestProcessor {
 
-    public static final String    METHOD = "INFO";
+    public static final String METHOD = "INFO";
 
-    private String                method = METHOD;
-
-    @Autowired
-    private InfoProcessorServer   infoProcessorServer;
+    private String method = METHOD;
 
     @Autowired
-    private SipUserGenerateServer sipUserGenerate;
+    private ServerInfoProcessorHandler serverInfoProcessorHandler;
 
     /**
-     * 收到Info请求 处理
+     * 处理INFO请求
+     * 只负责SIP协议层面的处理，业务逻辑通过ServerInfoProcessorHandler接口实现
      *
-     * @param evt
+     * @param evt 请求事件
      */
     @Override
     public void process(RequestEvent evt) {
-        SIPRequest request = (SIPRequest)evt.getRequest();
+        try {
+            SIPRequest request = (SIPRequest) evt.getRequest();
 
-        // 在服务端看来 收到请求的时候fromHeader还是客户端的 toHeader才是自己的，这里是要查询自己的信息
-        String sip = SipUtils.getUserIdFromToHeader(request);
+            // 解析协议层面的信息
+            String sipId = SipUtils.getUserIdFromToHeader(request);
+            String userId = SipUtils.getUserIdFromFromHeader(request);
 
-        // 获取设备
-        FromDevice fromDevice = (FromDevice)sipUserGenerate.getFromDevice();
-        if (!sip.equals(fromDevice.getUserId())) {
-            return;
+            log.debug("处理INFO请求：用户ID = {}, SIP ID = {}", userId, sipId);
+
+            // 验证设备权限
+            if (!serverInfoProcessorHandler.validateDevicePermission(userId, sipId, evt)) {
+                log.warn("INFO请求权限验证失败：用户ID = {}, SIP ID = {}", userId, sipId);
+                serverInfoProcessorHandler.handleInfoError(userId, "权限验证失败", evt);
+                return;
+            }
+
+            // 获取请求内容
+            String content = "";
+            if (evt.getRequest().getRawContent() != null) {
+                content = new String(evt.getRequest().getRawContent());
+            }
+
+            // 调用业务处理器
+            serverInfoProcessorHandler.handleInfoRequest(userId, content, evt);
+
+        } catch (Exception e) {
+            log.error("处理INFO请求异常：evt = {}", evt, e);
+            String userId = SipUtils.getUserIdFromFromHeader((SIPRequest) evt.getRequest());
+            serverInfoProcessorHandler.handleInfoError(userId, e.getMessage(), evt);
         }
-
-        String userId = SipUtils.getUserIdFromFromHeader(request);
-
-        infoProcessorServer.dealInfo(userId, new String(evt.getRequest().getRawContent()));
     }
 
 }

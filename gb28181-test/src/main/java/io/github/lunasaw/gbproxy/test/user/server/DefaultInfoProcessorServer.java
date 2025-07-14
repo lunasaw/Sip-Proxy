@@ -1,25 +1,28 @@
 package io.github.lunasaw.gbproxy.test.user.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.server.transimit.request.info.InfoProcessorServer;
-import io.github.lunasaw.gbproxy.test.config.DeviceConfig;
+import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
 import io.github.lunasaw.sip.common.entity.Device;
-import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author luna
- * @date 2023/12/26
+ * @date 2023/12/25
  */
 @Component
+@Slf4j
 public class DefaultInfoProcessorServer implements InfoProcessorServer {
+
     @Autowired
-    @Qualifier("serverFrom")
-    private Device fromDevice;
+    private SipUserGenerateServer sipUserGenerateServer;
 
     @Override
     public void dealInfo(String userId, String content) {
+        Device fromDevice = sipUserGenerateServer.getFromDevice();
+        log.info("deviceInfo::userId = {}, fromDevice = {}, xml = {}", userId, fromDevice, content);
 
     }
 }

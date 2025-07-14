@@ -2,8 +2,8 @@ package io.github.lunasaw.gbproxy.test.user.server;
 
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.sip.common.entity.Device;
+import io.github.lunasaw.sip.common.service.DeviceSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson2.JSON;
@@ -15,23 +15,23 @@ import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageProcessorServer;
-import io.github.lunasaw.gbproxy.test.config.DeviceConfig;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
-import io.github.lunasaw.sip.common.entity.ToDevice;
 import lombok.extern.slf4j.Slf4j;
+import io.github.lunasaw.gbproxy.server.user.SipUserGenerateServer;
 
 /**
  * @author luna
- * @date 2023/10/17
+ * @date 2023/12/25
  */
-@Slf4j
 @Component
+@Slf4j
 public class DefaultMessageProcessorServer implements MessageProcessorServer {
 
     @Autowired
-    @Qualifier("serverFrom")
-    private Device fromDevice;
+    private SipUserGenerateServer sipUserGenerateServer;
 
+    @Autowired
+    private DeviceSupplier        deviceSupplier;
     @Override
     public void keepLiveDevice(DeviceKeepLiveNotify deviceKeepLiveNotify) {
         log.info("接收到设备的心跳 keepLiveDevice::deviceKeepLiveNotify = {}", JSON.toJSONString(deviceKeepLiveNotify));
@@ -40,13 +40,13 @@ public class DefaultMessageProcessorServer implements MessageProcessorServer {
     @Override
     public void updateRemoteAddress(String userId, RemoteAddressInfo remoteAddressInfo) {
         log.info("接收到设备的地址信息 updateRemoteAddress::remoteAddressInfo = {}", remoteAddressInfo);
-        ToDevice device = (ToDevice) DeviceConfig.DEVICE_SERVER_VIEW_MAP.get(userId);
+        Device device = sipUserGenerateServer.getFromDevice();
         if (device == null) {
             return;
         }
         device.setIp(remoteAddressInfo.getIp());
         device.setPort(remoteAddressInfo.getPort());
-        DeviceConfig.DEVICE_SERVER_VIEW_MAP.put(userId, device);
+        deviceSupplier.addOrUpdateDevice(device);
     }
 
     @Override

@@ -1,0 +1,103 @@
+# SIP代理测试配置文件
+# 用于单元测试的配置 - 简化版本
+
+# GB28181配置
+sip:
+  gb28181:
+    server:
+      ip: "127.0.0.1"
+      port: 5060
+      maxDevices: 100
+      deviceTimeout: 5m
+      enableTcp: false
+      enableUdp: true
+      domain: "34020000002000000001"
+      serverId: "34020000002000000001"
+      serverName: "GB28181-Server"
+
+    client:
+      keepAliveInterval: 1m
+      maxRetries: 3
+      retryDelay: 5s
+      registerExpires: 3600
+      clientId: "34020000001320000001"
+      clientName: "GB28181-Client"
+      username: "admin"
+      password: "123456"
+
+    performance:
+      messageQueueSize: 100
+      threadPoolSize: 4
+      enableMetrics: false
+      enableAsync: false
+      batchSize: 10
+      processingTimeoutMs: 5000
+      slowQueryThresholdMs: 100
+
+    cache:
+      deviceMaxSize: 100
+      deviceExpireAfterWrite: 2h
+      deviceExpireAfterAccess: 30m
+      subscribeMaxSize: 50
+      subscribeExpireAfterWrite: 5m
+      subscribeExpireAfterAccess: 2m
+      transactionMaxSize: 20
+      transactionExpireAfterWrite: 1m
+      messageMaxSize: 100
+      messageExpireAfterWrite: 30m
+      messageExpireAfterAccess: 15m
+      enableStats: false
+
+  # 异步处理配置 - 禁用以避免复杂性问题
+  async:
+    enabled: false
+    corePoolSize: 1
+    maxPoolSize: 2
+    keepAliveSeconds: 60
+    queueCapacity: 10
+    threadNamePrefix: "sip-test-async-"
+    timeoutMillis: 5000
+    waitForTasksToCompleteOnShutdown: true
+    awaitTerminationSeconds: 5
+    callerRunsPolicy: true
+
+  # 连接池配置 - 简化配置
+  pool:
+    enabled: false
+    maxConnections: 10
+    coreConnections: 2
+    maxIdleConnections: 1
+    connectionTimeoutMillis: 5000
+    idleTimeoutMillis: 60000
+    validationIntervalMillis: 30000
+    testOnBorrow: false
+    testOnReturn: false
+    testWhileIdle: false
+    cleanupIntervalMillis: 60000
+    enableStatistics: false
+    forceCleanupOnShutdown: true
+    maxWaitMillis: 5000
+    validationQuery: "OPTIONS"
+
+# Spring配置
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    banner-mode: off
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+# 日志配置 - 确保测试输出可见
+logging:
+  level:
+    io.github.lunasaw.sip: DEBUG
+    io.github.lunasaw.gbproxy: DEBUG
+    io.github.lunasaw.gbproxy.test: DEBUG
+    org.springframework: INFO
+    root: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/sip-proxy-test.log

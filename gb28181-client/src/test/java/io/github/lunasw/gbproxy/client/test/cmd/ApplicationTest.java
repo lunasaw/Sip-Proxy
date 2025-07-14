@@ -2,6 +2,7 @@ package io.github.lunasw.gbproxy.client.test.cmd;
 
 import javax.sip.message.Request;
 
+import io.github.lunasaw.sip.common.transmit.CustomerSipListener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,12 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import io.github.lunasaw.gbproxy.client.Gb28181Client;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.response.register.RegisterResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.layer.SipLayer;
-import io.github.lunasaw.sip.common.transmit.SipProcessorObserver;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import io.github.lunasaw.sip.common.transmit.event.EventResult;
@@ -75,7 +74,7 @@ public class ApplicationTest {
         // 响应处理器
         RegisterResponseProcessor responseProcessor = new RegisterResponseProcessor();
         // 添加响应处理器
-        SipProcessorObserver.addResponseProcessor(RegisterResponseProcessor.METHOD, responseProcessor);
+        CustomerSipListener.getInstance().addResponseProcessor(RegisterResponseProcessor.METHOD, responseProcessor);
 
         SipSender.transmitRequestSuccess(fromDevice.getIp(), registerRequest, new Event() {
             @Override
@@ -83,15 +82,6 @@ public class ApplicationTest {
                 System.out.println(eventResult);
             }
         });
-    }
-
-    @SneakyThrows
-    @Test
-    public void messageResponse() {
-
-        ClientMessageRequestProcessor clientMessageRequestProcessor = new ClientMessageRequestProcessor();
-        SipProcessorObserver.addRequestProcessor(ClientMessageRequestProcessor.METHOD, clientMessageRequestProcessor);
-
     }
 
     @AfterEach

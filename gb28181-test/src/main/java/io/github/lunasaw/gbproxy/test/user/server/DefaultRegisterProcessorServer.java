@@ -4,32 +4,29 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson2.JSON;
 
 import io.github.lunasaw.gbproxy.server.transimit.request.register.RegisterInfo;
 import io.github.lunasaw.gbproxy.server.transimit.request.register.RegisterProcessorServer;
-import io.github.lunasaw.gbproxy.test.config.DeviceConfig;
-import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.service.DeviceSupplier;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author luna
- * @date 2023/10/18
+ * @date 2023/12/25
  */
-@Slf4j
 @Component
+@Slf4j
 public class DefaultRegisterProcessorServer implements RegisterProcessorServer {
 
     public static Map<String, SipTransaction> sipTransactionMap = new ConcurrentHashMap<>();
-    public static Map<String, Device> deviceMap = new ConcurrentHashMap<>();
+
     @Autowired
-    @Qualifier("serverFrom")
-    private Device fromDevice;
+    private DeviceSupplier                    deviceSupplier;
 
     @Override
     public void responseUnauthorized(String userId) {
@@ -48,7 +45,7 @@ public class DefaultRegisterProcessorServer implements RegisterProcessorServer {
         instance.setTransport(registerInfo.getTransport());
         instance.setLocalIp(registerInfo.getLocalIp());
 
-        DeviceConfig.DEVICE_SERVER_VIEW_MAP.put(userId, instance);
+        deviceSupplier.addOrUpdateDevice(instance);
 
         log.info("设备注册更新::userId = {}, registerInfo = {}", userId, JSON.toJSONString(registerInfo));
     }
@@ -62,7 +59,7 @@ public class DefaultRegisterProcessorServer implements RegisterProcessorServer {
     @Override
     public void deviceOffLine(String userId, RegisterInfo registerInfo, SipTransaction sipTransaction) {
         log.info("设备注销::userId = {}, sipTransaction = {}", userId, sipTransaction);
-        DeviceConfig.DEVICE_SERVER_VIEW_MAP.remove(userId);
+        deviceSupplier.removeDevice(userId);
         sipTransactionMap.remove(userId);
     }
 }

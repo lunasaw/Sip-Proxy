@@ -3,16 +3,17 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler;
 import javax.sip.RequestEvent;
 
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.user.SipUserGenerateClient;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
+ * 基础消息客户端处理器
+ * 提供基础的消息处理功能
+ *
  * @author luna
  * @date 2023/10/19
  */
@@ -26,14 +27,13 @@ public class BaseMessageClientHandler extends MessageClientHandlerAbstract {
 
     private String cmdType = CMD_TYPE;
 
-    public BaseMessageClientHandler(MessageProcessorClient messageProcessorClient, SipUserGenerateClient sipUserGenerateClient) {
-        super(messageProcessorClient, sipUserGenerateClient);
+    public BaseMessageClientHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
-
 
     @Override
     public void handForEvt(RequestEvent event) {
-        log.info("handForEvt::event = {}", event);
+        log.info("处理基础消息事件: event = {}", event);
     }
 
     @Override

@@ -2,7 +2,7 @@ package io.github.lunasaw.gb28181.common.entity.response;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 import io.github.lunasaw.gb28181.common.entity.base.DeviceBase;
 import lombok.Getter;

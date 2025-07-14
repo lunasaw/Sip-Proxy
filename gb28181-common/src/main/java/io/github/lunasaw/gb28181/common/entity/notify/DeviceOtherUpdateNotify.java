@@ -2,7 +2,7 @@ package io.github.lunasaw.gb28181.common.entity.notify;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 import org.assertj.core.util.Lists;
 

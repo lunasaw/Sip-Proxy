@@ -1,8 +1,11 @@
 package io.github.lunasaw.sip.common.conf;
 
-import java.lang.reflect.Field;
-import java.util.Map;
-
+import io.github.lunasaw.sip.common.transmit.CustomerSipListener;
+import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessor;
+import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
+import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
+import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -11,22 +14,17 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.sip.common.transmit.CustomSipProcessorInject;
-import io.github.lunasaw.sip.common.transmit.SipProcessorInject;
-import io.github.lunasaw.sip.common.transmit.SipProcessorObserver;
-import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessor;
-import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessor;
-import io.github.lunasaw.sip.common.transmit.event.response.SipResponseProcessorAbstract;
-import lombok.extern.slf4j.Slf4j;
+import javax.sip.SipListener;
+import java.lang.reflect.Field;
+import java.util.Map;
 
 /**
+ * SIP代理自动配置类
+ * 使用新的注册表机制管理响应处理器，实现框架和业务分离
+ *
  * @author luna
- * @date 2023/10/16
  */
-@Component
 @Slf4j
 @ComponentScan("io.github.lunasaw.sip.common")
 @Configuration
@@ -34,51 +32,75 @@ public class SipProxyAutoConfig implements InitializingBean, ApplicationContextA
 
     private static final String METHOD = "method";
 
-    private ApplicationContext  applicationContext;
+    private ApplicationContext applicationContext;
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SipListener sipListener() {
+        // 默认使用同步监听器，可以通过配置切换为异步监听器
+        return CustomerSipListener.getInstance();
+    }
 
     @Override
     public void afterPropertiesSet() {
-        // 获取所有的SipResponseProcessorAbstract bean
-        Map<String, SipResponseProcessor> responseProcessorAbstractMap =
-            applicationContext.getBeansOfType(SipResponseProcessor.class);
+        // 注册所有响应处理器
+        registerResponseProcessors();
 
-        responseProcessorAbstractMap.forEach((k, v) -> {
+        // 注册所有请求处理器
+        registerRequestProcessors();
+    }
+
+    /**
+     * 注册响应处理器
+     * 使用新的注册表机制，支持策略组合
+     */
+    private void registerResponseProcessors() {
+        Map<String, SipResponseProcessor> processorMap =
+                applicationContext.getBeansOfType(SipResponseProcessor.class);
+
+        processorMap.forEach((beanName, processor) -> {
             try {
-                if (v instanceof SipResponseProcessorAbstract) {
-                    Field field = v.getClass().getDeclaredField(METHOD);
-                    field.setAccessible(true);
-                    String method = field.get(v).toString();
-                    SipProcessorObserver.addResponseProcessor(method, v);
+                if (processor instanceof AbstractSipResponseProcessor) {
+                    AbstractSipResponseProcessor abstractProcessor = (AbstractSipResponseProcessor) processor;
+                    String method = abstractProcessor.getMethod();
+                    CustomerSipListener.getInstance().addResponseProcessor(method, abstractProcessor);
+                    log.debug("注册响应处理器: {} -> {}", method, processor.getClass().getSimpleName());
                 }
             } catch (Exception e) {
-                log.error("afterPropertiesSet:: bean = {}", k);
+                log.error("注册响应处理器失败: bean = {}", beanName, e);
             }
         });
 
-        Map<String, SipRequestProcessor> requestProcessorAbstractMap = applicationContext.getBeansOfType(SipRequestProcessor.class);
+        log.info("注册响应处理器完成: {} 个处理器", processorMap.size());
+    }
 
-        requestProcessorAbstractMap.forEach((k, v) -> {
+    /**
+     * 注册请求处理器
+     * 保持原有的请求处理器注册逻辑
+     */
+    private void registerRequestProcessors() {
+        Map<String, SipRequestProcessor> requestProcessorMap =
+                applicationContext.getBeansOfType(SipRequestProcessor.class);
+
+        requestProcessorMap.forEach((beanName, processor) -> {
             try {
-                if (v instanceof SipRequestProcessorAbstract) {
-                    Field field = v.getClass().getDeclaredField(METHOD);
+                if (processor instanceof SipRequestProcessorAbstract) {
+                    Field field = processor.getClass().getDeclaredField(METHOD);
                     field.setAccessible(true);
-                    String method = field.get(v).toString();
-                    SipProcessorObserver.addRequestProcessor(method, v);
+                    String method = field.get(processor).toString();
+                    CustomerSipListener.getInstance().addRequestProcessor(method, processor);
+                    log.debug("注册请求处理器: {} -> {}", method, processor.getClass().getSimpleName());
                 }
             } catch (Exception e) {
-                log.error("afterPropertiesSet:: bean = {}", k);
+                log.error("注册请求处理器失败: bean = {}", beanName, e);
             }
         });
+
+        log.info("注册请求处理器完成: {} 个处理器", requestProcessorMap.size());
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public SipProcessorInject sipProcessorInject() {
-        return new CustomSipProcessorInject();
     }
 }

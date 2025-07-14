@@ -1,6 +1,9 @@
 package io.github.lunasaw.sip.common.utils;
 
+import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import javax.sdp.SessionDescription;
 import javax.sip.RequestEvent;
@@ -34,12 +37,12 @@ import io.github.lunasaw.sip.common.entity.SipTransaction;
 public class SipUtils {
 
     public static String getUserIdFromToHeader(Response response) {
-        ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
+        ToHeader toHeader = (ToHeader)response.getHeader(ToHeader.NAME);
         return getUserIdFromHeader(toHeader);
     }
 
     public static String getUserIdFromFromHeader(Response response) {
-        FromHeader fromHeader = (FromHeader) response.getHeader(FromHeader.NAME);
+        FromHeader fromHeader = (FromHeader)response.getHeader(FromHeader.NAME);
         return getUserIdFromHeader(fromHeader);
     }
 
@@ -54,7 +57,7 @@ public class SipUtils {
     }
 
     public static String getUser(Request request) {
-        return ((SipUri) request.getRequestURI()).getUser();
+        return ((SipUri)request.getRequestURI()).getUser();
     }
 
     public static SipTransaction getSipTransaction(SIPResponse response) {
@@ -76,13 +79,13 @@ public class SipUtils {
     }
 
     public static String getUserIdFromHeader(HeaderAddress headerAddress) {
-        AddressImpl address = (AddressImpl) headerAddress.getAddress();
+        AddressImpl address = (AddressImpl)headerAddress.getAddress();
         SipUri uri = (SipUri)address.getURI();
         return uri.getUser();
     }
 
     public static String getCallId(RequestEvent requestEvent) {
-        return ((SIPRequest) requestEvent.getRequest()).getCallIdHeader().getCallId();
+        return ((SIPRequest)requestEvent.getRequest()).getCallIdHeader().getCallId();
     }
 
     public static String getCallId(SIPRequest request) {
@@ -97,7 +100,7 @@ public class SipUtils {
      * 从subject读取channelId
      */
     public static String getSubjectId(Request request) {
-        SubjectHeader subject = (SubjectHeader) request.getHeader(SubjectHeader.NAME);
+        SubjectHeader subject = (SubjectHeader)request.getHeader(SubjectHeader.NAME);
         if (subject == null) {
             // 如果缺失subject
             return null;
@@ -127,8 +130,9 @@ public class SipUtils {
             remotePort = request.getTopmostViaHeader().getRPort();
             // 解析本地地址替代
             if (ObjectUtils.isEmpty(remoteAddress) || remotePort == -1) {
-                remoteAddress = request.getPeerPacketSourceAddress().getHostAddress();
-                remotePort = request.getPeerPacketSourcePort();
+                remoteAddress =
+                    Optional.ofNullable(request.getPeerPacketSourceAddress()).map(InetAddress::getHostAddress).orElse(request.getViaHost());
+                remotePort = OptionalInt.of(request.getPeerPacketSourcePort()).stream().filter(e -> e != 0).findFirst().orElse(request.getViaPort());
             }
         }
 
@@ -180,12 +184,12 @@ public class SipUtils {
     }
 
     public static <T> T parseRequest(RequestEvent event, String charset, Class<T> clazz) {
-        SIPRequest sipRequest = (SIPRequest) event.getRequest();
+        SIPRequest sipRequest = (SIPRequest)event.getRequest();
         return getObj(charset, clazz, sipRequest.getRawContent());
     }
 
     public static String parseRequest(RequestEvent event, String charset) {
-        SIPRequest sipRequest = (SIPRequest) event.getRequest();
+        SIPRequest sipRequest = (SIPRequest)event.getRequest();
         byte[] rawContent = sipRequest.getRawContent();
         if (StringUtils.isBlank(charset)) {
             charset = Constant.UTF_8;

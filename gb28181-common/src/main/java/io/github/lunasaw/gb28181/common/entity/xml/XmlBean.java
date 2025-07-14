@@ -3,16 +3,13 @@ package io.github.lunasaw.gb28181.common.entity.xml;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
+import lombok.*;
 
 /**
  * @author luna
@@ -21,6 +18,8 @@ import lombok.SneakyThrows;
 @Getter
 @Setter
 @XmlAccessorType(XmlAccessType.NONE)
+@AllArgsConstructor
+@NoArgsConstructor
 public class XmlBean {
 
     /**

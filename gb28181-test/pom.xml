@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-proxy</artifactId>
-        <version>1.2.4</version>
+        <version>1.2.5-SNAPSHOT</version>
     </parent>
 
     <version>${gb28181-proxy.version}</version>
@@ -23,6 +23,19 @@
     </properties>
 
     <dependencies>
+        <!-- Spring Boot Test Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.github.lunasaw</groupId>
             <artifactId>sip-common</artifactId>

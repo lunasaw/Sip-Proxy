@@ -4,7 +4,7 @@ import io.github.lunasaw.gb28181.common.entity.base.DeviceBase;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 /**
  * @author luna

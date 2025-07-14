@@ -6,11 +6,11 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-proxy</artifactId>
-        <version>1.2.4</version>
+        <version>1.2.5-SNAPSHOT</version>
     </parent>
 
     <packaging>jar</packaging>
-    <version>1.2.4</version>
+    <version>1.2.5-SNAPSHOT</version>
     <artifactId>sip-common</artifactId>
     <name>sip-common</name>
     <description>轻量级SIP框架封装</description>

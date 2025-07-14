@@ -1,8 +1,10 @@
 package io.github.lunasaw.gb28181.common.entity.notify;
 
-import javax.xml.bind.annotation.*;
-
 import io.github.lunasaw.gb28181.common.entity.base.DeviceBase;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +18,7 @@ import lombok.Setter;
  * <DeviceID>parentPlatform.getDeviceGBId()</DeviceID>
  * <Status>OK</Status>
  * </Notify>
+ *
  * @author luna
  */
 @Getter

@@ -1,5 +1,7 @@
 package io.github.lunasaw.sip.common.transmit.event;
 
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,15 +20,17 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
+@Getter
+@Setter
 public class SipSubscribe {
 
-    private static final Map<String, Event> errorSubscribes = new ConcurrentHashMap<>();
+    public static final Map<String, Event> errorSubscribes = new ConcurrentHashMap<>();
 
-    private static final Map<String, Event> okSubscribes = new ConcurrentHashMap<>();
+    public static final Map<String, Event> okSubscribes = new ConcurrentHashMap<>();
 
-    private static final Map<String, Instant> okTimeSubscribes = new ConcurrentHashMap<>();
+    public static final Map<String, Instant> okTimeSubscribes = new ConcurrentHashMap<>();
 
-    private static final Map<String, Instant> errorTimeSubscribes = new ConcurrentHashMap<>();
+    public static final Map<String, Instant> errorTimeSubscribes = new ConcurrentHashMap<>();
 
     public synchronized static void addErrorSubscribe(String key, Event event) {
         errorSubscribes.put(key, event);

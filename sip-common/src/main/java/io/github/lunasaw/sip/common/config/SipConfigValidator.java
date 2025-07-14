@@ -9,6 +9,8 @@ import io.github.lunasaw.sip.common.exception.SipConfigurationException;
 import io.github.lunasaw.sip.common.pool.SipPoolConfig;
 import lombok.extern.slf4j.Slf4j;
 
+import jakarta.annotation.PostConstruct;
+
 /**
  * SIP配置验证器
  * 验证SIP相关配置参数的合理性和有效性
@@ -27,6 +29,14 @@ public class SipConfigValidator {
     public SipConfigValidator(SipAsyncConfig asyncConfig, SipPoolConfig poolConfig) {
         this.asyncConfig = asyncConfig;
         this.poolConfig = poolConfig;
+    }
+
+    /**
+     * 应用启动时自动验证配置
+     */
+    @PostConstruct
+    public void validateOnStartup() {
+        validateAllConfigs();
     }
 
     /**

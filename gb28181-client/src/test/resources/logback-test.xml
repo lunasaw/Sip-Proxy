@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 测试环境配置 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 测试文件输出 -->
+    <appender name="TEST_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/test-sip-proxy.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/test-sip-proxy.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>50MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 根日志级别配置 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="TEST_FILE"/>
+    </root>
+
+    <!-- 特定包的日志级别配置 -->
+    <logger name="io.github.lunasaw.sip.common.utils.TraceUtils" level="DEBUG"/>
+    <logger name="io.github.lunasaw.sip.common.utils.TraceUtilsTest" level="DEBUG"/>
+    <logger name="io.github.lunasaw.sip.common.utils.TraceExample" level="DEBUG"/>
+
+    <!-- SIP相关包的日志配置 -->
+    <logger name="io.github.lunasaw.sip.common.transmit" level="INFO"/>
+    <logger name="io.github.lunasaw.sip.common.layer" level="INFO"/>
+
+    <!-- GB28181相关包的日志配置 -->
+    <logger name="io.github.lunasaw.gbproxy" level="INFO"/>
+
+    <!-- 测试相关包的日志配置 -->
+    <logger name="io.github.lunasaw.sip.common.test" level="DEBUG"/>
+</configuration>

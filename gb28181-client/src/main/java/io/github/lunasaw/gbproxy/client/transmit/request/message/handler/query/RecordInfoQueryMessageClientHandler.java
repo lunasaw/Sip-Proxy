@@ -1,24 +1,23 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
-import javax.sip.RequestEvent;
-
-import org.springframework.stereotype.Component;
-
 import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientSendCmd;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageProcessorClient;
-import io.github.lunasaw.gbproxy.client.user.SipUserGenerateClient;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import javax.sip.RequestEvent;
 
 /**
+ * 设备录像信息查询消息处理器
+ * 负责处理设备录像信息查询请求
+ *
  * @author luna
  * @date 2023/10/19
  */
@@ -30,34 +29,41 @@ public class RecordInfoQueryMessageClientHandler extends MessageClientHandlerAbs
 
     public static final String CMD_TYPE = "RecordInfo";
 
-    private String             cmdType  = CMD_TYPE;
+    private String cmdType = CMD_TYPE;
 
-    public RecordInfoQueryMessageClientHandler(MessageProcessorClient messageProcessorClient, SipUserGenerateClient sipUserGenerateClient) {
-        super(messageProcessorClient, sipUserGenerateClient);
+    public RecordInfoQueryMessageClientHandler(MessageRequestHandler messageRequestHandler) {
+        super(messageRequestHandler);
     }
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + QUERY;
+        return ClientMessageRequestProcessor.METHOD + "Query";
     }
 
     @Override
     public void handForEvt(RequestEvent event) {
+        try {
+            DeviceSession deviceSession = getDeviceSession(event);
+            String userId = deviceSession.getUserId();
+            String sipId = deviceSession.getSipId();
 
-        DeviceSession deviceSession = getDeviceSession(event);
-        String sipId = deviceSession.getSipId();
+            log.debug("处理设备录像信息查询: userId={}, sipId={}", userId, sipId);
 
-        // 设备查询
-        FromDevice fromDevice = (FromDevice)sipUserGenerate.getFromDevice();
-        ToDevice toDevice = (ToDevice)sipUserGenerate.getToDevice(sipId);
+            // 解析查询请求
+            DeviceRecordQuery deviceRecordQuery = parseXml(DeviceRecordQuery.class);
+            String sn = deviceRecordQuery.getSn();
 
-        DeviceRecordQuery deviceRecordQuery = parseXml(DeviceRecordQuery.class);
+            // 调用业务处理器获取设备录像信息
+            DeviceRecord deviceRecord = messageRequestHandler.getDeviceRecord(deviceRecordQuery);
+            deviceRecord.setSn(sn);
 
-        String sn = deviceRecordQuery.getSn();
-        DeviceRecord deviceRecord = messageProcessorClient.getDeviceRecord(deviceRecordQuery);
-        deviceRecord.setSn(sn);
+            // 发送响应
+            log.debug("发送设备录像信息响应: userId={}, sipId={}, sn={}", userId, sipId, sn);
+            ClientCommandSender.sendDeviceRecordCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceRecord);
 
-        ClientSendCmd.deviceRecordResponse(fromDevice, toDevice, deviceRecord);
+        } catch (Exception e) {
+            log.error("处理设备录像信息查询时发生异常: event = {}", event, e);
+        }
     }
 
     @Override

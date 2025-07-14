@@ -26,6 +26,14 @@ public class ToDevice extends Device {
      */
     private String localIp;
 
+    private Integer expires;
+
+    private String eventType;
+
+    private String eventId;
+
+    private String callId;
+
     public static ToDevice getInstance(String userId, String ip, int port) {
         ToDevice toDevice = new ToDevice();
         toDevice.setUserId(userId);

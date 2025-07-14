@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-proxy</artifactId>
-        <version>1.2.4</version>
+        <version>1.2.5-SNAPSHOT</version>
     </parent>
 
-    <version>1.2.4</version>
+    <version>1.2.5-SNAPSHOT</version>
     <artifactId>gb28181-common</artifactId>
     <packaging>jar</packaging>
     <name>gb28181-common</name>
@@ -24,20 +24,17 @@
     </properties>
 
     <dependencies>
+        <!-- Jakarta XML Bind API - 符合Java 17和项目规范 -->
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <version>2.3.0.1</version>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>4.0.0</version>
         </dependency>
+        <!-- Jakarta XML Bind Implementation -->
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>2.3.1</version>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>4.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>
