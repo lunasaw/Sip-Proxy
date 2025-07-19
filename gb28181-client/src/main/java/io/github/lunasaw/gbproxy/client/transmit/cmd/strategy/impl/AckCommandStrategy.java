@@ -18,12 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 public class AckCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // ACK命令不需要构建内容，直接发送ACK响应
-        return null;
-    }
-
-    @Override
     public String getCommandType() {
         return "ACK";
     }

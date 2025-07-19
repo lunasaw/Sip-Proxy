@@ -18,15 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 public class InviteCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // INVITE命令需要构建SDP内容
-        if (params.length > 0 && params[0] instanceof String) {
-            return (String) params[0];
-        }
-        return null;
-    }
-
-    @Override
     public String getCommandType() {
         return "INVITE";
     }

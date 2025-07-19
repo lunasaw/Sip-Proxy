@@ -71,7 +71,13 @@ public abstract class AbstractClientCommandStrategy implements ClientCommandStra
      * @param params     参数
      * @return 命令内容
      */
-    protected abstract String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params);
+    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
+        // 默认实现：获取第一个String类型的参数
+        if (params.length > 0 && params[0] instanceof String) {
+            return (String) params[0];
+        }
+        return null;
+    }
 
     /**
      * 发送命令

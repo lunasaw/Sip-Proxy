@@ -26,29 +26,35 @@ public abstract class AbstractServerCommandStrategy implements ServerCommandStra
 
     @Override
     public String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Object... params) {
-        try {
-            Assert.notNull(fromDevice, "发送设备不能为空");
-            Assert.notNull(toDevice, "接收设备不能为空");
-            log.debug("执行命令: {}, 发送设备: {}, 接收设备: {}", getCommandType(), fromDevice.getUserId(), toDevice.getUserId());
+        // 构建请求对象
+        ServerCommandStrategyReq req = ServerCommandStrategyReq.builder()
+                .fromDevice(fromDevice)
+                .toDevice(toDevice)
+                .errorEvent(errorEvent)
+                .okEvent(okEvent)
+                .build();
 
-            // 构建请求对象
-            ServerCommandStrategyReq req = ServerCommandStrategyReq.builder()
-                    .fromDevice(fromDevice)
-                    .toDevice(toDevice)
-                    .errorEvent(errorEvent)
-                    .okEvent(okEvent)
-                    .build();
-
-            // 将参数放入paramMap，第一个参数作为"content"，其他参数按索引命名
-            if (params != null && params.length > 0) {
-                for (int i = 0; i < params.length; i++) {
-                    if (i == 0) {
-                        req.getParamMap().put("content", params[i]);
-                    } else {
-                        req.getParamMap().put("param" + i, params[i]);
-                    }
+        // 将参数放入paramMap，第一个参数作为"content"，其他参数按索引命名
+        if (params != null && params.length > 0) {
+            for (int i = 0; i < params.length; i++) {
+                if (i == 0) {
+                    req.getParamMap().put("content", params[i]);
+                } else {
+                    req.getParamMap().put("param" + i, params[i]);
                 }
             }
+        }
+
+        return execute(req);
+    }
+
+    @Override
+    public String execute(ServerCommandStrategyReq req) {
+        try {
+            Assert.notNull(req, "命令请求参数不能为空");
+            Assert.notNull(req.getFromDevice(), "发送设备不能为空");
+            Assert.notNull(req.getToDevice(), "接收设备不能为空");
+            log.debug("执行命令: {}, 发送设备: {}, 接收设备: {}", getCommandType(), req.getFromDevice().getUserId(), req.getToDevice().getUserId());
 
             // 参数校验
             validateParams(req);

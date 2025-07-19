@@ -18,15 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 public class InfoCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // INFO命令需要构建内容
-        if (params.length > 0 && params[0] instanceof String) {
-            return (String) params[0];
-        }
-        return null;
-    }
-
-    @Override
     public String getCommandType() {
         return "INFO";
     }

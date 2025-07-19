@@ -36,6 +36,14 @@ public interface ServerCommandStrategy {
     String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Object... params);
 
     /**
+     * 执行命令（使用请求对象）
+     *
+     * @param req 命令请求参数
+     * @return callId
+     */
+    String execute(ServerCommandStrategyReq req);
+
+    /**
      * 获取命令类型
      *
      * @return 命令类型

@@ -713,3 +713,101 @@ public class MessageRequestHandler {
 - **子类型路由**：对于有子类型的消息（如MESSAGE的cmdType），通过SubProcessor进行路由，但最终都落到对应的Handler
 - **扩展性**：新增业务子类型时，只需添加对应的SubProcessor，Handler可以复用
 - **维护性**：各层职责清晰，便于独立测试和维护
+
+### 15. 策略模式模板方法重构规范 (强制性要求)
+- **父类默认实现**：策略模式中的抽象父类应该为模板方法提供合理的默认实现，避免子类重复编写相同逻辑
+- **简单参数获取逻辑统一处理**：对于只是简单从参数中获取数据的模板方法，父类必须提供默认实现
+- **子类重写原则**：子类只在需要特殊业务逻辑或复杂参数处理时才重写模板方法
+- **代码示例**：
+  ```java
+  // 父类提供默认实现
+  public abstract class AbstractServerCommandStrategy {
+      protected String buildCommandContent(ServerCommandStrategyReq req) {
+          // 默认实现：从paramMap中获取content参数
+          Object content = req.getParamMap().get("content");
+          if (content instanceof String) {
+              return (String) content;
+          }
+          return null;
+      }
+  }
+
+  // 子类无需重写（使用默认实现）
+  public class InviteCommandStrategy extends AbstractServerCommandStrategy {
+      // 不需要重写buildCommandContent，使用父类默认实现
+  }
+
+  // 子类有特殊逻辑时才重写
+  public class MessageCommandStrategy extends AbstractServerCommandStrategy {
+      @Override
+      protected String buildCommandContent(ServerCommandStrategyReq req) {
+          // 特殊逻辑：需要将对象转换为XML
+          Object content = req.getParamMap().get("content");
+          if (content != null && !(content instanceof String)) {
+              return XmlUtils.toString("UTF-8", content);
+          }
+          return super.buildCommandContent(req);
+      }
+  }
+  ```
+- **重构指导原则**：
+  - 将抽象方法改为普通方法并提供默认实现
+  - 删除子类中只做简单参数获取的重写方法
+  - 保留有特殊业务逻辑的子类重写方法
+  - 确保子类可以通过`super.method()`调用父类默认实现
+- **适用场景**：所有策略模式、模板方法模式的实现都应遵循此规范
+- **维护性提升**：减少重复代码，提高代码可维护性，便于统一修改和扩展
+
+### 16. 客户端策略模式模板方法重构规范 (强制性要求)
+- **适用于Client模块**：本规范专门适用于 `AbstractClientCommandStrategy` 及其子类的重构
+- **参数格式差异**：客户端策略的模板方法参数格式为 `(FromDevice fromDevice, ToDevice toDevice, Object... params)`，不同于服务端的 `(ServerCommandStrategyReq req)` 格式
+- **父类默认实现**：`AbstractClientCommandStrategy` 应该为 `buildCommandContent` 方法提供默认实现，处理常见的参数获取逻辑
+- **默认实现逻辑**：从 `params` 数组中获取第一个 `String` 类型参数，如果不存在则返回 `null`
+- **代码示例**：
+  ```java
+  // 父类提供默认实现
+  public abstract class AbstractClientCommandStrategy {
+      protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
+          // 默认实现：获取第一个String类型的参数
+          if (params.length > 0 && params[0] instanceof String) {
+              return (String) params[0];
+          }
+          return null;
+      }
+  }
+
+  // 子类无需重写（使用默认实现）
+  public class InviteCommandStrategy extends AbstractClientCommandStrategy {
+      // 不需要重写buildCommandContent，使用父类默认实现
+  }
+
+  // 子类有特殊逻辑时才重写
+  public class MessageCommandStrategy extends AbstractClientCommandStrategy {
+      @Override
+      protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
+          if (params.length > 0) {
+              Object param = params[0];
+              // 如果参数是字符串，使用父类默认实现
+              if (param instanceof String) {
+                  return super.buildCommandContent(fromDevice, toDevice, params);
+              }
+              // 特殊逻辑：需要将对象转换为XML
+              if (param != null) {
+                  return XmlUtils.toString("UTF-8", param);
+              }
+          }
+          return null;
+      }
+  }
+  ```
+- **Client与Server对比**：
+  - Server端：使用 `ServerCommandStrategyReq` 封装参数，从 `paramMap` 获取 `content`
+  - Client端：直接使用方法参数 `params` 数组，获取第一个 `String` 参数
+  - 重构原则相同：父类提供默认实现，子类只在有特殊逻辑时重写
+- **重构指导原则**：
+  - 将抽象方法改为普通方法并提供默认实现
+  - 删除子类中只做简单参数获取的重写方法
+  - 保留有特殊业务逻辑的子类重写方法（如XML转换）
+  - 确保子类可以通过 `super.buildCommandContent()` 调用父类默认实现
+- **命名一致性**：Client和Server模块的策略类命名保持一致，只是继承的父类不同
+- **维护性提升**：减少Client模块中的重复代码，提高代码可维护性和一致性
