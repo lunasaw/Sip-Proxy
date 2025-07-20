@@ -1,11 +1,8 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message;
 
+import io.github.lunasaw.gb28181.common.entity.notify.*;
+import io.github.lunasaw.gb28181.common.entity.query.*;
 import io.github.lunasaw.gb28181.common.entity.response.*;
-import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
-import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceConfigDownload;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -62,5 +59,27 @@ public class CustomMessageRequestHandler implements MessageRequestHandler {
     @Override
     public <T> void deviceControl(T deviceControlBase) {
         log.info("处理设备控制命令: {}", deviceControlBase);
+    }
+
+    @Override
+    public PresetQueryResponse getDevicePresetQueryResponse(PresetQuery presetQuery) {
+        return null;
+    }
+
+    @Override
+    public MobilePositionNotify getMobilePositionNotify(MobilePositionQuery mobilePositionQuery) {
+        return null;
+    }
+
+    @Override
+    public PresetQueryResponse getPresetQueryResponse(String userId) {
+        log.info("获取设备预置位信息: {}", userId);
+        return new PresetQueryResponse();
+    }
+
+    @Override
+    public ConfigDownloadResponse getConfigDownloadResponse(String userId, String configType) {
+        log.info("获取设备配置查询应答: {}, configType={}", userId, configType);
+        return new ConfigDownloadResponse();
     }
 }

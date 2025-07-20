@@ -1,11 +1,10 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message;
 
+import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
+import io.github.lunasaw.gb28181.common.entity.query.*;
 import io.github.lunasaw.gb28181.common.entity.response.*;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceConfigDownload;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
 
 /**
  * MESSAGE请求业务处理器接口
@@ -80,4 +79,36 @@ public interface MessageRequestHandler {
      * @param deviceControlBase 设备控制基础信息
      */
     <T> void deviceControl(T deviceControlBase);
+
+    /**
+     * 获取设备预置位查询应答
+     *
+     * @return 预置位查询应答
+     */
+    PresetQueryResponse getDevicePresetQueryResponse(PresetQuery presetQuery);
+
+    /**
+     * 获取设备预置位信息
+     *
+     * @param userId 设备Id
+     * @return 设备预置位应答
+     */
+    PresetQueryResponse getPresetQueryResponse(String userId);
+
+    /**
+     * 获取设备配置查询应答
+     *
+     * @param userId     设备Id
+     * @param configType 配置类型
+     * @return 设备配置查询应答
+     */
+    ConfigDownloadResponse getConfigDownloadResponse(String userId, String configType);
+
+    /**
+     * 处理设备移动位置通知
+     *
+     * @param mobilePositionNotify 移动位置通知
+     */
+    MobilePositionNotify getMobilePositionNotify(MobilePositionQuery mobilePositionQuery);
+
 }

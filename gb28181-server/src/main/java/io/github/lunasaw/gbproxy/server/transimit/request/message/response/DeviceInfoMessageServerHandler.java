@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
- * 复制类 无实际使用
+ * 设备信息消息处理器
  *
  * @author luna
  * @date 2023/10/19
@@ -36,7 +36,7 @@ public class DeviceInfoMessageServerHandler extends MessageServerHandlerAbstract
 
     @Override
     public String getRootType() {
-        return ServerMessageRequestProcessor.METHOD + RESPONSE;
+        return RESPONSE;
     }
 
     @Override

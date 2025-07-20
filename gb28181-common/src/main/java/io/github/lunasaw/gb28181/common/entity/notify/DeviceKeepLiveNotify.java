@@ -29,6 +29,8 @@ import lombok.Setter;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DeviceKeepLiveNotify extends DeviceBase {
 
+    @XmlElement(name = "CmdType")
+    private String cmdType = "Keepalive";
 
     @XmlElement(name = "Status")
     public String status;

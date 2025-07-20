@@ -39,7 +39,7 @@ public class AlarmQueryMessageClientHandler extends MessageClientHandlerAbstract
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Query";
+        return "Query";
     }
 
     @Override

@@ -19,7 +19,7 @@ import javax.sip.ResponseEvent;
 @Slf4j
 @Getter
 @Setter
-@Component
+@Component("clientCancelResponseProcessor")
 public class CancelResponseProcessor extends ClientAbstractSipResponseProcessor {
 
     public static final String METHOD = "CANCEL";

@@ -37,7 +37,7 @@ public class BroadcastNotifyMessageHandler extends MessageClientHandlerAbstract 
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Notify";
+        return "Notify";
     }
 
     @Override

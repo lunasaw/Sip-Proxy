@@ -4,6 +4,7 @@ import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientCommandStrategy;
+import io.github.lunasaw.sip.common.transmit.event.Event;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -15,12 +16,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class ByeCommandStrategy extends AbstractClientCommandStrategy {
-
-    @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // BYE命令不需要构建内容，直接发送BYE请求
-        return null;
-    }
 
     @Override
     public String getCommandType() {

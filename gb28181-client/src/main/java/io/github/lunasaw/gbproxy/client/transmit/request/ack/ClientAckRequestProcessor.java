@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author weidian
  */
-@Component
+@Component("clientAckRequestProcessor")
 @Getter
 @Setter
 @Slf4j

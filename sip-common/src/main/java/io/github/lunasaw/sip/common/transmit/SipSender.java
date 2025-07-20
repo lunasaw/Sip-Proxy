@@ -86,6 +86,17 @@ public class SipSender {
                 .send();
     }
 
+    public static String doNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, SubscribeInfo subscribeInfo, Event errorEvent,
+                                         Event okEvent) {
+        return request(fromDevice, toDevice, "NOTIFY")
+                .content(content)
+                .errorEvent(errorEvent)
+                .okEvent(okEvent)
+                .subscribeInfo(subscribeInfo)
+                .send();
+    }
+
+
     public static String doNotifyRequest(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent,
                                          Event okEvent) {
         return request(fromDevice, toDevice, "NOTIFY")
@@ -149,6 +160,17 @@ public class SipSender {
     public static String doAckRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
         return request(fromDevice, toDevice, "ACK")
                 .content(content)
+                .callId(callId)
+                .send();
+    }
+
+
+    public static String doAckRequest(FromDevice fromDevice, ToDevice toDevice, String content, String callId, Event errorEvent,
+                                      Event okEvent) {
+        return request(fromDevice, toDevice, "ACK")
+                .content(content)
+                .okEvent(okEvent)
+                .errorEvent(errorEvent)
                 .callId(callId)
                 .send();
     }
@@ -303,6 +325,9 @@ public class SipSender {
                 return strategy.sendRequestWithSubscribe(fromDevice, toDevice, content, subscribeInfo, callId, errorEvent, okEvent);
             }
 
+            if (subscribeInfo != null) {
+                return strategy.sendRequestWithSubscribe(fromDevice, toDevice, content, subscribeInfo, callId, errorEvent, okEvent);
+            }
             return strategy.sendRequest(fromDevice, toDevice, content, callId, errorEvent, okEvent);
         }
 

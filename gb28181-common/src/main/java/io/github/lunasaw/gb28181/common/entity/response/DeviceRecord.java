@@ -2,6 +2,7 @@ package io.github.lunasaw.gb28181.common.entity.response;
 
 import java.util.List;
 
+import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import jakarta.xml.bind.annotation.*;
 
 import io.github.lunasaw.gb28181.common.entity.base.DeviceBase;
@@ -38,6 +39,10 @@ import lombok.Setter;
 @XmlRootElement(name = "Response")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DeviceRecord extends DeviceBase {
+
+
+    @XmlElement(name = "CmdType")
+    private String cmdType = CmdTypeEnum.RECORD_INFO.getType();
 
     /**
      * 总数

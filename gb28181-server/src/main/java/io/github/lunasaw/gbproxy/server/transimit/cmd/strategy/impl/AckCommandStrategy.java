@@ -1,10 +1,8 @@
 package io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.impl;
 
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.AbstractServerCommandStrategy;
-import io.github.lunasaw.sip.common.transmit.event.Event;
+import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.ServerCommandStrategyReq;
+import io.github.lunasaw.sip.common.transmit.SipSender;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -18,15 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 public class AckCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // ACK命令可能包含内容
-        if (params.length > 0 && params[0] instanceof String) {
-            return (String) params[0];
-        }
-        return null;
-    }
-
-    @Override
     public String getCommandType() {
         return "ACK";
     }
@@ -37,14 +26,13 @@ public class AckCommandStrategy extends AbstractServerCommandStrategy {
     }
 
     @Override
-    protected String sendCommand(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
+    protected String sendCommand(ServerCommandStrategyReq req) {
         // 发送ACK请求
-        return SipSender.doAckRequest(fromDevice, toDevice, content, errorEvent, okEvent);
-    }
-
-    @Override
-    protected void validateParams(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        super.validateParams(fromDevice, toDevice, params);
-        // ACK命令不需要特殊参数验证
+        if (req.getContent() != null) {
+            return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice(), req.getContent(),
+                    req.getContent(), req.getErrorEvent(), req.getOkEvent());
+        } else {
+            return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice());
+        }
     }
 }

@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author luna
  */
-@Component
+@Component("clientInviteRequestProcessor")
 @Getter
 @Setter
 @Slf4j

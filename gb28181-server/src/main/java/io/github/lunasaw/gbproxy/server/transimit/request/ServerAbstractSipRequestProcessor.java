@@ -1,7 +1,6 @@
 package io.github.lunasaw.gbproxy.server.transimit.request;
 
 import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
-import org.springframework.stereotype.Component;
 
 /**
  * Server模块SIP请求处理器抽象基类
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Component;
  *
  * @author luna
  */
-@Component
 public abstract class ServerAbstractSipRequestProcessor extends SipRequestProcessorAbstract {
 
 }

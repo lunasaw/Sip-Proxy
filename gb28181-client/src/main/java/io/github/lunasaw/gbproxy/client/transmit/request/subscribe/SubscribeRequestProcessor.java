@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author luna
  */
-@Component
+@Component("clientSubscribeRequestProcessor")
 @Getter
 @Setter
 @Slf4j

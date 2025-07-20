@@ -581,4 +581,17 @@ public class ServerSendCmd {
         Assert.notNull(controlBody, "不支持的操作类型");
         return SipSender.doInfoRequest(fromDevice, toDevice, controlBody);
     }
+
+    /**
+     * 通用设备控制命令发送（支持所有DeviceControlBase子类）
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param controlCmd 控制命令对象（如DeviceControlPtz、DeviceControlGuard等）
+     * @return callId
+     */
+    public static String deviceControl(FromDevice fromDevice, ToDevice toDevice, DeviceControlBase controlCmd) {
+        Assert.notNull(controlCmd, "控制命令对象不能为空");
+        return SipSender.doMessageRequest(fromDevice, toDevice, controlCmd.toString());
+    }
 }

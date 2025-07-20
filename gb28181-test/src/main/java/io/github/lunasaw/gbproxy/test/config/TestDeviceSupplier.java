@@ -66,14 +66,14 @@ public class TestDeviceSupplier implements DeviceSupplier {
      * 创建客户端From设备
      */
     private Device createClientFromDevice() {
-        return FromDevice.getInstance("33010602011187000001", LOOP_IP, 8118);
+        return FromDevice.getInstance("33010602011187000001", LOOP_IP, 5061);
     }
 
     /**
      * 创建客户端To设备
      */
     private Device createClientToDevice() {
-        ToDevice device = ToDevice.getInstance("41010500002000000001", LOOP_IP, 8117);
+        ToDevice device = ToDevice.getInstance("41010500002000000001", LOOP_IP, 5060);
         device.setPassword("bajiuwulian1006");
         device.setRealm("4101050000");
         return device;
@@ -83,7 +83,7 @@ public class TestDeviceSupplier implements DeviceSupplier {
      * 创建服务端From设备
      */
     private Device createServerFromDevice() {
-        FromDevice device = FromDevice.getInstance("41010500002000000001", LOOP_IP, 8117);
+        FromDevice device = FromDevice.getInstance("41010500002000000001", LOOP_IP, 5060);
         device.setPassword("bajiuwulian1006");
         device.setRealm("4101050000");
         return device;
@@ -93,7 +93,7 @@ public class TestDeviceSupplier implements DeviceSupplier {
      * 创建服务端To设备
      */
     private Device createServerToDevice() {
-        ToDevice device = ToDevice.getInstance("33010602011187000001", LOOP_IP, 8118);
+        ToDevice device = ToDevice.getInstance("33010602011187000001", LOOP_IP, 5061);
         return device;
     }
 

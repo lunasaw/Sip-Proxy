@@ -34,7 +34,7 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
     @Override
     public String getRootType() {
-        return ServerMessageRequestProcessor.METHOD + NOTIFY;
+        return NOTIFY;
     }
 
     @Override

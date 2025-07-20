@@ -9,6 +9,9 @@ import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * 抽象服务端命令策略基类
  * 提供通用的命令执行逻辑和工具方法
@@ -20,25 +23,41 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractServerCommandStrategy implements ServerCommandStrategy {
 
     @Override
-    public String execute(FromDevice fromDevice, ToDevice toDevice, Object... params) {
+    public String execute(FromDevice fromDevice, ToDevice toDevice, Map<String, Object> params) {
         return execute(fromDevice, toDevice, null, null, params);
     }
 
     @Override
-    public String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Object... params) {
+    public String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Map<String, Object> params) {
+        // 构建请求对象
+        ServerCommandStrategyReq req = ServerCommandStrategyReq.builder()
+                .fromDevice(fromDevice)
+                .toDevice(toDevice)
+                .errorEvent(errorEvent)
+                .okEvent(okEvent)
+                .paramMap(params)
+                .build();
+
+        return execute(req);
+    }
+
+    @Override
+    public String execute(ServerCommandStrategyReq req) {
         try {
-            Assert.notNull(fromDevice, "发送设备不能为空");
-            Assert.notNull(toDevice, "接收设备不能为空");
-            log.debug("执行命令: {}, 发送设备: {}, 接收设备: {}", getCommandType(), fromDevice.getUserId(), toDevice.getUserId());
+            Assert.notNull(req, "命令请求参数不能为空");
+            Assert.notNull(req.getFromDevice(), "发送设备不能为空");
+            Assert.notNull(req.getToDevice(), "接收设备不能为空");
+            log.debug("执行命令: {}, 发送设备: {}, 接收设备: {}", getCommandType(), req.getFromDevice().getUserId(), req.getToDevice().getUserId());
 
             // 参数校验
-            validateParams(fromDevice, toDevice, params);
+            validateParams(req);
 
             // 构建命令内容
-            String content = buildCommandContent(fromDevice, toDevice, params);
+            String content = buildCommandContent(req);
+            req.setContent(content);
 
             // 发送命令
-            String callId = sendCommand(fromDevice, toDevice, content, errorEvent, okEvent);
+            String callId = sendCommand(req);
 
             log.debug("命令执行成功: {}, callId: {}", getCommandType(), callId);
             return callId;
@@ -52,39 +71,34 @@ public abstract class AbstractServerCommandStrategy implements ServerCommandStra
     /**
      * 参数校验
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param params     参数
+     * @param req 命令请求参数
      */
-    protected void validateParams(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        Assert.notNull(fromDevice, "发送设备不能为空");
-        Assert.notNull(toDevice, "接收设备不能为空");
-        Assert.notNull(fromDevice.getUserId(), "发送设备ID不能为空");
-        Assert.notNull(toDevice.getUserId(), "接收设备ID不能为空");
+    protected void validateParams(ServerCommandStrategyReq req) {
+        Assert.notNull(req.getFromDevice(), "发送设备不能为空");
+        Assert.notNull(req.getToDevice(), "接收设备不能为空");
+        Assert.notNull(req.getFromDevice().getUserId(), "发送设备ID不能为空");
+        Assert.notNull(req.getToDevice().getUserId(), "接收设备ID不能为空");
     }
 
     /**
      * 构建命令内容
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param params     参数
+     * @param req 命令请求参数
      * @return 命令内容
      */
-    protected abstract String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params);
+    protected String buildCommandContent(ServerCommandStrategyReq req) {
+        // 默认实现：从paramMap中获取content参数
+        return Optional.ofNullable(req.getParamMap()).map(map -> map.get("content")).map(Object::toString).orElse(req.getContent());
+    }
 
     /**
      * 发送命令
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param content    命令内容
-     * @param errorEvent 错误事件
-     * @param okEvent    成功事件
+     * @param req 命令请求参数
      * @return callId
      */
-    protected String sendCommand(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
-        return SipSender.doMessageRequest(fromDevice, toDevice, content, errorEvent, okEvent);
+    protected String sendCommand(ServerCommandStrategyReq req) {
+        return SipSender.doMessageRequest(req.getFromDevice(), req.getToDevice(), req.getContent(), req.getErrorEvent(), req.getOkEvent());
     }
 
     /**

@@ -4,7 +4,6 @@ import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceKeepLiveNotify;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
@@ -37,7 +36,7 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
 
     @Override
     public String getRootType() {
-        return ServerMessageRequestProcessor.METHOD + NOTIFY;
+        return NOTIFY;
     }
 
 
@@ -59,6 +58,9 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
 
         RemoteAddressInfo remoteAddressInfo = SipUtils.getRemoteAddressFromRequest((SIPRequest) event.getRequest());
         serverMessageProcessorHandler.updateRemoteAddress(userId, remoteAddressInfo);
+
+        // 发送200 OK响应
+        responseAck(event);
     }
 
     @Override

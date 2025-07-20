@@ -38,7 +38,7 @@ public class CatalogQueryMessageClientHandler extends MessageClientHandlerAbstra
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Query";
+        return "Query";
     }
 
     @Override

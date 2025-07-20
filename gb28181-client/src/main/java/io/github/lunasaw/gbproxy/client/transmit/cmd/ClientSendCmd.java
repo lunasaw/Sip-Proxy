@@ -221,7 +221,7 @@ public class ClientSendCmd {
             mobilePositionNotify.setSn(RandomStrUtil.getValidationCode());
         }
         mobilePositionNotify.setDeviceId(fromDevice.getUserId());
-        return SipSender.doNotifyRequest(fromDevice, toDevice, mobilePositionNotify.toString(), subscribeInfo);
+        return SipSender.doNotifyRequest(fromDevice, toDevice, mobilePositionNotify.toString(), subscribeInfo, null, null);
     }
 
     // ==================== 设备更新相关命令 ====================
@@ -244,7 +244,7 @@ public class ClientSendCmd {
         );
         deviceUpdateNotify.setSumNum(deviceItems.size());
         deviceUpdateNotify.setDeviceItemList(deviceItems);
-        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo);
+        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo, null, null);
     }
 
     /**
@@ -265,7 +265,7 @@ public class ClientSendCmd {
         );
         deviceUpdateNotify.setSumNum(deviceItems.size());
         deviceUpdateNotify.setDeviceItemList(deviceItems);
-        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo);
+        return SipSender.doNotifyRequest(fromDevice, toDevice, deviceUpdateNotify.toString(), subscribeInfo, null, null);
     }
 
     // ==================== 录像相关命令 ====================
@@ -319,25 +319,6 @@ public class ClientSendCmd {
      */
     public static String deviceConfigResponse(FromDevice fromDevice, ToDevice toDevice, DeviceConfigResponse deviceConfigResponse) {
         return SipSender.doMessageRequest(fromDevice, toDevice, deviceConfigResponse.toString());
-    }
-
-    /**
-     * 设备配置上报（基础参数）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice 接收设备
-     * @param basicParam 基础参数
-     * @return callId
-     */
-    public static String deviceConfigResponse(FromDevice fromDevice, ToDevice toDevice, DeviceConfigResponse.BasicParam basicParam) {
-        DeviceConfigResponse configResponse = new DeviceConfigResponse(
-                CmdTypeEnum.DEVICE_CONFIG.getType(),
-                RandomStrUtil.getValidationCode(),
-                fromDevice.getUserId()
-        );
-        configResponse.setBasicParam(basicParam);
-        configResponse.setResult("ok");
-        return deviceConfigResponse(fromDevice, toDevice, configResponse);
     }
 
     // ==================== 媒体状态相关命令 ====================

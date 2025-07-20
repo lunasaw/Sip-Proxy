@@ -4,6 +4,8 @@ import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 
+import java.util.Map;
+
 /**
  * 服务端命令策略接口
  * 定义统一的命令执行策略，支持不同类型的GB28181命令
@@ -21,7 +23,7 @@ public interface ServerCommandStrategy {
      * @param params     命令参数
      * @return callId
      */
-    String execute(FromDevice fromDevice, ToDevice toDevice, Object... params);
+    String execute(FromDevice fromDevice, ToDevice toDevice, Map<String, Object> params);
 
     /**
      * 执行命令（带事件）
@@ -33,7 +35,15 @@ public interface ServerCommandStrategy {
      * @param params     命令参数
      * @return callId
      */
-    String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Object... params);
+    String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Map<String, Object> params);
+
+    /**
+     * 执行命令（使用请求对象）
+     *
+     * @param req 命令请求参数
+     * @return callId
+     */
+    String execute(ServerCommandStrategyReq req);
 
     /**
      * 获取命令类型

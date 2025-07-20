@@ -10,6 +10,8 @@ import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
+import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
+import io.github.lunasaw.gb28181.common.entity.response.ConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -296,15 +298,15 @@ public class ClientCommandSender {
     }
 
     /**
-     * 发送设备配置响应命令（基础参数）
+     * 发送设备配置查询应答
      *
      * @param fromDevice 发送设备
      * @param toDevice   接收设备
-     * @param basicParam 基础参数
+     * @param response   配置查询应答对象
      * @return callId
      */
-    public static String sendDeviceConfigCommand(FromDevice fromDevice, ToDevice toDevice, DeviceConfigResponse.BasicParam basicParam) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, basicParam);
+    public static String sendConfigDownloadResponse(FromDevice fromDevice, ToDevice toDevice, ConfigDownloadResponse response) {
+        return sendCommand("MESSAGE", fromDevice, toDevice, response);
     }
 
     // ==================== 媒体状态相关命令 ====================
@@ -325,6 +327,31 @@ public class ClientCommandSender {
         );
         mediaStatusNotify.setNotifyType(notifyType);
         return sendCommand("MESSAGE", fromDevice, toDevice, mediaStatusNotify);
+    }
+
+    /**
+     * 发送设备预置位查询应答
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param response   预置位查询应答对象
+     * @return callId
+     */
+    public static String sendPresetQueryResponse(FromDevice fromDevice, ToDevice toDevice, PresetQueryResponse response) {
+        return sendCommand("MESSAGE", fromDevice, toDevice, response);
+    }
+
+
+    /**
+     * 发送设备预置位查询应答
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param response   预置位查询应答对象
+     * @return callId
+     */
+    public static String sendMobilePositionNotify(FromDevice fromDevice, ToDevice toDevice, MobilePositionNotify response) {
+        return sendCommand("MESSAGE", fromDevice, toDevice, response);
     }
 
 

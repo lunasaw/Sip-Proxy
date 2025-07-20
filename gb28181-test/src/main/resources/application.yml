@@ -1,0 +1,164 @@
+# GB28181测试模块配置
+spring:
+  application:
+    name: gb28181-test
+  profiles:
+    active: test
+
+# 测试套件配置
+test:
+  mode: auto                    # 测试模式: auto/manual
+  suite: all                    # 测试套件: all/server/client/integration
+  concurrent: false             # 是否并发执行测试
+  report: true                  # 是否生成测试报告
+  timeout: 30                   # 测试超时时间(秒)
+  retry-count: 3                # 测试重试次数
+  interval: 1000                # 测试间隔时间(毫秒)
+  continue-on-failure: true     # 测试失败时是否继续
+  output-dir: target/test-results  # 测试结果输出目录
+  verbose: true                 # 是否输出详细日志
+  test-data-dir: src/test/resources/test-data     # 测试数据目录
+  scenario-dir: src/test/resources/test-scenarios  # 测试场景配置目录
+
+  # 服务端测试配置
+  server:
+    ip: 127.0.0.1
+    port: 5060
+    domain: "44050100"
+    server-id: "44050100002000000001"
+    server-name: "GB28181-Server-Test"
+    username: "admin"
+    password: "123456"
+    realm: "44050100"
+    register-timeout: 60
+    heartbeat-timeout: 30
+    invite-timeout: 30
+    max-devices: 1000
+    auth-enabled: true
+    device-monitor-enabled: true
+    media-server:
+      ip: 127.0.0.1
+      rtp-port-start: 10000
+      rtp-port-end: 20000
+      rtcp-port-start: 20001
+      rtcp-port-end: 30000
+
+  # 客户端测试配置
+  client:
+    ip: 127.0.0.1
+    port: 5061
+    server-ip: 127.0.0.1
+    server-port: 5060
+    domain: "44050100"
+    device-id: "44050100001327000001"
+    device-name: "GB28181-Client-Test"
+    manufacturer: "TestManufacturer"
+    model: "TestModel"
+    firmware: "V1.0.0"
+    username: "admin"
+    password: "123456"
+    register-expires: 3600
+    keepalive-interval: 60
+    max-retries: 3
+    retry-delay: 5000
+    auto-register: true
+    auto-keepalive: true
+    channels:
+      - channel-id: "44050100001327000002"
+        channel-name: "测试通道1"
+        channel-type: 1
+        status: "ON"
+        parent-id: "44050100001327000001"
+        address: "测试地址1"
+        has-record: true
+        record-type: "time"
+      - channel-id: "44050100001327000003"
+        channel-name: "测试通道2"
+        channel-type: 2
+        status: "ON"
+        parent-id: "44050100001327000001"
+        address: "测试地址2"
+        has-record: true
+        record-type: "alarm"
+
+# SIP基础配置
+sip:
+  local:
+    ip: 127.0.0.1
+    port: 5060
+    transport: UDP
+    charset: UTF-8
+  
+  performance:
+    enable-async: true
+    thread-pool-size: 50
+    cache-enable: true
+    cache-size: 1000
+  
+  monitor:
+    enable: true
+    metrics-enable: true
+
+# GB28181协议配置
+gb28181:
+  # 服务端配置
+  server:
+    device:
+      domain: "44050100"
+      server-id: "44050100002000000001"
+      server-name: "GB28181-Server-Test"
+    auth:
+      enable: true
+      realm: "44050100"
+      username: "admin"
+      password: "123456"
+    timeout:
+      register: 60
+      heartbeat: 30
+      invite: 30
+
+  # 客户端配置  
+  client:
+    device:
+      domain: "44050100"
+      device-id: "44050100001327000001"
+      device-name: "GB28181-Client-Test"
+      manufacturer: "TestManufacturer"
+      model: "TestModel"
+      firmware: "V1.0.0"
+    auth:
+      username: "admin"
+      password: "123456"
+    timeout:
+      register-expires: 3600
+      keepalive-interval: 60
+
+# 日志配置
+logging:
+  level:
+    io.github.lunasaw: DEBUG
+    io.github.lunasaw.gbproxy.test: INFO
+    gov.nist.javax.sip: WARN
+    org.springframework: INFO
+    root: INFO
+  pattern:
+    console: "[%d{HH:mm:ss.SSS}] [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level [%logger{50}] - %msg%n"
+  file:
+    name: logs/gb28181-test.log
+    max-size: 100MB
+    max-history: 30
+
+# 管理端点配置(用于健康检查和指标收集)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true

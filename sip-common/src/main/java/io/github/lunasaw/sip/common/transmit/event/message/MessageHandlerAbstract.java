@@ -1,14 +1,6 @@
 package io.github.lunasaw.sip.common.transmit.event.message;
 
-import java.nio.charset.Charset;
-
-import javax.sip.RequestEvent;
-import javax.sip.message.Response;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.luna.common.text.StringTools;
-
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.sip.common.constant.Constant;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
@@ -16,34 +8,45 @@ import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.InitializingBean;
+
+import javax.sip.RequestEvent;
+import javax.sip.message.Response;
+import java.nio.charset.Charset;
 
 /**
  * @author weidian
  */
 @Getter
 @Setter
-public abstract class MessageHandlerAbstract implements MessageHandler {
+public abstract class MessageHandlerAbstract implements MessageHandler, InitializingBean {
 
     private String xmlStr;
 
     public static <T> T parseRequest(RequestEvent event, String charset, Class<T> clazz) {
-        SIPRequest sipRequest = (SIPRequest)event.getRequest();
+        SIPRequest sipRequest = (SIPRequest) event.getRequest();
         byte[] rawContent = sipRequest.getRawContent();
         if (StringUtils.isBlank(charset)) {
             charset = Constant.UTF_8;
         }
         String xmlStr = StringTools.toEncodedString(rawContent, Charset.forName(charset));
         Object o = XmlUtils.parseObj(xmlStr, clazz);
-        return (T)o;
+        return (T) o;
     }
 
     public static String parseRequest(RequestEvent event, String charset) {
-        SIPRequest sipRequest = (SIPRequest)event.getRequest();
+        SIPRequest sipRequest = (SIPRequest) event.getRequest();
         byte[] rawContent = sipRequest.getRawContent();
         if (StringUtils.isBlank(charset)) {
             charset = Constant.UTF_8;
         }
         return StringTools.toEncodedString(rawContent, Charset.forName(charset));
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        SipMessageRequestProcessorAbstract.addHandler(this);
     }
 
     @Override
@@ -53,6 +56,10 @@ public abstract class MessageHandlerAbstract implements MessageHandler {
 
     @Override
     public String getRootType() {
+        return null;
+    }
+
+    public String getMethod() {
         return null;
     }
 
@@ -87,6 +94,6 @@ public abstract class MessageHandlerAbstract implements MessageHandler {
         if (StringUtils.isBlank(xmlStr)) {
             return null;
         }
-        return (T)XmlUtils.parseObj(xmlStr, clazz);
+        return (T) XmlUtils.parseObj(xmlStr, clazz);
     }
 }

@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Setter
-@Component
+@Component("serverRegisterRequestProcessor")
 @Slf4j
 public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProcessor {
 

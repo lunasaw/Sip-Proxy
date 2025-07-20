@@ -24,9 +24,9 @@ public class MessageCommandStrategy extends AbstractClientCommandStrategy {
         if (params.length > 0) {
             Object param = params[0];
 
-            // 如果参数是字符串，直接返回
+            // 如果参数是字符串，使用父类默认实现
             if (param instanceof String) {
-                return (String) param;
+                return super.buildCommandContent(fromDevice, toDevice, params);
             }
 
             // 如果参数是对象，尝试转换为XML

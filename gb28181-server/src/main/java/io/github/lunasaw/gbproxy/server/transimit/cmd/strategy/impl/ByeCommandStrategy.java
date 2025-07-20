@@ -1,10 +1,8 @@
 package io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.impl;
 
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.AbstractServerCommandStrategy;
-import io.github.lunasaw.sip.common.transmit.event.Event;
+import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.ServerCommandStrategyReq;
+import io.github.lunasaw.sip.common.transmit.SipSender;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -18,12 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ByeCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override
-    protected String buildCommandContent(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // BYE命令通常不需要内容
-        return null;
-    }
-
-    @Override
     public String getCommandType() {
         return "BYE";
     }
@@ -34,14 +26,8 @@ public class ByeCommandStrategy extends AbstractServerCommandStrategy {
     }
 
     @Override
-    protected String sendCommand(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
+    protected String sendCommand(ServerCommandStrategyReq req) {
         // 发送BYE请求
-        return SipSender.doByeRequest(fromDevice, toDevice, errorEvent, okEvent);
-    }
-
-    @Override
-    protected void validateParams(FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        super.validateParams(fromDevice, toDevice, params);
-        // BYE命令不需要特殊参数验证
+        return SipSender.doByeRequest(req.getFromDevice(), req.getToDevice());
     }
 }
