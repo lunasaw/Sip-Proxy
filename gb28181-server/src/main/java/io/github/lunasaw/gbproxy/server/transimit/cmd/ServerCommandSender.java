@@ -20,6 +20,7 @@ import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.ServerCommandStra
 import io.github.lunasaw.gbproxy.server.transimit.cmd.strategy.ServerCommandStrategyFactory;
 
 import java.util.Date;
+import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +45,7 @@ public class ServerCommandSender {
      * @param params      命令参数
      * @return callId
      */
-    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Object... params) {
+    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Map<String, Object> params) {
         // 如果没有对应的策略，使用MESSAGE策略
         ServerCommandStrategy strategy;
         try {
@@ -68,7 +69,7 @@ public class ServerCommandSender {
      * @return callId
      */
     public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent,
-                                     Object... params) {
+                                     Map<String, Object> params) {
         // 如果没有对应的策略，使用MESSAGE策略
         ServerCommandStrategy strategy;
         try {
@@ -91,7 +92,7 @@ public class ServerCommandSender {
      */
     public static String deviceInfoQuery(FromDevice fromDevice, ToDevice toDevice) {
         DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.DEVICE_INFO.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
     }
 
     /**
@@ -103,7 +104,7 @@ public class ServerCommandSender {
      */
     public static String deviceStatusQuery(FromDevice fromDevice, ToDevice toDevice) {
         DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.DEVICE_STATUS.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
     }
 
     /**
@@ -115,7 +116,7 @@ public class ServerCommandSender {
      */
     public static String deviceCatalogQuery(FromDevice fromDevice, ToDevice toDevice) {
         DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.CATALOG.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
     }
 
     /**
@@ -127,7 +128,7 @@ public class ServerCommandSender {
      */
     public static String devicePresetQuery(FromDevice fromDevice, ToDevice toDevice) {
         DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.PRESET_QUERY.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
     }
 
     // ==================== 设备录像查询相关命令 ====================
@@ -145,7 +146,7 @@ public class ServerCommandSender {
         DeviceRecordQuery deviceRecordQuery = new DeviceRecordQuery(CmdTypeEnum.RECORD_INFO.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
         deviceRecordQuery.setStartTime(startTime);
         deviceRecordQuery.setEndTime(endTime);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceRecordQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceRecordQuery));
     }
 
     /**
@@ -191,7 +192,7 @@ public class ServerCommandSender {
     public static String deviceMobilePositionQuery(FromDevice fromDevice, ToDevice toDevice, String interval) {
         DeviceMobileQuery deviceMobileQuery = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
         deviceMobileQuery.setInterval(interval);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceMobileQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceMobileQuery));
     }
 
     // ==================== 设备订阅相关命令 ====================
@@ -212,7 +213,7 @@ public class ServerCommandSender {
         subscribeInfo.setEventType(eventType);
         subscribeInfo.setExpires(expires);
 
-        return sendCommand("SUBSCRIBE", fromDevice, toDevice, deviceQuery, subscribeInfo);
+        return sendCommand("SUBSCRIBE", fromDevice, toDevice, Map.of("content", deviceQuery, "subscribeInfo", subscribeInfo));
     }
 
     /**
@@ -235,7 +236,7 @@ public class ServerCommandSender {
         subscribeInfo.setEventType(eventType);
         subscribeInfo.setExpires(expires);
 
-        return sendCommand("SUBSCRIBE", fromDevice, toDevice, deviceMobileQuery, subscribeInfo);
+        return sendCommand("SUBSCRIBE", fromDevice, toDevice, Map.of("content", deviceMobileQuery, "subscribeInfo", subscribeInfo));
     }
 
     // ==================== 设备告警相关命令 ====================
@@ -262,7 +263,7 @@ public class ServerCommandSender {
         deviceAlarmQuery.setEndAlarmPriority(endPriority);
         deviceAlarmQuery.setAlarmMethod(alarmMethod);
         deviceAlarmQuery.setAlarmType(alarmType);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceAlarmQuery);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceAlarmQuery));
     }
 
     // ==================== 设备控制相关命令 ====================
@@ -278,7 +279,7 @@ public class ServerCommandSender {
     public static String deviceControlGuardCmd(FromDevice fromDevice, ToDevice toDevice, String guardCmdStr) {
         DeviceControlGuard deviceControlGuard = new DeviceControlGuard(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
         deviceControlGuard.setGuardCmd(guardCmdStr);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceControlGuard);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlGuard));
     }
 
     /**
@@ -296,7 +297,7 @@ public class ServerCommandSender {
         alarmInfo.setAlarmMethod(alarmMethod);
         alarmInfo.setAlarmType(alarmType);
         deviceControlAlarm.setAlarmInfo(alarmInfo);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceControlAlarm);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlAlarm));
     }
 
     /**
@@ -325,7 +326,7 @@ public class ServerCommandSender {
         DeviceControlPtz deviceControlPtz = new DeviceControlPtz(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
         deviceControlPtz.setPtzCmd(ptzCmd);
         deviceControlPtz.setPtzInfo(new DeviceControlPtz.PtzInfo());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceControlPtz);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlPtz));
     }
 
     /**
@@ -337,7 +338,7 @@ public class ServerCommandSender {
      */
     public static String deviceControlReboot(FromDevice fromDevice, ToDevice toDevice) {
         DeviceControlTeleBoot deviceControlTeleBoot = new DeviceControlTeleBoot(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceControlTeleBoot);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlTeleBoot));
     }
 
     /**
@@ -351,7 +352,7 @@ public class ServerCommandSender {
     public static String deviceControlRecord(FromDevice fromDevice, ToDevice toDevice, String recordCmd) {
         DeviceControlRecordCmd deviceControlRecordCmd = new DeviceControlRecordCmd(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
         deviceControlRecordCmd.setRecordCmd(recordCmd);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceControlRecordCmd);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlRecordCmd));
     }
 
     // ==================== 设备配置相关命令 ====================
@@ -376,7 +377,7 @@ public class ServerCommandSender {
 
         deviceConfigControl.setBasicParam(new DeviceConfigControl.BasicParam(name, expiration, heartBeatInterval, heartBeatCount));
 
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceConfigControl);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceConfigControl));
     }
 
     /**
@@ -390,7 +391,7 @@ public class ServerCommandSender {
     public static String deviceConfigDownload(FromDevice fromDevice, ToDevice toDevice, String configType) {
         DeviceConfigDownload deviceConfigDownload = new DeviceConfigDownload(CmdTypeEnum.CONFIG_DOWNLOAD.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
         deviceConfigDownload.setConfigType(configType);
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceConfigDownload);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceConfigDownload));
     }
 
     // ==================== 设备广播相关命令 ====================
@@ -404,7 +405,7 @@ public class ServerCommandSender {
      */
     public static String deviceBroadcast(FromDevice fromDevice, ToDevice toDevice) {
         DeviceBroadcastNotify deviceBroadcastNotify = new DeviceBroadcastNotify(CmdTypeEnum.BROADCAST.getType(), fromDevice.getUserId(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceBroadcastNotify);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceBroadcastNotify));
     }
 
     // ==================== 设备点播相关命令 ====================
@@ -433,7 +434,7 @@ public class ServerCommandSender {
      */
     public static String deviceInvitePlay(FromDevice fromDevice, ToDevice toDevice, InviteRequest inviteRequest) {
         String content = inviteRequest.getContent();
-        return sendCommand("INVITE", fromDevice, toDevice, content);
+        return sendCommand("INVITE", fromDevice, toDevice, Map.of("content", content));
     }
 
     /**
@@ -464,7 +465,7 @@ public class ServerCommandSender {
      */
     public static String deviceInvitePlayBack(FromDevice fromDevice, ToDevice toDevice, InviteRequest inviteRequest) {
         String content = inviteRequest.getBackContent();
-        return sendCommand("INVITE", fromDevice, toDevice, content);
+        return sendCommand("INVITE", fromDevice, toDevice, Map.of("content", content));
     }
 
     /**
@@ -478,7 +479,7 @@ public class ServerCommandSender {
     public static String deviceInvitePlayBackControl(FromDevice fromDevice, ToDevice toDevice, PlayActionEnums playActionEnums) {
         String controlBody = playActionEnums.getControlBody();
         Assert.notNull(controlBody, "不支持的操作类型");
-        return sendCommand("INFO", fromDevice, toDevice, controlBody);
+        return sendCommand("INFO", fromDevice, toDevice, Map.of("controlBody", controlBody));
     }
 
     // ==================== 会话控制相关命令 ====================
@@ -491,7 +492,7 @@ public class ServerCommandSender {
      * @return callId
      */
     public static String deviceAck(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("ACK", fromDevice, toDevice);
+        return sendCommand("ACK", fromDevice, toDevice, Map.of());
     }
 
     /**
@@ -503,7 +504,7 @@ public class ServerCommandSender {
      * @return callId
      */
     public static String deviceAck(FromDevice fromDevice, ToDevice toDevice, String callId) {
-        return sendCommand("ACK", fromDevice, toDevice, callId);
+        return sendCommand("ACK", fromDevice, toDevice, Map.of("callId", callId));
     }
 
     /**
@@ -514,7 +515,7 @@ public class ServerCommandSender {
      * @return callId
      */
     public static String deviceBye(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("BYE", fromDevice, toDevice);
+        return sendCommand("BYE", fromDevice, toDevice, Map.of());
     }
 
     // ==================== 建造者模式 ====================
@@ -530,7 +531,7 @@ public class ServerCommandSender {
         private Event errorEvent;
         private Event okEvent;
         private SubscribeInfo subscribeInfo;
-        private Object[] params;
+        private Map<String, Object> params;
 
         public CommandBuilder commandType(String commandType) {
             this.commandType = commandType;
@@ -562,14 +563,15 @@ public class ServerCommandSender {
             return this;
         }
 
-        public CommandBuilder params(Object... params) {
+        public CommandBuilder params(Map<String, Object> params) {
             this.params = params;
             return this;
         }
 
         public String execute() {
             if (subscribeInfo != null) {
-                return sendCommand(commandType, fromDevice, toDevice, subscribeInfo, params);
+                params.put("subscribeInfo", subscribeInfo);
+                return sendCommand(commandType, fromDevice, toDevice, params);
             } else {
                 return sendCommand(commandType, fromDevice, toDevice, errorEvent, okEvent, params);
             }

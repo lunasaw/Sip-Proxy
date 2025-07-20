@@ -40,7 +40,7 @@ public class DeviceControlMessageHandler extends MessageClientHandlerAbstract {
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Control";
+        return "Control";
     }
 
     @Override

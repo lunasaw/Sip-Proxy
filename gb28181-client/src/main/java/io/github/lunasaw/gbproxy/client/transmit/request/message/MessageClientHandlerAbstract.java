@@ -43,6 +43,13 @@ public abstract class MessageClientHandlerAbstract extends MessageHandlerAbstrac
         return "Root";
     }
 
+
+    @Override
+    public String getMethod() {
+        return "MESSAGE";
+    }
+
+
     /**
      * 获取设备会话信息
      * 客户端收到消息时，fromHeader是服务端，toHeader是客户端

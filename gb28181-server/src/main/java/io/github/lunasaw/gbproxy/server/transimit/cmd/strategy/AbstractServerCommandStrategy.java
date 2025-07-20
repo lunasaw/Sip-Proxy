@@ -9,6 +9,9 @@ import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * 抽象服务端命令策略基类
  * 提供通用的命令执行逻辑和工具方法
@@ -20,30 +23,20 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractServerCommandStrategy implements ServerCommandStrategy {
 
     @Override
-    public String execute(FromDevice fromDevice, ToDevice toDevice, Object... params) {
+    public String execute(FromDevice fromDevice, ToDevice toDevice, Map<String, Object> params) {
         return execute(fromDevice, toDevice, null, null, params);
     }
 
     @Override
-    public String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Object... params) {
+    public String execute(FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent, Map<String, Object> params) {
         // 构建请求对象
         ServerCommandStrategyReq req = ServerCommandStrategyReq.builder()
                 .fromDevice(fromDevice)
                 .toDevice(toDevice)
                 .errorEvent(errorEvent)
                 .okEvent(okEvent)
+                .paramMap(params)
                 .build();
-
-        // 将参数放入paramMap，第一个参数作为"content"，其他参数按索引命名
-        if (params != null && params.length > 0) {
-            for (int i = 0; i < params.length; i++) {
-                if (i == 0) {
-                    req.getParamMap().put("content", params[i]);
-                } else {
-                    req.getParamMap().put("param" + i, params[i]);
-                }
-            }
-        }
 
         return execute(req);
     }
@@ -95,11 +88,7 @@ public abstract class AbstractServerCommandStrategy implements ServerCommandStra
      */
     protected String buildCommandContent(ServerCommandStrategyReq req) {
         // 默认实现：从paramMap中获取content参数
-        Object content = req.getParamMap().get("content");
-        if (content instanceof String) {
-            return (String) content;
-        }
-        return null;
+        return Optional.ofNullable(req.getParamMap()).map(map -> map.get("content")).map(Object::toString).orElse(req.getContent());
     }
 
     /**

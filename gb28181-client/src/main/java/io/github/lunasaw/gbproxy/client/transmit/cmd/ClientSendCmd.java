@@ -321,25 +321,6 @@ public class ClientSendCmd {
         return SipSender.doMessageRequest(fromDevice, toDevice, deviceConfigResponse.toString());
     }
 
-    /**
-     * 设备配置上报（基础参数）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice 接收设备
-     * @param basicParam 基础参数
-     * @return callId
-     */
-    public static String deviceConfigResponse(FromDevice fromDevice, ToDevice toDevice, DeviceConfigResponse.BasicParam basicParam) {
-        DeviceConfigResponse configResponse = new DeviceConfigResponse(
-                CmdTypeEnum.DEVICE_CONFIG.getType(),
-                RandomStrUtil.getValidationCode(),
-                fromDevice.getUserId()
-        );
-        configResponse.setBasicParam(basicParam);
-        configResponse.setResult("ok");
-        return deviceConfigResponse(fromDevice, toDevice, configResponse);
-    }
-
     // ==================== 媒体状态相关命令 ====================
 
     /**

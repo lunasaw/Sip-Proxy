@@ -43,7 +43,7 @@ public class DeviceStatusQueryMessageClientHandler extends MessageClientHandlerA
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Query";
+        return "Query";
     }
 
     @Override

@@ -37,7 +37,7 @@ public class DeviceInfoQueryMessageClientHandler extends MessageClientHandlerAbs
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Query";
+        return "Query";
     }
 
     @Override

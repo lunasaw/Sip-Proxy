@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
+ * 设备移动位置查询
  * @author luna
  */
 @Getter

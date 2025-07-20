@@ -37,7 +37,7 @@ public class RecordInfoQueryMessageClientHandler extends MessageClientHandlerAbs
 
     @Override
     public String getRootType() {
-        return ClientMessageRequestProcessor.METHOD + "Query";
+        return "Query";
     }
 
     @Override
