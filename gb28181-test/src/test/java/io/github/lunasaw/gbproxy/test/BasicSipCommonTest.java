@@ -44,16 +44,16 @@ import java.util.concurrent.atomic.AtomicReference;
 public class BasicSipCommonTest {
 
     @Autowired(required = false)
-    private TestDeviceSupplier deviceSupplier;
+    protected TestDeviceSupplier deviceSupplier;
 
     @Autowired(required = false)
-    private SipLayer sipLayer;
+    protected SipLayer sipLayer;
 
     @Autowired(required = false)
-    private SipListener sipListener;
+    protected SipListener sipListener;
 
     @Autowired(required = false)
-    private io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor serverMessageRequestProcessor;
+    protected io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor serverMessageRequestProcessor;
 
     @BeforeEach
     public void setUp() {

@@ -36,7 +36,7 @@ public class DeviceInfoMessageServerHandler extends MessageServerHandlerAbstract
 
     @Override
     public String getRootType() {
-        return ServerMessageRequestProcessor.METHOD + RESPONSE;
+        return RESPONSE;
     }
 
     @Override

@@ -7,6 +7,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
@@ -33,6 +34,36 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
     private static CountDownLatch keepaliveLatch;
     private static AtomicBoolean keepaliveReceived = new AtomicBoolean(false);
     private static AtomicReference<DeviceKeepLiveNotify> receivedKeepalive = new AtomicReference<>();
+
+    // === 新增：报警 ===
+    private static CountDownLatch alarmLatch;
+    private static AtomicBoolean alarmReceived = new AtomicBoolean(false);
+    private static AtomicReference<DeviceAlarmNotify> receivedAlarm = new AtomicReference<>();
+
+    // === 新增：目录 ===
+    private static CountDownLatch catalogLatch;
+    private static AtomicBoolean catalogReceived = new AtomicBoolean(false);
+    private static AtomicReference<DeviceResponse> receivedCatalog = new AtomicReference<>();
+
+    // === 新增：设备信息 ===
+    private static CountDownLatch deviceInfoLatch;
+    private static AtomicBoolean deviceInfoReceived = new AtomicBoolean(false);
+    private static AtomicReference<DeviceInfo> receivedDeviceInfo = new AtomicReference<>();
+
+    // === 新增：设备状态 ===
+    private static CountDownLatch deviceStatusLatch;
+    private static AtomicBoolean deviceStatusReceived = new AtomicBoolean(false);
+    private static AtomicReference<io.github.lunasaw.gb28181.common.entity.response.DeviceStatus> receivedDeviceStatus = new AtomicReference<>();
+
+    // === 新增：录像 ===
+    private static CountDownLatch deviceRecordLatch;
+    private static AtomicBoolean deviceRecordReceived = new AtomicBoolean(false);
+    private static AtomicReference<DeviceRecord> receivedDeviceRecord = new AtomicReference<>();
+
+    // === 新增：设备配置 ===
+    private static CountDownLatch deviceConfigLatch;
+    private static AtomicBoolean deviceConfigReceived = new AtomicBoolean(false);
+    private static AtomicReference<DeviceConfigResponse> receivedDeviceConfig = new AtomicReference<>();
 
     @Override
     public void handleMessageRequest(RequestEvent evt, FromDevice fromDevice) {
@@ -83,6 +114,9 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
     @Override
     public void updateDeviceAlarm(DeviceAlarmNotify deviceAlarmNotify) {
         log.info("🚨 TestServerMessageProcessorHandler 更新设备报警: {}", deviceAlarmNotify);
+        alarmReceived.set(true);
+        receivedAlarm.set(deviceAlarmNotify);
+        if (alarmLatch != null) alarmLatch.countDown();
     }
 
     @Override
@@ -98,27 +132,58 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
     @Override
     public void updateDeviceRecord(String userId, DeviceRecord deviceRecord) {
         log.info("📼 TestServerMessageProcessorHandler 更新设备录像: userId={}, record={}", userId, deviceRecord);
+        deviceRecordReceived.set(true);
+        receivedDeviceRecord.set(deviceRecord);
+        if (deviceRecordLatch != null) deviceRecordLatch.countDown();
     }
 
     @Override
     public void updateDeviceResponse(String userId, DeviceResponse deviceResponse) {
         log.info("📋 TestServerMessageProcessorHandler 更新设备响应: userId={}, response={}", userId, deviceResponse);
+        catalogReceived.set(true);
+        receivedCatalog.set(deviceResponse);
+        if (catalogLatch != null) catalogLatch.countDown();
     }
 
     @Override
     public void updateDeviceInfo(String userId, DeviceInfo deviceInfo) {
         log.info("ℹ️ TestServerMessageProcessorHandler 更新设备信息: userId={}, info={}", userId, deviceInfo);
+        deviceInfoReceived.set(true);
+        receivedDeviceInfo.set(deviceInfo);
+        if (deviceInfoLatch != null) deviceInfoLatch.countDown();
+    }
+
+    // 设备状态
+    public void updateDeviceStatus(String userId, io.github.lunasaw.gb28181.common.entity.response.DeviceStatus deviceStatus) {
+        log.info("📶 TestServerMessageProcessorHandler 更新设备状态: userId={}, status={}", userId, deviceStatus);
+        deviceStatusReceived.set(true);
+        receivedDeviceStatus.set(deviceStatus);
+        if (deviceStatusLatch != null) deviceStatusLatch.countDown();
     }
 
     // === 测试辅助方法 ===
-
-    /**
-     * 重置测试状态
-     */
     public static void resetTestState() {
         keepaliveLatch = new CountDownLatch(1);
         keepaliveReceived.set(false);
         receivedKeepalive.set(null);
+        alarmLatch = new CountDownLatch(1);
+        alarmReceived.set(false);
+        receivedAlarm.set(null);
+        catalogLatch = new CountDownLatch(1);
+        catalogReceived.set(false);
+        receivedCatalog.set(null);
+        deviceInfoLatch = new CountDownLatch(1);
+        deviceInfoReceived.set(false);
+        receivedDeviceInfo.set(null);
+        deviceStatusLatch = new CountDownLatch(1);
+        deviceStatusReceived.set(false);
+        receivedDeviceStatus.set(null);
+        deviceRecordLatch = new CountDownLatch(1);
+        deviceRecordReceived.set(false);
+        receivedDeviceRecord.set(null);
+        deviceConfigLatch = new CountDownLatch(1);
+        deviceConfigReceived.set(false);
+        receivedDeviceConfig.set(null);
         log.info("🔄 TestServerMessageProcessorHandler 测试状态已重置");
     }
 
@@ -156,5 +221,89 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
      */
     public static DeviceKeepLiveNotify getReceivedKeepalive() {
         return receivedKeepalive.get();
+    }
+
+    // === 报警 ===
+    public static boolean waitForAlarm(long timeout, TimeUnit unit) throws InterruptedException {
+        if (alarmLatch == null) return false;
+        return alarmLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedAlarm() {
+        return alarmReceived.get();
+    }
+
+    public static DeviceAlarmNotify getReceivedAlarm() {
+        return receivedAlarm.get();
+    }
+
+    // === 目录 ===
+    public static boolean waitForCatalog(long timeout, TimeUnit unit) throws InterruptedException {
+        if (catalogLatch == null) return false;
+        return catalogLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedCatalog() {
+        return catalogReceived.get();
+    }
+
+    public static DeviceResponse getReceivedCatalog() {
+        return receivedCatalog.get();
+    }
+
+    // === 设备信息 ===
+    public static boolean waitForDeviceInfo(long timeout, TimeUnit unit) throws InterruptedException {
+        if (deviceInfoLatch == null) return false;
+        return deviceInfoLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedDeviceInfo() {
+        return deviceInfoReceived.get();
+    }
+
+    public static DeviceInfo getReceivedDeviceInfo() {
+        return receivedDeviceInfo.get();
+    }
+
+    // === 设备状态 ===
+    public static boolean waitForDeviceStatus(long timeout, TimeUnit unit) throws InterruptedException {
+        if (deviceStatusLatch == null) return false;
+        return deviceStatusLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedDeviceStatus() {
+        return deviceStatusReceived.get();
+    }
+
+    public static io.github.lunasaw.gb28181.common.entity.response.DeviceStatus getReceivedDeviceStatus() {
+        return receivedDeviceStatus.get();
+    }
+
+    // === 录像 ===
+    public static boolean waitForDeviceRecord(long timeout, TimeUnit unit) throws InterruptedException {
+        if (deviceRecordLatch == null) return false;
+        return deviceRecordLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedDeviceRecord() {
+        return deviceRecordReceived.get();
+    }
+
+    public static DeviceRecord getReceivedDeviceRecord() {
+        return receivedDeviceRecord.get();
+    }
+
+    // === 设备配置 ===
+    public static boolean waitForDeviceConfig(long timeout, TimeUnit unit) throws InterruptedException {
+        if (deviceConfigLatch == null) return false;
+        return deviceConfigLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedDeviceConfig() {
+        return deviceConfigReceived.get();
+    }
+
+    public static DeviceConfigResponse getReceivedDeviceConfig() {
+        return receivedDeviceConfig.get();
     }
 }

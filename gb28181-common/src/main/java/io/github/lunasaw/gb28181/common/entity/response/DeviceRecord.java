@@ -39,6 +39,10 @@ import lombok.Setter;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DeviceRecord extends DeviceBase {
 
+
+    @XmlElement(name = "CmdType")
+    private String cmdType = "RecordInfo";
+
     /**
      * 总数
      */

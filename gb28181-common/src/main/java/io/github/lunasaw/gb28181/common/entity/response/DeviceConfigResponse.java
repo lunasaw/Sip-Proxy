@@ -1,5 +1,6 @@
 package io.github.lunasaw.gb28181.common.entity.response;
 
+import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -40,11 +41,21 @@ import lombok.Setter;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DeviceConfigResponse extends DeviceBase {
 
+    @XmlElement(name = "CmdType")
+    private String cmdType = CmdTypeEnum.DEVICE_CONFIG.getType();
+
+    @XmlElement(name = "SN")
+    private String sn;
+
+    @XmlElement(name = "DeviceID")
+    private String deviceId;
+
+
     /**
      * OK
      */
     @XmlElement(name = "Result")
-    private String     Result;
+    private String Result = "OK";
 
     @XmlElement(name = "BasicParam")
     private BasicParam BasicParam;

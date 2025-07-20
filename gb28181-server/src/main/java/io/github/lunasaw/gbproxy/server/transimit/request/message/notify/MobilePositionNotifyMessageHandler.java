@@ -34,7 +34,7 @@ public class MobilePositionNotifyMessageHandler extends MessageServerHandlerAbst
 
     @Override
     public String getRootType() {
-        return ServerMessageRequestProcessor.METHOD + NOTIFY;
+        return NOTIFY;
     }
 
 

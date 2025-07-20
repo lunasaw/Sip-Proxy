@@ -34,7 +34,7 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
 
     @Override
     public String getRootType() {
-        return ServerMessageRequestProcessor.METHOD + NOTIFY;
+        return NOTIFY;
     }
 
 

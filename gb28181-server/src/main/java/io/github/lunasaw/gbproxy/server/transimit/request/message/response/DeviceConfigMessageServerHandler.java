@@ -1,6 +1,7 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.message.response;
 
-import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
+import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
+ * 复制类 无实际使用
+ *
  * @author luna
  * @date 2023/10/19
  */
@@ -21,14 +24,20 @@ import javax.sip.RequestEvent;
 @Slf4j
 @Getter
 @Setter
-public class ResponseCatalogMessageHandler extends MessageServerHandlerAbstract {
+public class DeviceConfigMessageServerHandler extends MessageServerHandlerAbstract {
 
-    public static final String CMD_TYPE = "Catalog";
+    public static final String CMD_TYPE = CmdTypeEnum.DEVICE_CONFIG.getType();
 
-    public ResponseCatalogMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+    private String cmdType = CMD_TYPE;
+
+    public DeviceConfigMessageServerHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
         super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
 
+    @Override
+    public String getRootType() {
+        return RESPONSE;
+    }
 
     @Override
     public void handForEvt(RequestEvent event) {
@@ -37,18 +46,18 @@ public class ResponseCatalogMessageHandler extends MessageServerHandlerAbstract 
         }
         DeviceSession deviceSession = getDeviceSession(event);
         String userId = deviceSession.getUserId();
-        DeviceResponse deviceResponse = parseXml(DeviceResponse.class);
 
-        serverMessageProcessorHandler.updateDeviceResponse(userId, deviceResponse);
+        DeviceInfo deviceInfo = parseXml(DeviceInfo.class);
+
+
+        serverMessageProcessorHandler.updateDeviceInfo(userId, deviceInfo);
     }
+
 
     @Override
     public String getCmdType() {
-        return CMD_TYPE;
+        return cmdType;
     }
 
-    @Override
-    public String getRootType() {
-        return RESPONSE;
-    }
+
 }
