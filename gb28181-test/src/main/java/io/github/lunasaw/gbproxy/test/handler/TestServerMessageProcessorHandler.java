@@ -153,6 +153,14 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
         if (deviceInfoLatch != null) deviceInfoLatch.countDown();
     }
 
+    @Override
+    public void updateDeviceConfig(String userId, DeviceConfigResponse deviceConfigResponse) {
+        log.info("⚙️ TestServerMessageProcessorHandler 更新设备配置: userId={}, config={}", userId, deviceConfigResponse);
+        deviceConfigReceived.set(true);
+        receivedDeviceConfig.set(deviceConfigResponse);
+        if (deviceConfigLatch != null) deviceConfigLatch.countDown();
+    }
+
     // 设备状态
     public void updateDeviceStatus(String userId, io.github.lunasaw.gb28181.common.entity.response.DeviceStatus deviceStatus) {
         log.info("📶 TestServerMessageProcessorHandler 更新设备状态: userId={}, status={}", userId, deviceStatus);

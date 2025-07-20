@@ -44,13 +44,6 @@ public class DeviceConfigResponse extends DeviceBase {
     @XmlElement(name = "CmdType")
     private String cmdType = CmdTypeEnum.DEVICE_CONFIG.getType();
 
-    @XmlElement(name = "SN")
-    private String sn;
-
-    @XmlElement(name = "DeviceID")
-    private String deviceId;
-
-
     /**
      * OK
      */

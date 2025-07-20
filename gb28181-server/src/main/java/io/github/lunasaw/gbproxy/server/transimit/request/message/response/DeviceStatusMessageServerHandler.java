@@ -1,10 +1,10 @@
 package io.github.lunasaw.gbproxy.server.transimit.request.message.response;
 
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
- * 设备信息消息处理器
+ * 设备状态消息处理器
  *
  * @author luna
  * @date 2023/10/19
@@ -24,13 +24,13 @@ import javax.sip.RequestEvent;
 @Slf4j
 @Getter
 @Setter
-public class DeviceInfoMessageServerHandler extends MessageServerHandlerAbstract {
+public class DeviceStatusMessageServerHandler extends MessageServerHandlerAbstract {
 
-    public static final String CMD_TYPE = CmdTypeEnum.DEVICE_INFO.getType();
+    public static final String CMD_TYPE = CmdTypeEnum.DEVICE_STATUS.getType();
 
     private String cmdType = CMD_TYPE;
 
-    public DeviceInfoMessageServerHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+    public DeviceStatusMessageServerHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
         super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
 
@@ -47,10 +47,10 @@ public class DeviceInfoMessageServerHandler extends MessageServerHandlerAbstract
         DeviceSession deviceSession = getDeviceSession(event);
         String userId = deviceSession.getUserId();
 
-        DeviceInfo deviceInfo = parseXml(DeviceInfo.class);
+        DeviceStatus deviceStatus = parseXml(DeviceStatus.class);
 
 
-        serverMessageProcessorHandler.updateDeviceInfo(userId, deviceInfo);
+        serverMessageProcessorHandler.updateDeviceStatus(userId, deviceStatus);
     }
 
 

@@ -4,9 +4,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceKeepLiveNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.MediaStatusNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
+import io.github.lunasaw.gb28181.common.entity.response.*;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +78,16 @@ public class DefaultServerMessageProcessorHandler implements ServerMessageProces
 
     @Override
     public void updateDeviceInfo(String userId, DeviceInfo deviceInfo) {
+
+    }
+
+    @Override
+    public void updateDeviceConfig(String userId, DeviceConfigResponse deviceConfigResponse) {
+
+    }
+
+    @Override
+    public void updateDeviceStatus(String userId, DeviceStatus deviceStatus) {
 
     }
 }
