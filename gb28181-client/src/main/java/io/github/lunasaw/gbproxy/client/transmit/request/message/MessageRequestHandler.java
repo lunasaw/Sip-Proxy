@@ -88,6 +88,23 @@ public interface MessageRequestHandler {
     PresetQueryResponse getDevicePresetQueryResponse(PresetQuery presetQuery);
 
     /**
+     * 获取设备预置位信息
+     *
+     * @param userId 设备Id
+     * @return 设备预置位应答
+     */
+    PresetQueryResponse getPresetQueryResponse(String userId);
+
+    /**
+     * 获取设备配置查询应答
+     *
+     * @param userId     设备Id
+     * @param configType 配置类型
+     * @return 设备配置查询应答
+     */
+    ConfigDownloadResponse getConfigDownloadResponse(String userId, String configType);
+
+    /**
      * 处理设备移动位置通知
      *
      * @param mobilePositionNotify 移动位置通知

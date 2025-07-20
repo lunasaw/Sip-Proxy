@@ -11,6 +11,7 @@ import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
+import io.github.lunasaw.gb28181.common.entity.response.ConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -294,6 +295,18 @@ public class ClientCommandSender {
      */
     public static String sendDeviceConfigCommand(FromDevice fromDevice, ToDevice toDevice, DeviceConfigResponse deviceConfigResponse) {
         return sendCommand("MESSAGE", fromDevice, toDevice, deviceConfigResponse);
+    }
+
+    /**
+     * 发送设备配置查询应答
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param response   配置查询应答对象
+     * @return callId
+     */
+    public static String sendConfigDownloadResponse(FromDevice fromDevice, ToDevice toDevice, ConfigDownloadResponse response) {
+        return sendCommand("MESSAGE", fromDevice, toDevice, response);
     }
 
     // ==================== 媒体状态相关命令 ====================

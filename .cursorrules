@@ -816,3 +816,26 @@ public class MessageRequestHandler {
   - 确保子类可以通过 `super.buildCommandContent()` 调用父类默认实现
 - **命名一致性**：Client和Server模块的策略类命名保持一致，只是继承的父类不同
 - **维护性提升**：减少Client模块中的重复代码，提高代码可维护性和一致性
+
+### 17. SIP Query请求端到端单测流程规范（强制性要求）
+- **完整流程**：所有SIP Query类请求（如设备状态、目录、预置位、配置等）必须具备端到端单测验证链路，流程如下：
+  1. **服务端发起请求**：通过ServerCommandSender/ServerSendCmd等主动服务接口，构造并发送SIP Query请求。
+  2. **SIP协议栈转发**：消息通过SIP协议栈传递到客户端。
+  3. **客户端处理器接收**：客户端的XXXQueryMessageClientHandler等处理器收到请求，调用MessageRequestHandler接口的对应方法（如getPresetQueryResponse）。
+  4. **测试钩子触发**：在TestClientMessageProcessorHandler等测试Handler实现中，方法内部需调用updateXXX（如updatePresetQuery），设置CountDownLatch、AtomicReference等钩子，记录收到的应答对象。
+  5. **单测断言**：测试用例通过waitForXXX（如waitForPresetQuery）等待钩子触发，并通过hasReceivedXXX、getReceivedXXX断言客户端是否收到并正确处理消息。
+- **实现要求**：
+  - 所有测试Handler必须为每种Query类型实现对应的updateXXX、waitForXXX、hasReceivedXXX、getReceivedXXX等辅助方法。
+  - resetTestState方法需同步重置所有钩子状态，保证测试隔离。
+  - 单测必须严格区分client/server设备配置，遵循from/to分离规范。
+- **示例代码**：
+  ```java
+  // 服务端发起请求
+  ServerCommandSender.devicePresetQuery(serverFromDevice, serverToDevice);
+  // 单测等待并断言
+  assertTrue(TestClientMessageProcessorHandler.waitForPresetQuery(5, TimeUnit.SECONDS));
+  assertTrue(TestClientMessageProcessorHandler.hasReceivedPresetQuery());
+  PresetQueryResponse resp = TestClientMessageProcessorHandler.getReceivedPresetQuery();
+  assertNotNull(resp);
+  ```
+- **适用范围**：所有SIP Query类请求的端到端集成测试，必须遵循此流程和钩子规范，确保消息链路和处理能力可验证、可追踪。

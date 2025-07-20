@@ -394,6 +394,22 @@ public class ServerCommandSender {
         return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceConfigDownload));
     }
 
+    /**
+     * 设备配置查询
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param configType 配置类型（如BasicParam/VideoParamOpt等）
+     * @return callId
+     */
+    public static String deviceConfigDownloadQuery(FromDevice fromDevice, ToDevice toDevice, String configType) {
+        ConfigDownloadQuery configDownloadQuery = new ConfigDownloadQuery();
+        configDownloadQuery.setSn(RandomStrUtil.getValidationCode());
+        configDownloadQuery.setDeviceId(toDevice.getUserId());
+        configDownloadQuery.setConfigType(configType);
+        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", configDownloadQuery));
+    }
+
     // ==================== 设备广播相关命令 ====================
 
     /**

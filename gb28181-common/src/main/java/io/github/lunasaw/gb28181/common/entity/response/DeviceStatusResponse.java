@@ -1,0 +1,62 @@
+package io.github.lunasaw.gb28181.common.entity.response;
+
+import jakarta.xml.bind.annotation.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * GB28181协议 A.2.6 g）设备状态信息查询应答
+ * <pre>
+ * <Response>
+ *   <CmdType>DeviceStatus</CmdType>
+ *   <SN>123</SN>
+ *   <DeviceID>34020000001320000001</DeviceID>
+ *   <Result>OK</Result>
+ *   <Online>ONLINE</Online>
+ *   <Status>OK</Status>
+ *   <Reason>无</Reason>
+ *   <Encode>ON</Encode>
+ *   <Record>OFF</Record>
+ *   <DeviceTime>2023-12-01T10:30:00</DeviceTime>
+ * </Response>
+ * </pre>
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@XmlRootElement(name = "Response")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class DeviceStatusResponse {
+    @XmlElement(name = "CmdType")
+    private final String cmdType = "DeviceStatus";
+
+    @XmlElement(name = "SN")
+    private String sn;
+
+    @XmlElement(name = "DeviceID")
+    private String deviceId;
+
+    @XmlElement(name = "Result")
+    private String result;
+
+    @XmlElement(name = "Online")
+    private String online;
+
+    @XmlElement(name = "Status")
+    private String status;
+
+    @XmlElement(name = "Reason")
+    private String reason;
+
+    @XmlElement(name = "Encode")
+    private String encode;
+
+    @XmlElement(name = "Record")
+    private String record;
+
+    @XmlElement(name = "DeviceTime")
+    private String deviceTime;
+}

@@ -70,4 +70,16 @@ public class CustomMessageRequestHandler implements MessageRequestHandler {
     public MobilePositionNotify getMobilePositionNotify(MobilePositionQuery mobilePositionQuery) {
         return null;
     }
+
+    @Override
+    public PresetQueryResponse getPresetQueryResponse(String userId) {
+        log.info("获取设备预置位信息: {}", userId);
+        return new PresetQueryResponse();
+    }
+
+    @Override
+    public ConfigDownloadResponse getConfigDownloadResponse(String userId, String configType) {
+        log.info("获取设备配置查询应答: {}, configType={}", userId, configType);
+        return new ConfigDownloadResponse();
+    }
 }
