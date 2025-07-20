@@ -28,6 +28,6 @@ public class ByeCommandStrategy extends AbstractServerCommandStrategy {
     @Override
     protected String sendCommand(ServerCommandStrategyReq req) {
         // 发送BYE请求
-        return SipSender.doByeRequest(req.getFromDevice(), req.getToDevice(), req.getErrorEvent(), req.getOkEvent());
+        return SipSender.doByeRequest(req.getFromDevice(), req.getToDevice());
     }
 }

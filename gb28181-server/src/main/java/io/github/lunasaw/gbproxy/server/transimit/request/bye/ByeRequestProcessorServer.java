@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author luna
  */
-@Component
+@Component("serverByeRequestProcessor")
 @Getter
 @Setter
 @Slf4j

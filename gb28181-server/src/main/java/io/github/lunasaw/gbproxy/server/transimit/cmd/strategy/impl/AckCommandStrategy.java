@@ -28,6 +28,11 @@ public class AckCommandStrategy extends AbstractServerCommandStrategy {
     @Override
     protected String sendCommand(ServerCommandStrategyReq req) {
         // 发送ACK请求
-        return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice(), req.getContent(), req.getErrorEvent(), req.getOkEvent());
+        if (req.getContent() != null) {
+            return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice(), req.getContent(),
+                    req.getContent(), req.getErrorEvent(), req.getOkEvent());
+        } else {
+            return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice());
+        }
     }
 }

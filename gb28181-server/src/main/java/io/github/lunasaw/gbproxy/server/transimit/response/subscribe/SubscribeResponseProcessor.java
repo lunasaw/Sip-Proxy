@@ -23,7 +23,7 @@ import io.github.lunasaw.gbproxy.server.transimit.response.ServerAbstractSipResp
 @Slf4j
 @Getter
 @Setter
-@Component
+@Component("serverSubscribeResponseProcessor")
 public class SubscribeResponseProcessor extends ServerAbstractSipResponseProcessor {
 
     public static final String METHOD = "SUBSCRIBE";

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  *
  * @author luna
  */
-@Component
+@Component("clientCancelRequestProcessor")
 @Getter
 @Setter
 @Slf4j

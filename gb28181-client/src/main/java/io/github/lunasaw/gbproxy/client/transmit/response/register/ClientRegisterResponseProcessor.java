@@ -35,7 +35,7 @@ import javax.sip.message.Response;
 @Slf4j
 @Getter
 @Setter
-@Component
+@Component("clientRegisterResponseProcessor")
 public class ClientRegisterResponseProcessor extends ClientAbstractSipResponseProcessor {
 
     public static final String METHOD = "REGISTER";

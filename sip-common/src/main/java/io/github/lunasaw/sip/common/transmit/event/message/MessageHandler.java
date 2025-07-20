@@ -60,6 +60,14 @@ public interface MessageHandler extends RequestHandler {
     String getCmdType();
 
     /**
+     * 获取处理方法
+     *
+     * @return
+     */
+    String getMethod();
+
+
+    /**
      * 当前接受到的原始消息
      */
     void setXmlStr(String xmlStr);

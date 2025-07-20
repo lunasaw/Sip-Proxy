@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author luna
  */
-@Component
+@Component("serverNotifyRequestProcessor")
 @Getter
 @Setter
 @Slf4j

@@ -3,12 +3,12 @@ package io.github.lunasaw.gbproxy.server.transimit.request.message;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstract;
+import io.github.lunasaw.sip.common.transmit.event.message.SipMessageRequestProcessorAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Data;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -18,20 +18,27 @@ import javax.sip.RequestEvent;
  */
 @Data
 @Component
-public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstract {
+public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstract implements InitializingBean {
 
     public ServerMessageProcessorHandler serverMessageProcessorHandler;
 
     public ServerDeviceSupplier serverDeviceSupplier;
+
 
     public MessageServerHandlerAbstract(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
         this.serverMessageProcessorHandler = serverMessageProcessorHandler;
         this.serverDeviceSupplier = serverDeviceSupplier;
     }
 
+
     @Override
     public String getRootType() {
         return "Root";
+    }
+
+    @Override
+    public String getMethod() {
+        return "MESSAGE";
     }
 
     public DeviceSession getDeviceSession(RequestEvent event) {

@@ -21,7 +21,7 @@ import javax.sip.message.Response;
 @Slf4j
 @Getter
 @Setter
-@Component
+@Component("serverInviteResponseProcessor")
 public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor {
 
     public static final String METHOD = "INVITE";

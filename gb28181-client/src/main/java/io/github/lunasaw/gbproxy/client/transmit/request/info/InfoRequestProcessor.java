@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author luna
  * @date 2023/10/18
  */
-@Component
+@Component("clientInfoRequestProcessor")
 @Getter
 @Setter
 @Slf4j

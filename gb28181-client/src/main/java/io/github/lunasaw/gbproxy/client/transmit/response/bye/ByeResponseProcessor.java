@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Getter
 @Setter
-@Component
+@Component("clientByeResponseProcessor")
 public class ByeResponseProcessor extends ClientAbstractSipResponseProcessor {
 
     public static final String METHOD = "BYE";
