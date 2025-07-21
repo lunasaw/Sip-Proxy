@@ -43,16 +43,16 @@ public abstract class AbstractSipListener implements SipListener {
     /**
      * 对SIP事件进行处理
      */
-    protected final Map<String, List<SipRequestProcessor>> REQUEST_PROCESSOR_MAP = new ConcurrentHashMap<>();
+    protected static final Map<String, List<SipRequestProcessor>> REQUEST_PROCESSOR_MAP = new ConcurrentHashMap<>();
     ;
     /**
      * 处理接收SIP发来的SIP协议响应消息
      */
-    protected final Map<String, List<SipResponseProcessor>> RESPONSE_PROCESSOR_MAP = new ConcurrentHashMap<>();
+    protected static final Map<String, List<SipResponseProcessor>> RESPONSE_PROCESSOR_MAP = new ConcurrentHashMap<>();
     /**
      * 处理超时事件
      */
-    protected final Map<String, List<ITimeoutProcessor>> TIMEOUT_PROCESSOR_MAP = new ConcurrentHashMap<>();
+    protected static final Map<String, List<ITimeoutProcessor>> TIMEOUT_PROCESSOR_MAP = new ConcurrentHashMap<>();
 
     /**
      * SIP指标收集器
@@ -77,7 +77,7 @@ public abstract class AbstractSipListener implements SipListener {
             processors.add(processor);
             REQUEST_PROCESSOR_MAP.put(method, processors);
         }
-        log.debug("添加请求处理器: {} -> {}", method, processor.getClass().getSimpleName());
+        log.info("添加请求处理器: {} -> {}", method, processor.getClass().getSimpleName());
     }
 
     /**
@@ -255,6 +255,7 @@ public abstract class AbstractSipListener implements SipListener {
      */
     @Override
     public void processResponse(ResponseEvent responseEvent) {
+        // 测试钩子：捕获401 REGISTER响应
         Timer.Sample sample = sipMetrics != null ? sipMetrics.startTimer() : null;
         Response response = responseEvent.getResponse();
         int status = response.getStatusCode();

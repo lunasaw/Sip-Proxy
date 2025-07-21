@@ -7,9 +7,7 @@ import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipRespo
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
-import io.github.lunasaw.sip.common.service.DefaultDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.SipSender;
-import io.github.lunasaw.sip.common.transmit.event.response.AbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.transmit.request.SipRequestBuilderFactory;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -19,7 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.sdp.SdpParseException;
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.WWWAuthenticateHeader;
@@ -30,6 +27,7 @@ import javax.sip.message.Response;
  * Register响应处理器
  * 只负责SIP协议层面的处理，业务逻辑通过RegisterProcessorHandler接口实现
  * 这个是客户端发起的REGISTER后，服务端回复的REGISTER响应处理器
+ *
  * @author luna
  */
 @Slf4j
@@ -113,13 +111,12 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
      * @param toUserId 目标用户ID
      * @param callId   呼叫ID
      */
-    private void processReAuthentication(ResponseEventExt evt, String toUserId, String callId) throws SdpParseException {
+    private void processReAuthentication(ResponseEventExt evt, String toUserId, String callId) {
         SIPResponse response = (SIPResponse) evt.getResponse();
         CallIdHeader callIdHeader = response.getCallIdHeader();
 
-        String clientId = clientProperties.getAuth().getDeviceId();
-        FromDevice fromDevice = (FromDevice) deviceSupplier.getDevice(clientId);
-        ToDevice toDevice = (ToDevice) deviceSupplier.getDevice(toUserId);
+        FromDevice fromDevice = deviceSupplier.getClientFromDevice();
+        ToDevice toDevice = deviceSupplier.getToDevice(deviceSupplier.getDevice(toUserId));
 
         if (fromDevice == null || toDevice == null) {
             log.error("设备信息获取失败：fromDevice = {}, toDevice = {}", fromDevice, toDevice);

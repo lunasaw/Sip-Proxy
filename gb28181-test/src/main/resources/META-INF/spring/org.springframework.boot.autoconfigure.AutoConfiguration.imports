@@ -1,1 +1,2 @@
 io.github.lunasaw.gbproxy.server.config.SipProxyServerAutoConfig
+io.github.lunasaw.sip.common.conf.SipProxyAutoConfig
