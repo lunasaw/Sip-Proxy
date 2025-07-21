@@ -63,44 +63,6 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
     private static AtomicBoolean presetQueryReceived = new AtomicBoolean(false);
     private static AtomicReference<PresetQueryResponse> receivedPresetQuery = new AtomicReference<>();
 
-    // === 控制命令测试辅助字段 ===
-    private static CountDownLatch ptzCmdLatch;
-    private static AtomicBoolean ptzCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlPtz> receivedPtzCmd = new AtomicReference<>();
-
-    private static CountDownLatch guardCmdLatch;
-    private static AtomicBoolean guardCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlGuard> receivedGuardCmd = new AtomicReference<>();
-
-    private static CountDownLatch alarmCmdLatch;
-    private static AtomicBoolean alarmCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlAlarm> receivedAlarmCmd = new AtomicReference<>();
-
-    private static CountDownLatch teleBootCmdLatch;
-    private static AtomicBoolean teleBootCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlTeleBoot> receivedTeleBootCmd = new AtomicReference<>();
-
-    private static CountDownLatch recordCmdLatch;
-    private static AtomicBoolean recordCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlRecordCmd> receivedRecordCmd = new AtomicReference<>();
-
-    private static CountDownLatch iFameCmdLatch;
-    private static AtomicBoolean iFameCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlIFame> receivedIFameCmd = new AtomicReference<>();
-
-    private static CountDownLatch dragInCmdLatch;
-    private static AtomicBoolean dragInCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlDragIn> receivedDragInCmd = new AtomicReference<>();
-
-    private static CountDownLatch dragOutCmdLatch;
-    private static AtomicBoolean dragOutCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlDragOut> receivedDragOutCmd = new AtomicReference<>();
-
-    private static CountDownLatch homePositionCmdLatch;
-    private static AtomicBoolean homePositionCmdReceived = new AtomicBoolean(false);
-    private static AtomicReference<DeviceControlPosition> receivedHomePositionCmd = new AtomicReference<>();
-
-
     // === 业务方法实现 ===
     @Override
     public DeviceRecord getDeviceRecord(DeviceRecordQuery deviceRecordQuery) {
@@ -224,22 +186,11 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
         if (mobilePositionLatch != null) mobilePositionLatch.countDown();
     }
 
-    public void keepLiveDevice(DeviceKeepLiveNotify deviceKeepLiveNotify) {
-        log.info("[ClientTest] 接收到心跳: {}", deviceKeepLiveNotify);
-        keepaliveReceived.set(true);
-        receivedKeepalive.set(deviceKeepLiveNotify);
-        if (keepaliveLatch != null) keepaliveLatch.countDown();
-    }
-
     public void updateDeviceAlarm(DeviceAlarmNotify deviceAlarmNotify) {
         log.info("[ClientTest] 更新设备报警: {}", deviceAlarmNotify);
         alarmReceived.set(true);
         receivedAlarm.set(deviceAlarmNotify);
         if (alarmLatch != null) alarmLatch.countDown();
-    }
-
-    public void updateMediaStatus(MediaStatusNotify mediaStatusNotify) {
-        log.info("[ClientTest] 更新媒体状态: {}", mediaStatusNotify);
     }
 
     // === 设备状态 ===
@@ -296,179 +247,6 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
         return receivedMobilePosition.get();
     }
 
-    // === 控制命令 update 方法 ===
-    public void updatePtzCmd(DeviceControlPtz cmd) {
-        ptzCmdReceived.set(true);
-        receivedPtzCmd.set(cmd);
-        if (ptzCmdLatch != null) ptzCmdLatch.countDown();
-    }
-
-    public void updateGuardCmd(DeviceControlGuard cmd) {
-        guardCmdReceived.set(true);
-        receivedGuardCmd.set(cmd);
-        if (guardCmdLatch != null) guardCmdLatch.countDown();
-    }
-
-    public void updateAlarmCmd(DeviceControlAlarm cmd) {
-        alarmCmdReceived.set(true);
-        receivedAlarmCmd.set(cmd);
-        if (alarmCmdLatch != null) alarmCmdLatch.countDown();
-    }
-
-    public void updateTeleBootCmd(DeviceControlTeleBoot cmd) {
-        teleBootCmdReceived.set(true);
-        receivedTeleBootCmd.set(cmd);
-        if (teleBootCmdLatch != null) teleBootCmdLatch.countDown();
-    }
-
-    public void updateRecordCmd(DeviceControlRecordCmd cmd) {
-        recordCmdReceived.set(true);
-        receivedRecordCmd.set(cmd);
-        if (recordCmdLatch != null) recordCmdLatch.countDown();
-    }
-
-    public void updateIFameCmd(DeviceControlIFame cmd) {
-        iFameCmdReceived.set(true);
-        receivedIFameCmd.set(cmd);
-        if (iFameCmdLatch != null) iFameCmdLatch.countDown();
-    }
-
-    public void updateDragInCmd(DeviceControlDragIn cmd) {
-        dragInCmdReceived.set(true);
-        receivedDragInCmd.set(cmd);
-        if (dragInCmdLatch != null) dragInCmdLatch.countDown();
-    }
-
-    public void updateDragOutCmd(DeviceControlDragOut cmd) {
-        dragOutCmdReceived.set(true);
-        receivedDragOutCmd.set(cmd);
-        if (dragOutCmdLatch != null) dragOutCmdLatch.countDown();
-    }
-
-    public void updateHomePositionCmd(DeviceControlPosition cmd) {
-        homePositionCmdReceived.set(true);
-        receivedHomePositionCmd.set(cmd);
-        if (homePositionCmdLatch != null) homePositionCmdLatch.countDown();
-    }
-
-    // === 控制命令 wait/has/get 方法 ===
-    public static boolean waitForPtzCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (ptzCmdLatch == null) return false;
-        return ptzCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedPtzCmd() {
-        return ptzCmdReceived.get();
-    }
-
-    public static DeviceControlPtz getReceivedPtzCmd() {
-        return receivedPtzCmd.get();
-    }
-
-    public static boolean waitForGuardCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (guardCmdLatch == null) return false;
-        return guardCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedGuardCmd() {
-        return guardCmdReceived.get();
-    }
-
-    public static DeviceControlGuard getReceivedGuardCmd() {
-        return receivedGuardCmd.get();
-    }
-
-    public static boolean waitForAlarmCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (alarmCmdLatch == null) return false;
-        return alarmCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedAlarmCmd() {
-        return alarmCmdReceived.get();
-    }
-
-    public static DeviceControlAlarm getReceivedAlarmCmd() {
-        return receivedAlarmCmd.get();
-    }
-
-    public static boolean waitForTeleBootCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (teleBootCmdLatch == null) return false;
-        return teleBootCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedTeleBootCmd() {
-        return teleBootCmdReceived.get();
-    }
-
-    public static DeviceControlTeleBoot getReceivedTeleBootCmd() {
-        return receivedTeleBootCmd.get();
-    }
-
-    public static boolean waitForRecordCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (recordCmdLatch == null) return false;
-        return recordCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedRecordCmd() {
-        return recordCmdReceived.get();
-    }
-
-    public static DeviceControlRecordCmd getReceivedRecordCmd() {
-        return receivedRecordCmd.get();
-    }
-
-    public static boolean waitForIFameCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (iFameCmdLatch == null) return false;
-        return iFameCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedIFameCmd() {
-        return iFameCmdReceived.get();
-    }
-
-    public static DeviceControlIFame getReceivedIFameCmd() {
-        return receivedIFameCmd.get();
-    }
-
-    public static boolean waitForDragInCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (dragInCmdLatch == null) return false;
-        return dragInCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedDragInCmd() {
-        return dragInCmdReceived.get();
-    }
-
-    public static DeviceControlDragIn getReceivedDragInCmd() {
-        return receivedDragInCmd.get();
-    }
-
-    public static boolean waitForDragOutCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (dragOutCmdLatch == null) return false;
-        return dragOutCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedDragOutCmd() {
-        return dragOutCmdReceived.get();
-    }
-
-    public static DeviceControlDragOut getReceivedDragOutCmd() {
-        return receivedDragOutCmd.get();
-    }
-
-    public static boolean waitForHomePositionCmd(long timeout, TimeUnit unit) throws InterruptedException {
-        if (homePositionCmdLatch == null) return false;
-        return homePositionCmdLatch.await(timeout, unit);
-    }
-
-    public static boolean hasReceivedHomePositionCmd() {
-        return homePositionCmdReceived.get();
-    }
-
-    public static DeviceControlPosition getReceivedHomePositionCmd() {
-        return receivedHomePositionCmd.get();
-    }
-
     // === 测试辅助方法 ===
     public static void resetTestState() {
         keepaliveLatch = new CountDownLatch(1);
@@ -498,33 +276,6 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
         presetQueryLatch = new CountDownLatch(1);
         presetQueryReceived.set(false);
         receivedPresetQuery.set(null);
-        ptzCmdLatch = new CountDownLatch(1);
-        ptzCmdReceived.set(false);
-        receivedPtzCmd.set(null);
-        guardCmdLatch = new CountDownLatch(1);
-        guardCmdReceived.set(false);
-        receivedGuardCmd.set(null);
-        alarmCmdLatch = new CountDownLatch(1);
-        alarmCmdReceived.set(false);
-        receivedAlarmCmd.set(null);
-        teleBootCmdLatch = new CountDownLatch(1);
-        teleBootCmdReceived.set(false);
-        receivedTeleBootCmd.set(null);
-        recordCmdLatch = new CountDownLatch(1);
-        recordCmdReceived.set(false);
-        receivedRecordCmd.set(null);
-        iFameCmdLatch = new CountDownLatch(1);
-        iFameCmdReceived.set(false);
-        receivedIFameCmd.set(null);
-        dragInCmdLatch = new CountDownLatch(1);
-        dragInCmdReceived.set(false);
-        receivedDragInCmd.set(null);
-        dragOutCmdLatch = new CountDownLatch(1);
-        dragOutCmdReceived.set(false);
-        receivedDragOutCmd.set(null);
-        homePositionCmdLatch = new CountDownLatch(1);
-        homePositionCmdReceived.set(false);
-        receivedHomePositionCmd.set(null);
         log.info("[ClientTest] 测试状态已重置");
     }
 
