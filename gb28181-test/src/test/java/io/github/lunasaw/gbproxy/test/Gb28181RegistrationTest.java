@@ -6,7 +6,7 @@ import io.github.lunasaw.gbproxy.test.handler.TestServerRegisterProcessorHandler
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.layer.SipLayer;
-import io.github.lunasaw.sip.common.transmit.request.SipRequestProvider;
+import io.github.lunasaw.sip.common.transmit.request.SipRequestBuilderFactory;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
@@ -91,9 +91,9 @@ public class Gb28181RegistrationTest extends BasicSipCommonTest {
         // 步骤1: 发送初始REGISTER请求（无认证信息）
         System.out.println("\n📤 步骤1: 发送初始REGISTER请求");
         String callId = "register-test-" + System.currentTimeMillis();
-        Request registerRequest = SipRequestProvider.createRegisterRequest(
+        Request registerRequest = SipRequestBuilderFactory.createRegisterRequest(
                 clientFromDevice, clientToDevice, 3600, callId);
-        SipSender.transmitRequest(clientFromDevice.getIp(), registerRequest);
+        SipSender.doRegisterRequest(clientFromDevice, clientToDevice, 3600);
         Assertions.assertNotNull(registerRequest, "REGISTER请求应该被成功创建");
         Assertions.assertEquals("REGISTER", registerRequest.getMethod(), "请求方法应该是REGISTER");
         System.out.println("✅ REGISTER请求发送成功，CallId: " + callId);
@@ -147,11 +147,11 @@ public class Gb28181RegistrationTest extends BasicSipCommonTest {
         // 测试注册请求的核心功能
         System.out.println("\n📤 发送双向认证注册请求");
         String callId = "dual-auth-test-" + System.currentTimeMillis();
-        Request registerRequest = SipRequestProvider.createRegisterRequest(
+        Request registerRequest = SipRequestBuilderFactory.createRegisterRequest(
                 clientFromDevice, clientToDevice, 3600, callId);
 
         // 使用SipSender直接发送请求
-        SipSender.transmitRequest(clientFromDevice.getIp(), registerRequest);
+        SipSender.doRegisterRequest(clientFromDevice, clientToDevice, 3600);
 
         Assertions.assertNotNull(registerRequest, "双向认证REGISTER请求应该被成功创建");
         Assertions.assertEquals("REGISTER", registerRequest.getMethod(), "请求方法应该是REGISTER");
@@ -207,11 +207,11 @@ public class Gb28181RegistrationTest extends BasicSipCommonTest {
         // 发送注销命令（expires=0）
         System.out.println("\n📤 发送设备注销请求");
         String callId = "unregister-test-" + System.currentTimeMillis();
-        Request unregisterRequest = SipRequestProvider.createRegisterRequest(
+        Request unregisterRequest = SipRequestBuilderFactory.createRegisterRequest(
                 clientFromDevice, clientToDevice, 0, callId);
 
         // 使用SipSender直接发送请求
-        SipSender.transmitRequest(clientFromDevice.getIp(), unregisterRequest);
+        SipSender.doRegisterRequest(clientFromDevice, clientToDevice, 0);
 
         Assertions.assertNotNull(unregisterRequest, "注销请求应该被成功创建");
         Assertions.assertEquals("REGISTER", unregisterRequest.getMethod(), "请求方法应该是REGISTER");
@@ -256,7 +256,7 @@ public class Gb28181RegistrationTest extends BasicSipCommonTest {
 
         // 创建并验证REGISTER请求结构
         String callId = "structure-test-" + System.currentTimeMillis();
-        Request registerRequest = SipRequestProvider.createRegisterRequest(
+        Request registerRequest = SipRequestBuilderFactory.createRegisterRequest(
                 clientFromDevice, clientToDevice, 3600, callId);
 
         System.out.println("📤 验证REGISTER请求结构");
@@ -278,7 +278,7 @@ public class Gb28181RegistrationTest extends BasicSipCommonTest {
      */
     private Request createAuthenticatedRegisterRequest(FromDevice fromDevice, ToDevice toDevice, String callId)
             throws Exception {
-        Request registerRequest = SipRequestProvider.createRegisterRequest(fromDevice, toDevice, 3600, callId);
+        Request registerRequest = SipRequestBuilderFactory.createRegisterRequest(fromDevice, toDevice, 3600, callId);
 
         // 添加Authorization头（模拟认证信息）
         SIPRequest sipRequest = (SIPRequest) registerRequest;
