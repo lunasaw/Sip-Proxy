@@ -12,9 +12,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@XmlRootElement(name = "Control")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ControlBase extends DeviceControlBase {
+public abstract class ControlBase extends DeviceControlBase {
 
 
     public ControlBase() {

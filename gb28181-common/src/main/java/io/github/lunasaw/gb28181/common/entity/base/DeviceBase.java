@@ -14,7 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DeviceBase extends XmlBean {
+public abstract class DeviceBase extends XmlBean {
     @XmlElement(name = "CmdType")
     private String cmdType;
 
