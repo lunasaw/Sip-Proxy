@@ -48,7 +48,14 @@ public class DefaultInviteResponseProcessorHandler implements InviteResponseProc
             SIPResponse response = (SIPResponse) evt.getResponse();
             FromDevice fromDevice = (FromDevice) serverDeviceSupplier.getServerFromDevice();
 
-            String contentString = new String(response.getRawContent());
+            // 检查响应是否包含SDP内容
+            byte[] rawContent = response.getRawContent();
+            if (rawContent == null || rawContent.length == 0) {
+                log.debug("INVITE OK响应不包含SDP内容，跳过处理：callId = {}", callId);
+                return;
+            }
+
+            String contentString = new String(rawContent);
             SdpSessionDescription gb28181Sdp = SipUtils.parseSdp(contentString);
             SessionDescription sdp = gb28181Sdp.getBaseSdb();
 
@@ -60,6 +67,8 @@ public class DefaultInviteResponseProcessorHandler implements InviteResponseProc
             log.info("发送ACK响应：requestUri = {}, callId = {}", requestUri, callId);
         } catch (SdpParseException e) {
             log.error("处理INVITE OK响应异常：callId = {}", callId, e);
+        } catch (Exception e) {
+            log.error("处理INVITE响应异常：evt = {}", evt, e);
         }
     }
 

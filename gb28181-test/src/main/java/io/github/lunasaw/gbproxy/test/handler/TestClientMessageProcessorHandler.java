@@ -63,6 +63,8 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
     private static AtomicBoolean presetQueryReceived = new AtomicBoolean(false);
     private static AtomicReference<PresetQueryResponse> receivedPresetQuery = new AtomicReference<>();
 
+
+
     // === 业务方法实现 ===
     @Override
     public DeviceRecord getDeviceRecord(DeviceRecordQuery deviceRecordQuery) {
@@ -370,4 +372,6 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
     public static DeviceResponse getReceivedCatalog() {
         return receivedCatalog.get();
     }
+
+
 }

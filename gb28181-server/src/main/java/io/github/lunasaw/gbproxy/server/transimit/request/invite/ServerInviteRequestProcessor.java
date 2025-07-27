@@ -1,4 +1,4 @@
-package io.github.lunasaw.gbproxy.client.transmit.request.invite;
+package io.github.lunasaw.gbproxy.server.transimit.request.invite;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.RequestEvent;
@@ -18,26 +18,26 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * SIP命令类型： 收到Invite请求
- * 客户端发起Invite请求, Invite Request消息实现，请求视频指令
+ * 服务端INVITE请求处理器
+ * 处理服务端收到的INVITE请求，专注于协议层面处理
  *
  * @author luna
  */
-@Component("clientInviteRequestProcessor")
+@Component("serverInviteRequestProcessor")
 @Getter
 @Setter
 @Slf4j
-public class InviteRequestProcessor extends SipRequestProcessorAbstract {
+public class ServerInviteRequestProcessor extends SipRequestProcessorAbstract {
 
-    public static final String    METHOD = "INVITE";
+    public static final String METHOD = "INVITE";
 
-    private String                method = METHOD;
+    private String method = METHOD;
 
     @Autowired
-    private InviteRequestHandler inviteRequestHandler;
+    private ServerInviteRequestHandler serverInviteRequestHandler;
 
     /**
-     * 收到Invite请求 处理
+     * 处理INVITE请求
      *
      * @param evt
      */
@@ -47,25 +47,25 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
             SIPRequest request = (SIPRequest) evt.getRequest();
 
             // 协议层面处理：解析SIP消息
-            String toUserId = SipUtils.getUserIdFromFromHeader(request);
-            String userId = SipUtils.getUserIdFromToHeader(request);
+            String fromUserId = SipUtils.getUserIdFromFromHeader(request);
+            String toUserId = SipUtils.getUserIdFromToHeader(request);
             String callId = SipUtils.getCallId(request);
 
-            log.info("📺 客户端收到INVITE请求: callId={}, fromUserId={}, toUserId={}", callId, toUserId, userId);
+            log.info("📺 服务端收到INVITE请求: callId={}, fromUserId={}, toUserId={}", callId, fromUserId, toUserId);
 
             // 解析Sdp
             String sdpContent = new String(request.getRawContent());
             GbSessionDescription sessionDescription = (GbSessionDescription) SipUtils.parseSdp(sdpContent);
 
             // 调用业务处理器
-            inviteRequestHandler.inviteSession(callId, sessionDescription);
-            String content = inviteRequestHandler.getInviteResponse(userId, sessionDescription);
+            serverInviteRequestHandler.inviteSession(callId, sessionDescription);
+            String content = serverInviteRequestHandler.getInviteResponse(toUserId, sessionDescription);
 
             // 构建响应
             ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();
             ResponseCmd.doResponseCmd(Response.OK, "OK", content, contentTypeHeader, evt);
 
-            log.info("✅ 客户端INVITE请求处理完成: callId={}", callId);
+            log.info("✅ 服务端INVITE请求处理完成: callId={}", callId);
 
         } catch (Exception e) {
             log.error("处理INVITE请求时发生异常: evt = {}", evt, e);
