@@ -1,6 +1,6 @@
 package io.github.lunasw.gbproxy.client.test.cmd;
 
-import javax.sip.message.Request;
+
 
 import io.github.lunasaw.sip.common.transmit.CustomerSipListener;
 import org.junit.jupiter.api.AfterEach;
@@ -10,13 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import io.github.lunasaw.gbproxy.client.Gb28181Client;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.layer.SipLayer;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import io.github.lunasaw.sip.common.transmit.event.EventResult;
-import io.github.lunasaw.sip.common.transmit.request.SipRequestProvider;
+
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.SneakyThrows;
 
@@ -45,22 +46,15 @@ public class ApplicationTest {
     @SneakyThrows
     @Test
     public void atest() {
-        String callId = SipRequestUtils.getNewCallId();
-        Request messageRequest = SipRequestProvider.createMessageRequest(fromDevice, toDevice, "123123", callId);
-        SipSender.transmitRequest(fromDevice.getIp(), messageRequest);
+        String resultCallId = ClientCommandSender.sendCommand("MESSAGE", fromDevice, toDevice, "123123");
+        System.out.println("MESSAGE请求发送成功，CallId: " + resultCallId);
     }
 
     @SneakyThrows
     @Test
     public void register() {
-        String callId = SipRequestUtils.getNewCallId();
-        Request registerRequest = SipRequestProvider.createRegisterRequest(fromDevice, toDevice, 300, callId);
-        SipSender.transmitRequestSuccess(fromDevice.getIp(), registerRequest, new Event() {
-            @Override
-            public void response(EventResult eventResult) {
-                System.out.println(eventResult);
-            }
-        });
+        String resultCallId = ClientCommandSender.sendRegisterCommand(fromDevice, toDevice, 300);
+        System.out.println("REGISTER请求发送成功，CallId: " + resultCallId);
     }
 
     @SneakyThrows

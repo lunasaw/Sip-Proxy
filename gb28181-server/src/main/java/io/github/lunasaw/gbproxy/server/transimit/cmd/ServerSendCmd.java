@@ -29,6 +29,7 @@ import io.github.lunasaw.sip.common.transmit.SipSender;
  * @author luna
  * @date 2023/10/14
  */
+@Deprecated
 public class ServerSendCmd {
 
     /**
