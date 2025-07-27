@@ -55,6 +55,19 @@ gb28181:
       register-expires: 3600
       keepalive-interval: 60
 
+# SIP协议配置
+sip:
+  gb28181:
+    # 时间同步配置
+    time-sync:
+      enabled: true                    # 是否启用时间同步
+      mode: BOTH                       # 时间同步方式: SIP, NTP, BOTH
+      offset-threshold: 1000           # 时间偏差阈值(毫秒)
+      ntp-server: "pool.ntp.org"       # NTP服务器地址
+      ntp-sync-interval: 3600          # NTP校时间隔(秒)
+      register-expire-on-error: 36000  # 时间偏差较大时的注册过期时间(秒)
+      auto-adjust-expire: true         # 是否自动调整注册过期时间
+
 # 日志配置
 logging:
   level:

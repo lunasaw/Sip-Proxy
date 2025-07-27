@@ -7,6 +7,7 @@ import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipRespo
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
+import io.github.lunasaw.sip.common.service.TimeSyncService;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.request.SipRequestBuilderFactory;
 import io.github.lunasaw.sip.common.utils.SipUtils;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.DateHeader;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -49,6 +51,9 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
     @Autowired
     private RegisterProcessorHandler registerProcessorHandler;
 
+    @Autowired
+    private TimeSyncService timeSyncService;
+
     /**
      * 处理Register响应
      *
@@ -70,8 +75,8 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
             if (statusCode == Response.UNAUTHORIZED) {
                 handleUnauthorizedResponse(evt, toUserId, callId);
             } else if (statusCode == Response.OK) {
-                registerProcessorHandler.registerSuccess(toUserId);
-                log.info("Register成功：toUserId = {}", toUserId);
+                // 处理注册成功，包括时间同步
+                handleRegisterSuccess(response, toUserId);
             } else {
                 registerProcessorHandler.handleRegisterFailure(toUserId, statusCode);
                 log.warn("Register失败：toUserId = {}, statusCode = {}", toUserId, statusCode);
@@ -136,5 +141,60 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
         // 发送二次请求
         SipSender.transmitRequest(fromDevice.getIp(), registerRequestWithAuth);
         log.info("发送重新认证请求：toUserId = {}, callId = {}", toUserId, callId);
+    }
+
+    /**
+     * 处理注册成功响应，包括时间同步
+     *
+     * @param response 注册成功响应
+     * @param toUserId 目标用户ID
+     */
+    private void handleRegisterSuccess(SIPResponse response, String toUserId) {
+        try {
+            // 调用业务处理器
+            registerProcessorHandler.registerSuccess(toUserId);
+            log.info("Register成功：toUserId = {}", toUserId);
+
+            // 处理SIP校时 - 从Date头域同步时间
+            handleSipTimeSync(response);
+
+        } catch (Exception e) {
+            log.error("处理注册成功响应异常：toUserId = {}", toUserId, e);
+        }
+    }
+
+    /**
+     * 处理SIP校时
+     *
+     * @param response SIP响应消息
+     */
+    private void handleSipTimeSync(SIPResponse response) {
+        try {
+            DateHeader dateHeader = (DateHeader) response.getHeader(DateHeader.NAME);
+            if (dateHeader == null) {
+                log.debug("未找到Date头域，跳过SIP校时");
+                return;
+            }
+
+            // 获取Date头域的值
+            String dateValue = dateHeader.getDate().toString();
+            log.debug("收到Date头域：{}", dateValue);
+
+            // 执行时间同步
+            boolean syncSuccess = timeSyncService.syncTimeFromSip(dateValue);
+            if (syncSuccess) {
+                log.info("SIP校时成功");
+                
+                // 检查是否需要进一步校时
+                if (timeSyncService.needsTimeSync()) {
+                    log.warn("时间偏差仍然较大，建议检查系统时间设置");
+                }
+            } else {
+                log.warn("SIP校时失败");
+            }
+
+        } catch (Exception e) {
+            log.error("SIP校时处理异常", e);
+        }
     }
 }
