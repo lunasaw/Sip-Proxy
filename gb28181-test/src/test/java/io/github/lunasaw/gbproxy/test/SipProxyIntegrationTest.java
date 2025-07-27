@@ -79,8 +79,6 @@ public class SipProxyIntegrationTest {
 
     private CountDownLatch responseLatch;
 
-    private EventResult        lastEventResult;
-
     @BeforeEach
     public void setUp() {
         // 获取客户端设备
