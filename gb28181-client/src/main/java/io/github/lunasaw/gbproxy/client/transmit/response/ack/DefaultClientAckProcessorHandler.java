@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.client.transmit.response.ack;
 import javax.sip.ResponseEvent;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,7 +13,8 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class DefaultAckProcessorHandler implements ClientAckProcessorHandler {
+@ConditionalOnMissingBean(ClientAckProcessorHandler.class)
+public class DefaultClientAckProcessorHandler implements ClientAckProcessorHandler {
 
     @Override
     public void handleAckResponse(String callId, ResponseEvent evt) {

@@ -2,6 +2,8 @@ package io.github.lunasaw.gbproxy.server.transmit.response.subscribe;
 
 import io.github.lunasaw.gb28181.common.entity.response.DeviceSubscribe;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 
@@ -11,6 +13,8 @@ import javax.sip.ResponseEvent;
  * @author luna
  */
 @Slf4j
+@Component
+@ConditionalOnMissingBean(SubscribeResponseProcessorHandler.class)
 public class DefaultSubscribeResponseProcessorHandler implements SubscribeResponseProcessorHandler {
 
     @Override

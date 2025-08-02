@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.client.transmit.response.cancel;
 import javax.sip.ResponseEvent;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnMissingBean(CancelProcessorHandler.class)
 public class DefaultCancelProcessorHandler implements CancelProcessorHandler {
 
     @Override

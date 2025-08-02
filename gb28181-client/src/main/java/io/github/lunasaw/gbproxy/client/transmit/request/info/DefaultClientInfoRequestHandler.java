@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @ConditionalOnMissingBean(InfoRequestHandler.class)
-public class CustomInfoRequestHandler implements InfoRequestHandler {
+public class DefaultClientInfoRequestHandler implements InfoRequestHandler {
 
     /**
      * 接收INFO消息

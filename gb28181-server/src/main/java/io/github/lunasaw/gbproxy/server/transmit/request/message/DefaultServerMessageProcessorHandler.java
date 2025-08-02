@@ -8,6 +8,8 @@ import io.github.lunasaw.gb28181.common.entity.response.*;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
 
@@ -17,6 +19,8 @@ import javax.sip.RequestEvent;
  * @author luna
  */
 @Slf4j
+@Component
+@ConditionalOnMissingBean(ServerMessageProcessorHandler.class)
 public class DefaultServerMessageProcessorHandler implements ServerMessageProcessorHandler {
 
     @Override

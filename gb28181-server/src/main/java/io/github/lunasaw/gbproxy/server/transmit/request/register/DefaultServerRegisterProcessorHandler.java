@@ -2,6 +2,8 @@ package io.github.lunasaw.gbproxy.server.transmit.request.register;
 
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
 
@@ -11,6 +13,8 @@ import javax.sip.RequestEvent;
  * @author luna
  */
 @Slf4j
+@Component
+@ConditionalOnMissingBean(ServerRegisterProcessorHandler.class)
 public class DefaultServerRegisterProcessorHandler implements ServerRegisterProcessorHandler {
 
     @Override

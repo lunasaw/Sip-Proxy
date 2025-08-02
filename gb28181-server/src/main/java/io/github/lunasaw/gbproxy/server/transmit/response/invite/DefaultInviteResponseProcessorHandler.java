@@ -10,6 +10,7 @@ import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 import javax.sdp.SdpParseException;
@@ -25,6 +26,7 @@ import javax.sip.address.SipURI;
  */
 @Slf4j
 @Component
+@ConditionalOnMissingBean(InviteResponseProcessorHandler.class)
 public class DefaultInviteResponseProcessorHandler implements InviteResponseProcessorHandler {
 
     @Autowired
