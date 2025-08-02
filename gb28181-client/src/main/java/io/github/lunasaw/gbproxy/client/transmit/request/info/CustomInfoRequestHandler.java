@@ -1,6 +1,8 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.info;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
 /**
  * INFO请求业务处理器默认实现
@@ -12,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/12/29
  */
 @Slf4j
+@Component
+@ConditionalOnMissingBean(InfoRequestHandler.class)
 public class CustomInfoRequestHandler implements InfoRequestHandler {
 
     /**

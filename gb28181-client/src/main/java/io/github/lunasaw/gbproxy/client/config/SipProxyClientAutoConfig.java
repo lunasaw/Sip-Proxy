@@ -1,28 +1,14 @@
 package io.github.lunasaw.gbproxy.client.config;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.ack.AckRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.ack.DefaultAckRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.bye.DefaultClientByeProcessorClient;
-import io.github.lunasaw.gbproxy.client.transmit.request.info.CustomInfoRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.info.InfoRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.invite.DefaultInviteRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.invite.InviteRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.CustomMessageRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
-import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.DefaultSubscribeProcessor;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestProcessor;
-import io.github.lunasaw.gbproxy.client.transmit.response.bye.ClientByeProcessorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 
@@ -54,40 +40,5 @@ public class SipProxyClientAutoConfig implements InitializingBean, ApplicationCo
         this.applicationContext = applicationContext;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public MessageRequestHandler messageRequestHandler() {
-        return new CustomMessageRequestHandler();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ClientByeProcessorHandler byeProcessorHandler() {
-        return new DefaultClientByeProcessorClient();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public InfoRequestHandler infoRequestHandler() {
-        return new CustomInfoRequestHandler();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public SubscribeRequestHandler subscribeRequestHandler() {
-        return new DefaultSubscribeProcessor();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public AckRequestHandler ackRequestHandler() {
-        return new DefaultAckRequestHandler();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public InviteRequestHandler inviteRequestHandler() {
-        return new DefaultInviteRequestHandler();
-    }
 
 }
