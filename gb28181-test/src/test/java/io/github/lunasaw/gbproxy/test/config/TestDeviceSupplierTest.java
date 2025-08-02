@@ -55,7 +55,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(clientFrom, "客户端From设备不能为空");
         assertEquals("33010602011187000001", clientFrom.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", clientFrom.getIp(), "IP地址应该正确");
-        assertEquals(8118, clientFrom.getPort(), "端口应该正确");
+        assertEquals(5061, clientFrom.getPort(), "端口应该正确");
         assertNotNull(clientFrom.getFromTag(), "FromTag应该存在");
         assertNotNull(clientFrom.getAgent(), "Agent应该存在");
 
@@ -72,7 +72,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(clientTo, "客户端To设备不能为空");
         assertEquals("41010500002000000001", clientTo.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", clientTo.getIp(), "IP地址应该正确");
-        assertEquals(8117, clientTo.getPort(), "端口应该正确");
+        assertEquals(5060, clientTo.getPort(), "端口应该正确");
         assertEquals("bajiuwulian1006", clientTo.getPassword(), "密码应该正确");
         assertEquals("4101050000", clientTo.getRealm(), "Realm应该正确");
 
@@ -89,7 +89,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(serverFrom, "服务端From设备不能为空");
         assertEquals("41010500002000000001", serverFrom.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", serverFrom.getIp(), "IP地址应该正确");
-        assertEquals(8117, serverFrom.getPort(), "端口应该正确");
+        assertEquals(5060, serverFrom.getPort(), "端口应该正确");
         assertEquals("bajiuwulian1006", serverFrom.getPassword(), "密码应该正确");
         assertEquals("4101050000", serverFrom.getRealm(), "Realm应该正确");
         assertNotNull(serverFrom.getFromTag(), "FromTag应该存在");
@@ -108,7 +108,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(serverTo, "服务端To设备不能为空");
         assertEquals("33010602011187000001", serverTo.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", serverTo.getIp(), "IP地址应该正确");
-        assertEquals(8118, serverTo.getPort(), "端口应该正确");
+        assertEquals(5061, serverTo.getPort(), "端口应该正确");
 
         System.out.println("服务端To设备: " + serverTo.getUserId() + "@" + serverTo.getIp() + ":" + serverTo.getPort());
     }

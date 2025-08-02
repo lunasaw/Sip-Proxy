@@ -171,6 +171,8 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
     public MobilePositionNotify getMobilePositionNotify(MobilePositionQuery mobilePositionQuery) {
         // 模拟获取移动位置通知
         MobilePositionNotify mobilePositionNotify = new MobilePositionNotify();
+        mobilePositionNotify.setCmdType("MobilePosition");
+        mobilePositionNotify.setSn(mobilePositionQuery.getSn());
         mobilePositionNotify.setDeviceId(mobilePositionQuery.getDeviceId());
         mobilePositionNotify.setLatitude(34.0522);
         mobilePositionNotify.setLongitude(-118.2437);

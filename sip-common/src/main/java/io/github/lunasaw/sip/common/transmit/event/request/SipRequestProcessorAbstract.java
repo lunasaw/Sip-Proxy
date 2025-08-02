@@ -63,6 +63,12 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
         String cmdType = XmlUtils.getCmdType(xmlStr);
         String rootType = XmlUtils.getRootType(xmlStr);
         String method = request.getMethod();
+
+        if (cmdType == null) {
+            log.warn("XML消息中缺少CmdType元素，跳过处理: {}", xmlStr);
+            return;
+        }
+        
         Map<String, MessageHandler> messageHandlerMap = MESSAGE_HANDLER_CMD_MAP.get(rootType);
 
         if (MapUtils.isEmpty(messageHandlerMap)) {

@@ -88,6 +88,12 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
         serverTo.setRealm(serverRealm);
         serverTo.setPassword(serverPassword);
         addOrUpdateDevice(serverTo);
+
+        // 添加测试用的硬编码设备
+        addOrUpdateDevice(createClientFromDevice());
+        addOrUpdateDevice(createClientToDevice());
+        addOrUpdateDevice(createServerFromDevice());
+        addOrUpdateDevice(createServerToDevice());
     }
 
     /**
