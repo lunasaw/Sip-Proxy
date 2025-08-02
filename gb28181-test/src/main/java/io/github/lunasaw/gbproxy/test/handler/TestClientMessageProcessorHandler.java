@@ -172,10 +172,10 @@ public class TestClientMessageProcessorHandler implements MessageRequestHandler 
         // 模拟获取移动位置通知
         MobilePositionNotify mobilePositionNotify = new MobilePositionNotify();
         mobilePositionNotify.setDeviceId(mobilePositionQuery.getDeviceId());
-        mobilePositionNotify.setLatitude("34.0522");
-        mobilePositionNotify.setLongitude("-118.2437");
+        mobilePositionNotify.setLatitude(34.0522);
+        mobilePositionNotify.setLongitude(-118.2437);
         mobilePositionNotify.setTime(DateUtils.formatDateTime(new Date()));
-        mobilePositionNotify.setSpeed("10.0");
+        mobilePositionNotify.setSpeed(10.0);
         log.info("[ClientTest] 获取设备移动位置通知: {}", mobilePositionQuery);
         updateMobilePosition(mobilePositionNotify);
         return mobilePositionNotify;
