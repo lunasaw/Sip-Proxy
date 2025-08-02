@@ -51,8 +51,11 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
             String userId = SipUtils.getUserIdFromToHeader(request);
             String callId = SipUtils.getCallId(request);
 
+            log.info("📺 客户端收到INVITE请求: callId={}, fromUserId={}, toUserId={}", callId, toUserId, userId);
+
             // 解析Sdp
-            GbSessionDescription sessionDescription = (GbSessionDescription) SipUtils.parseSdp(new String(request.getRawContent()));
+            String sdpContent = new String(request.getRawContent());
+            GbSessionDescription sessionDescription = (GbSessionDescription) SipUtils.parseSdp(sdpContent);
 
             // 调用业务处理器
             inviteRequestHandler.inviteSession(callId, sessionDescription);
@@ -61,6 +64,8 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
             // 构建响应
             ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();
             ResponseCmd.doResponseCmd(Response.OK, "OK", content, contentTypeHeader, evt);
+
+            log.info("✅ 客户端INVITE请求处理完成: callId={}", callId);
 
         } catch (Exception e) {
             log.error("处理INVITE请求时发生异常: evt = {}", evt, e);

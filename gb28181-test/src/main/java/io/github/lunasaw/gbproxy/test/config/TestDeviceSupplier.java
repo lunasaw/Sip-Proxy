@@ -8,12 +8,17 @@ import io.github.lunasaw.sip.common.service.DeviceSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
+import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 
 /**
  * 测试设备提供器实现
@@ -31,9 +36,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @Primary
-public class TestDeviceSupplier implements DeviceSupplier {
+@EnableConfigurationProperties(TestDeviceProperties.class)
+public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier, ServerDeviceSupplier {
 
     private static final String       LOOP_IP   = "127.0.0.1";
+
+    @Autowired
+    private TestDeviceProperties testDeviceProperties;
 
     /**
      * 用户ID到设备的映射
@@ -41,25 +50,50 @@ public class TestDeviceSupplier implements DeviceSupplier {
      */
     private final Map<String, Device> userIdMap = new ConcurrentHashMap<>();
 
+    private FromDevice clientFromDevice;
+    private FromDevice serverFromDevice;
+
     @PostConstruct
     public void initializeDevices() {
         log.info("初始化测试设备配置...");
 
-        // 客户端设备配置 - 统一存储为Device对象
-        Device clientFrom = createClientFromDevice();
+        // 客户端设备配置
+        String clientId = testDeviceProperties.getClient().getClientId();
+        String clientIp = testDeviceProperties.getClient().getDomain() != null ? testDeviceProperties.getClient().getDomain() : "127.0.0.1";
+        int clientPort = 5061; // 可根据需要从配置读取
+        String clientRealm = testDeviceProperties.getServer().getRealm();
+        String clientPassword = testDeviceProperties.getServer().getPassword();
+        FromDevice clientFrom = FromDevice.getInstance(clientId, clientIp, clientPort);
+        clientFrom.setRealm(clientRealm);
+        clientFrom.setPassword(clientPassword);
         addOrUpdateDevice(clientFrom);
 
-        Device clientTo = createClientToDevice();
+        ToDevice clientTo = ToDevice.getInstance(testDeviceProperties.getServer().getServerId(), clientIp, 5060);
+        clientTo.setRealm(clientRealm);
+        clientTo.setPassword(clientPassword);
         addOrUpdateDevice(clientTo);
 
-        // 服务端设备配置 - 统一存储为Device对象
-        Device serverFrom = createServerFromDevice();
+        // 服务端设备配置
+        String serverId = testDeviceProperties.getServer().getServerId();
+        String serverIp = testDeviceProperties.getServer().getDomain() != null ? testDeviceProperties.getServer().getDomain() : "127.0.0.1";
+        int serverPort = 5060;
+        String serverRealm = testDeviceProperties.getServer().getRealm();
+        String serverPassword = testDeviceProperties.getServer().getPassword();
+        FromDevice serverFrom = FromDevice.getInstance(serverId, serverIp, serverPort);
+        serverFrom.setRealm(serverRealm);
+        serverFrom.setPassword(serverPassword);
         addOrUpdateDevice(serverFrom);
 
-        Device serverTo = createServerToDevice();
+        ToDevice serverTo = ToDevice.getInstance(testDeviceProperties.getClient().getClientId(), serverIp, 5061);
+        serverTo.setRealm(serverRealm);
+        serverTo.setPassword(serverPassword);
         addOrUpdateDevice(serverTo);
 
-        log.info("测试设备初始化完成，共初始化 {} 个设备", getDeviceCount());
+        // 添加测试用的硬编码设备
+        addOrUpdateDevice(createClientFromDevice());
+        addOrUpdateDevice(createClientToDevice());
+        addOrUpdateDevice(createServerFromDevice());
+        addOrUpdateDevice(createServerToDevice());
     }
 
     /**
@@ -97,7 +131,6 @@ public class TestDeviceSupplier implements DeviceSupplier {
         return device;
     }
 
-    @Override
     public List<Device> getDevices() {
         return Lists.newArrayList(userIdMap.values());
     }
@@ -111,7 +144,6 @@ public class TestDeviceSupplier implements DeviceSupplier {
         return device;
     }
 
-    @Override
     public void addOrUpdateDevice(Device device) {
         if (device == null) {
             log.warn("尝试添加空设备");
@@ -130,7 +162,6 @@ public class TestDeviceSupplier implements DeviceSupplier {
             device.getUserId(), device.getIp(), device.getPort());
     }
 
-    @Override
     public void removeDevice(String userId) {
         Device removedDevice = userIdMap.remove(userId);
         if (removedDevice != null) {
@@ -140,7 +171,6 @@ public class TestDeviceSupplier implements DeviceSupplier {
         }
     }
 
-    @Override
     public int getDeviceCount() {
         return userIdMap.size();
     }
@@ -157,12 +187,24 @@ public class TestDeviceSupplier implements DeviceSupplier {
      * 用于客户端主动发送请求的场景
      */
     public FromDevice getClientFromDevice() {
+        if (clientFromDevice != null) {
+            return clientFromDevice;
+        }
         Device device = getDevice("33010602011187000001");
         if (device instanceof FromDevice) {
-            return (FromDevice)device;
+            clientFromDevice = (FromDevice) device;
+            return clientFromDevice;
         }
-        // 如果不是FromDevice类型，创建新的FromDevice
-        return createFromDevice(device);
+        clientFromDevice = createFromDevice(device);
+        return clientFromDevice;
+    }
+
+    @Override
+    public void setClientFromDevice(FromDevice fromDevice) {
+        if (fromDevice != null) {
+            this.clientFromDevice = fromDevice;
+            addOrUpdateDevice(fromDevice);
+        }
     }
 
     /**
@@ -185,10 +227,19 @@ public class TestDeviceSupplier implements DeviceSupplier {
     public FromDevice getServerFromDevice() {
         Device device = getDevice("41010500002000000001");
         if (device instanceof FromDevice) {
-            return (FromDevice)device;
+            serverFromDevice = (FromDevice) device;
+            return serverFromDevice;
         }
-        // 如果不是FromDevice类型，创建新的FromDevice
-        return createFromDevice(device);
+        serverFromDevice = createFromDevice(device);
+        return serverFromDevice;
+    }
+
+    @Override
+    public void setServerFromDevice(FromDevice fromDevice) {
+        if (fromDevice != null) {
+            this.serverFromDevice = fromDevice;
+            addOrUpdateDevice(fromDevice);
+        }
     }
 
     /**

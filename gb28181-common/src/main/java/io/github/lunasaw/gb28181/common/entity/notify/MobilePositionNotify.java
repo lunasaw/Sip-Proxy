@@ -36,18 +36,42 @@ import lombok.Setter;
 public class MobilePositionNotify extends DeviceBase {
 
 
+    /**
+     * 产生通知时间（必选）
+     */
     @XmlElement(name = "Time")
     private String time;
+    
+    /**
+     * 经度（必选）- GB28181标准要求double类型
+     */
     @XmlElement(name = "Longitude")
-    private String longitude;
+    private Double longitude;
+    
+    /**
+     * 纬度（必选）- GB28181标准要求double类型
+     */
     @XmlElement(name = "Latitude")
-    private String latitude;
+    private Double latitude;
+    
+    /**
+     * 速度，单位：km/h（可选）- GB28181标准要求double类型
+     */
     @XmlElement(name = "Speed")
-    private String speed;
+    private Double speed;
+    
+    /**
+     * 方向，取值为当前摄像头方向与正北方的顺时针夹角，取值范围0°～360°，单位：(°)（可选）
+     * GB28181标准要求double类型
+     */
     @XmlElement(name = "Direction")
-    private String direction;
+    private Double direction;
+    
+    /**
+     * 海拔高度，单位：m（可选）- GB28181标准要求double类型
+     */
     @XmlElement(name = "Altitude")
-    private String altitude;
+    private Double altitude;
 
     public MobilePositionNotify(String cmdType, String sn, String deviceId) {
         super(cmdType, sn, deviceId);

@@ -64,7 +64,7 @@ public class SipProxyAutoConfig implements InitializingBean, ApplicationContextA
                     AbstractSipResponseProcessor abstractProcessor = (AbstractSipResponseProcessor) processor;
                     String method = abstractProcessor.getMethod();
                     CustomerSipListener.getInstance().addResponseProcessor(method, abstractProcessor);
-                    log.debug("注册响应处理器: {} -> {}", method, processor.getClass().getSimpleName());
+                    log.info("注册响应处理器: {} -> {}", method, processor.getClass().getSimpleName());
                 }
             } catch (Exception e) {
                 log.error("注册响应处理器失败: bean = {}", beanName, e);
@@ -89,7 +89,7 @@ public class SipProxyAutoConfig implements InitializingBean, ApplicationContextA
                     field.setAccessible(true);
                     String method = field.get(processor).toString();
                     CustomerSipListener.getInstance().addRequestProcessor(method, processor);
-                    log.debug("注册请求处理器: {} -> {}", method, processor.getClass().getSimpleName());
+                    log.info("注册请求处理器: {} -> {}", method, processor.getClass().getSimpleName());
                 }
             } catch (Exception e) {
                 log.error("注册请求处理器失败: bean = {}", beanName, e);

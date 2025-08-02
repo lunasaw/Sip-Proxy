@@ -20,118 +20,48 @@ test:
   test-data-dir: src/test/resources/test-data     # 测试数据目录
   scenario-dir: src/test/resources/test-scenarios  # 测试场景配置目录
 
-  # 服务端测试配置
-  server:
-    ip: 127.0.0.1
-    port: 5060
-    domain: "44050100"
-    server-id: "44050100002000000001"
-    server-name: "GB28181-Server-Test"
-    username: "admin"
-    password: "123456"
-    realm: "44050100"
-    register-timeout: 60
-    heartbeat-timeout: 30
-    invite-timeout: 30
-    max-devices: 1000
-    auth-enabled: true
-    device-monitor-enabled: true
-    media-server:
-      ip: 127.0.0.1
-      rtp-port-start: 10000
-      rtp-port-end: 20000
-      rtcp-port-start: 20001
-      rtcp-port-end: 30000
 
-  # 客户端测试配置
-  client:
-    ip: 127.0.0.1
-    port: 5061
-    server-ip: 127.0.0.1
-    server-port: 5060
-    domain: "44050100"
-    device-id: "44050100001327000001"
-    device-name: "GB28181-Client-Test"
-    manufacturer: "TestManufacturer"
-    model: "TestModel"
-    firmware: "V1.0.0"
-    username: "admin"
-    password: "123456"
-    register-expires: 3600
-    keepalive-interval: 60
-    max-retries: 3
-    retry-delay: 5000
-    auto-register: true
-    auto-keepalive: true
-    channels:
-      - channel-id: "44050100001327000002"
-        channel-name: "测试通道1"
-        channel-type: 1
-        status: "ON"
-        parent-id: "44050100001327000001"
-        address: "测试地址1"
-        has-record: true
-        record-type: "time"
-      - channel-id: "44050100001327000003"
-        channel-name: "测试通道2"
-        channel-type: 2
-        status: "ON"
-        parent-id: "44050100001327000001"
-        address: "测试地址2"
-        has-record: true
-        record-type: "alarm"
-
-# SIP基础配置
+# SIP协议配置
 sip:
-  local:
-    ip: 127.0.0.1
-    port: 5060
-    transport: UDP
-    charset: UTF-8
-  
-  performance:
-    enable-async: true
-    thread-pool-size: 50
-    cache-enable: true
-    cache-size: 1000
-  
-  monitor:
-    enable: true
-    metrics-enable: true
+  common:
+    # 时间同步配置
+    time-sync:
+      enabled: true                    # 是否启用时间同步
+      mode: BOTH                       # 时间同步方式: SIP, NTP, BOTH
+      offset-threshold: 1000           # 时间偏差阈值(毫秒)
+      ntp-server: "pool.ntp.org"       # NTP服务器地址
+      ntp-sync-interval: 3600          # NTP校时间隔(秒)
+      register-expire-on-error: 36000  # 时间偏差较大时的注册过期时间(秒)
+      auto-adjust-expire: true         # 是否自动调整注册过期时间
 
-# GB28181协议配置
-gb28181:
-  # 服务端配置
+  # SIP相关配置
+
   server:
-    device:
-      domain: "44050100"
-      server-id: "44050100002000000001"
-      server-name: "GB28181-Server-Test"
-    auth:
-      enable: true
-      realm: "44050100"
-      username: "admin"
-      password: "123456"
-    timeout:
-      register: 60
-      heartbeat: 30
-      invite: 30
+    enabled: true
+    ip: "127.0.0.1"
+    port: 5060
+    maxDevices: 100
+    deviceTimeout: 5m
+    enableTcp: false
+    enableUdp: true
+    domain: "34020000002000000001"
+    serverId: "34020000002000000001"
+    serverName: "GB28181-Server"
+    username: "admin"
+    password: "12345678"
+    realm: 34020000
 
-  # 客户端配置  
+
   client:
-    device:
-      domain: "44050100"
-      device-id: "44050100001327000001"
-      device-name: "GB28181-Client-Test"
-      manufacturer: "TestManufacturer"
-      model: "TestModel"
-      firmware: "V1.0.0"
-    auth:
-      username: "admin"
-      password: "123456"
-    timeout:
-      register-expires: 3600
-      keepalive-interval: 60
+    enabled: true
+    domain: 127.0.0.1
+    keepAliveInterval: 1m
+    maxRetries: 3
+    retryDelay: 5s
+    registerExpires: 3600
+    clientId: "34020000001320000001"
+    clientName: "GB28181-Client"
+    port: 5061
 
 # 日志配置
 logging:
@@ -158,7 +88,7 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true

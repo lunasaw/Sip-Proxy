@@ -76,6 +76,9 @@ public class XmlUtils {
         // 获取CmdType子元素
         Element cmdType = root.element("CmdType");
 
+        if (cmdType == null) {
+            return null;
+        }
         return cmdType.getText();
     }
 

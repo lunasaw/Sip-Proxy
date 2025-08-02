@@ -11,7 +11,7 @@ import jakarta.xml.bind.annotation.XmlElement;
  */
 @Getter
 @Setter
-public class DeviceControlBase extends DeviceBase {
+public abstract class DeviceControlBase extends DeviceBase {
 
     @XmlElement(name = "ControlType")
     private String controlType;

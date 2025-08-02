@@ -16,6 +16,7 @@ import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 客户端消息处理器抽象基类
@@ -23,6 +24,7 @@ import lombok.Getter;
  *
  * @author luna
  */
+@Slf4j
 @Getter
 @Component
 @ConditionalOnBean(MessageRequestHandler.class)
@@ -65,16 +67,23 @@ public abstract class MessageClientHandlerAbstract extends MessageHandlerAbstrac
         String sipId = SipUtils.getUserIdFromFromHeader(sipRequest);
 
         DeviceSession deviceSession = new DeviceSession(userId, sipId);
+
+        // 设置FromDevice - 客户端响应时使用
         FromDevice clientFromDevice = clientDeviceSupplier.getClientFromDevice();
-        if (clientFromDevice != null && clientFromDevice.getUserId().equals(userId)) {
-            // 如果客户端的fromDevice和请求中的userId一致，说明是自己的设备
-            deviceSession.setFromDevice(clientFromDevice);
+        if (clientFromDevice == null) {
+            // log 这里获取不到客户端发送设备，表示当前配置未启动客户端，需要抛出异常
+            throw new RuntimeException("获取不到客户端发送设备，表示当前配置未启动客户端");
         }
+        deviceSession.setFromDevice(clientFromDevice);
+
+        // 设置ToDevice - 响应的目标设备（通常是服务端）
         Device device = clientDeviceSupplier.getDevice(sipId);
-        if (device != null) {
-            ToDevice toDevice = clientDeviceSupplier.getToDevice(device);
-            deviceSession.setToDevice(toDevice);
+        if (device == null) {
+            // log 这里获取不到目标设备，表示当前配置未启动服务端，需要抛出异常
+            throw new RuntimeException("获取不到目标设备，表示当前配置未启动服务端");
         }
+        deviceSession.setToDevice(clientDeviceSupplier.getToDevice(device));
+
         return deviceSession;
     }
 }

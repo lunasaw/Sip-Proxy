@@ -8,7 +8,7 @@ import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +64,20 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
     private static CountDownLatch deviceConfigLatch;
     private static AtomicBoolean deviceConfigReceived = new AtomicBoolean(false);
     private static AtomicReference<DeviceConfigResponse> receivedDeviceConfig = new AtomicReference<>();
+
+    // === 新增：Invite/Play 点播 ===
+    private static CountDownLatch invitePlayLatch;
+    private static AtomicBoolean invitePlayReceived = new AtomicBoolean(false);
+    private static AtomicReference<String> receivedInvitePlayCallId = new AtomicReference<>();
+    private static AtomicReference<String> receivedInvitePlaySdp = new AtomicReference<>();
+    private static AtomicReference<String> receivedInvitePlayFromUserId = new AtomicReference<>();
+
+    // === 新增：Invite/PlayBack 回放 ===
+    private static CountDownLatch invitePlayBackLatch;
+    private static AtomicBoolean invitePlayBackReceived = new AtomicBoolean(false);
+    private static AtomicReference<String> receivedInvitePlayBackCallId = new AtomicReference<>();
+    private static AtomicReference<String> receivedInvitePlayBackSdp = new AtomicReference<>();
+    private static AtomicReference<String> receivedInvitePlayBackFromUserId = new AtomicReference<>();
 
     @Override
     public void handleMessageRequest(RequestEvent evt, FromDevice fromDevice) {
@@ -192,6 +206,16 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
         deviceConfigLatch = new CountDownLatch(1);
         deviceConfigReceived.set(false);
         receivedDeviceConfig.set(null);
+        invitePlayLatch = new CountDownLatch(1);
+        invitePlayReceived.set(false);
+        receivedInvitePlayCallId.set(null);
+        receivedInvitePlaySdp.set(null);
+        receivedInvitePlayFromUserId.set(null);
+        invitePlayBackLatch = new CountDownLatch(1);
+        invitePlayBackReceived.set(false);
+        receivedInvitePlayBackCallId.set(null);
+        receivedInvitePlayBackSdp.set(null);
+        receivedInvitePlayBackFromUserId.set(null);
         log.info("🔄 TestServerMessageProcessorHandler 测试状态已重置");
     }
 
@@ -313,5 +337,68 @@ public class TestServerMessageProcessorHandler implements ServerMessageProcessor
 
     public static DeviceConfigResponse getReceivedDeviceConfig() {
         return receivedDeviceConfig.get();
+    }
+
+    // === Invite/Play 点播 ===
+    public static boolean waitForInvitePlay(long timeout, TimeUnit unit) throws InterruptedException {
+        if (invitePlayLatch == null) return false;
+        return invitePlayLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedInvitePlay() {
+        return invitePlayReceived.get();
+    }
+
+    public static String getReceivedInvitePlayCallId() {
+        return receivedInvitePlayCallId.get();
+    }
+
+    public static String getReceivedInvitePlaySdp() {
+        return receivedInvitePlaySdp.get();
+    }
+
+    public static String getReceivedInvitePlayFromUserId() {
+        return receivedInvitePlayFromUserId.get();
+    }
+
+    // === Invite/PlayBack 回放 ===
+    public static boolean waitForInvitePlayBack(long timeout, TimeUnit unit) throws InterruptedException {
+        if (invitePlayBackLatch == null) return false;
+        return invitePlayBackLatch.await(timeout, unit);
+    }
+
+    public static boolean hasReceivedInvitePlayBack() {
+        return invitePlayBackReceived.get();
+    }
+
+    public static String getReceivedInvitePlayBackCallId() {
+        return receivedInvitePlayBackCallId.get();
+    }
+
+    public static String getReceivedInvitePlayBackSdp() {
+        return receivedInvitePlayBackSdp.get();
+    }
+
+    public static String getReceivedInvitePlayBackFromUserId() {
+        return receivedInvitePlayBackFromUserId.get();
+    }
+
+    // === Invite/Play 点播更新方法 ===
+    public static void updateInvitePlay(String callId, String sdpContent, String fromUserId) {
+        log.info("📺 TestServerMessageProcessorHandler 更新实时点播: callId={}, fromUserId={}, sdp={}", callId, fromUserId, sdpContent);
+        invitePlayReceived.set(true);
+        receivedInvitePlayCallId.set(callId);
+        receivedInvitePlaySdp.set(sdpContent);
+        receivedInvitePlayFromUserId.set(fromUserId);
+        if (invitePlayLatch != null) invitePlayLatch.countDown();
+    }
+
+    public static void updateInvitePlayBack(String callId, String sdpContent, String fromUserId) {
+        log.info("📼 TestServerMessageProcessorHandler 更新回放点播: callId={}, fromUserId={}, sdp={}", callId, fromUserId, sdpContent);
+        invitePlayBackReceived.set(true);
+        receivedInvitePlayBackCallId.set(callId);
+        receivedInvitePlayBackSdp.set(sdpContent);
+        receivedInvitePlayBackFromUserId.set(fromUserId);
+        if (invitePlayBackLatch != null) invitePlayBackLatch.countDown();
     }
 }

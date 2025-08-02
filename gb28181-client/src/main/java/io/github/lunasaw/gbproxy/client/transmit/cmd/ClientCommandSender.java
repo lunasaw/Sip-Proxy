@@ -404,6 +404,72 @@ public class ClientCommandSender {
         return sendCommand("ACK", fromDevice, toDevice, content, callId);
     }
 
+    // ==================== 点播相关命令 ====================
+
+    /**
+     * 发送实时点播命令
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param sdpContent SDP内容
+     * @return callId
+     */
+    public static String sendInvitePlayCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent) {
+        return sendCommand("INVITE", fromDevice, toDevice, sdpContent);
+    }
+
+    /**
+     * 发送实时点播命令（带事件）
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param sdpContent SDP内容
+     * @param errorEvent 错误事件
+     * @param okEvent    成功事件
+     * @return callId
+     */
+    public static String sendInvitePlayCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent, Event errorEvent, Event okEvent) {
+        return sendCommand("INVITE", fromDevice, toDevice, errorEvent, okEvent, sdpContent);
+    }
+
+    /**
+     * 发送回放点播命令
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param sdpContent SDP内容
+     * @return callId
+     */
+    public static String sendInvitePlayBackCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent) {
+        return sendCommand("INVITE", fromDevice, toDevice, sdpContent);
+    }
+
+    /**
+     * 发送回放点播命令（带事件）
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param sdpContent SDP内容
+     * @param errorEvent 错误事件
+     * @param okEvent    成功事件
+     * @return callId
+     */
+    public static String sendInvitePlayBackCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent, Event errorEvent, Event okEvent) {
+        return sendCommand("INVITE", fromDevice, toDevice, errorEvent, okEvent, sdpContent);
+    }
+
+    /**
+     * 发送点播控制命令（暂停、继续、快进等）
+     *
+     * @param fromDevice 发送设备
+     * @param toDevice   接收设备
+     * @param controlContent 控制内容
+     * @return callId
+     */
+    public static String sendInvitePlayControlCommand(FromDevice fromDevice, ToDevice toDevice, String controlContent) {
+        return sendCommand("MESSAGE", fromDevice, toDevice, controlContent);
+    }
+
     // ==================== 注册相关命令 ====================
 
     /**

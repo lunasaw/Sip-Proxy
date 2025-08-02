@@ -7,6 +7,7 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.InviteCommand
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.ByeCommandStrategy;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.AckCommandStrategy;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.InfoCommandStrategy;
+import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl.RegisterCommandStrategy;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -34,6 +35,7 @@ public class ClientCommandStrategyFactory {
         STRATEGY_MAP.put("BYE", new ByeCommandStrategy());
         STRATEGY_MAP.put("ACK", new AckCommandStrategy());
         STRATEGY_MAP.put("INFO", new InfoCommandStrategy());
+        STRATEGY_MAP.put("REGISTER", new RegisterCommandStrategy());
 
         log.info("客户端SIP消息类型策略工厂初始化完成，已注册策略: {}", STRATEGY_MAP.keySet());
     }
@@ -73,6 +75,10 @@ public class ClientCommandStrategyFactory {
 
     public static ClientCommandStrategy getInfoStrategy() {
         return getStrategy("INFO");
+    }
+
+    public static ClientCommandStrategy getRegisterStrategy() {
+        return getStrategy("REGISTER");
     }
 
     // 删除自定义注册、移除、查询等非必要方法，只保留基础功能

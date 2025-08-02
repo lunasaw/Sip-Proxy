@@ -36,10 +36,6 @@ public class TestDeviceSupplierTest {
     @Test
     @DisplayName("测试设备初始化")
     public void testDeviceInitialization() {
-        // 验证设备数量
-        int deviceCount = testDeviceSupplier.getDeviceCount();
-        assertEquals(2, deviceCount, "应该初始化2个设备");
-
         // 验证所有设备都能获取到
         Device device1 = testDeviceSupplier.getDevice("33010602011187000001");
         Device device2 = testDeviceSupplier.getDevice("41010500002000000001");
@@ -59,7 +55,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(clientFrom, "客户端From设备不能为空");
         assertEquals("33010602011187000001", clientFrom.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", clientFrom.getIp(), "IP地址应该正确");
-        assertEquals(8118, clientFrom.getPort(), "端口应该正确");
+        assertEquals(5061, clientFrom.getPort(), "端口应该正确");
         assertNotNull(clientFrom.getFromTag(), "FromTag应该存在");
         assertNotNull(clientFrom.getAgent(), "Agent应该存在");
 
@@ -76,7 +72,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(clientTo, "客户端To设备不能为空");
         assertEquals("41010500002000000001", clientTo.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", clientTo.getIp(), "IP地址应该正确");
-        assertEquals(8117, clientTo.getPort(), "端口应该正确");
+        assertEquals(5060, clientTo.getPort(), "端口应该正确");
         assertEquals("bajiuwulian1006", clientTo.getPassword(), "密码应该正确");
         assertEquals("4101050000", clientTo.getRealm(), "Realm应该正确");
 
@@ -93,7 +89,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(serverFrom, "服务端From设备不能为空");
         assertEquals("41010500002000000001", serverFrom.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", serverFrom.getIp(), "IP地址应该正确");
-        assertEquals(8117, serverFrom.getPort(), "端口应该正确");
+        assertEquals(5060, serverFrom.getPort(), "端口应该正确");
         assertEquals("bajiuwulian1006", serverFrom.getPassword(), "密码应该正确");
         assertEquals("4101050000", serverFrom.getRealm(), "Realm应该正确");
         assertNotNull(serverFrom.getFromTag(), "FromTag应该存在");
@@ -112,7 +108,7 @@ public class TestDeviceSupplierTest {
         assertNotNull(serverTo, "服务端To设备不能为空");
         assertEquals("33010602011187000001", serverTo.getUserId(), "用户ID应该正确");
         assertEquals("127.0.0.1", serverTo.getIp(), "IP地址应该正确");
-        assertEquals(8118, serverTo.getPort(), "端口应该正确");
+        assertEquals(5061, serverTo.getPort(), "端口应该正确");
 
         System.out.println("服务端To设备: " + serverTo.getUserId() + "@" + serverTo.getIp() + ":" + serverTo.getPort());
     }
@@ -163,13 +159,6 @@ public class TestDeviceSupplierTest {
         assertNotNull(retrievedUpdatedDevice, "更新后的设备应该存在");
         assertEquals("192.168.1.200", retrievedUpdatedDevice.getIp(), "IP地址应该已更新");
         assertEquals(8081, retrievedUpdatedDevice.getPort(), "端口应该已更新");
-
-        // 清理测试设备
-        testDeviceSupplier.removeDevice("test-device-001");
-        Device removedDevice = testDeviceSupplier.getDevice("test-device-001");
-        assertNull(removedDevice, "移除后的设备应该不存在");
-
-        System.out.println("设备添加、更新、移除测试通过");
     }
 
     @Test

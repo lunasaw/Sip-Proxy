@@ -4,6 +4,8 @@ import io.github.lunasaw.gb28181.common.entity.notify.*;
 import io.github.lunasaw.gb28181.common.entity.query.*;
 import io.github.lunasaw.gb28181.common.entity.response.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.stereotype.Component;
 
 /**
  * MESSAGE请求业务处理器默认实现
@@ -13,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/10/18
  */
 @Slf4j
+@Component
+@ConditionalOnMissingBean(MessageRequestHandler.class)
 public class CustomMessageRequestHandler implements MessageRequestHandler {
 
     @Override

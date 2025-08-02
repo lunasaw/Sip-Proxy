@@ -2,6 +2,7 @@ package io.github.lunasaw.gb28181.common.entity.notify;
 
 
 import com.luna.common.date.DateUtils;
+import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceItem;
 import io.github.lunasaw.gb28181.common.entity.DeviceAlarm;
 import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
@@ -41,7 +42,7 @@ import lombok.Setter;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DeviceAlarmNotify extends XmlBean {
     @XmlElement(name = "CmdType")
-    public String     cmdType;
+    public String cmdType = CmdTypeEnum.ALARM.getType();
 
     @XmlElement(name = "SN")
     public String     sn;

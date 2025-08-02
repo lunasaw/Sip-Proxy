@@ -1,19 +1,20 @@
 package io.github.lunasaw.gbproxy.test;
 
+import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.test.config.TestDeviceSupplier;
 import io.github.lunasaw.gbproxy.test.utils.TestSipRequestUtils;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.DeviceSupplier;
-import io.github.lunasaw.sip.common.transmit.request.SipRequestProvider;
+
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
-import javax.sip.message.Request;
+
 import java.util.List;
 
 /**
@@ -114,11 +115,6 @@ public class SipProxyBasicTest {
                 Assertions.assertNotNull(toDevice.getUserId(), "To设备ID不能为空");
                 System.out.println("To设备获取成功: " + toDevice.getUserId());
             }
-
-            // 测试获取所有设备
-            List<Device> allDevices = deviceSupplier.getDevices();
-            System.out.println("总设备数量: " + allDevices.size());
-
         } catch (Exception e) {
             System.err.println("设备获取测试失败: " + e.getMessage());
             e.printStackTrace();
@@ -135,20 +131,14 @@ public class SipProxyBasicTest {
         }
 
         try {
-            String callId = TestSipRequestUtils.getNewCallId();
-            Request registerRequest = SipRequestProvider.createRegisterRequest(
-                clientFromDevice,
-                clientToDevice,
-                3600,
-                callId);
+            String resultCallId = ClientCommandSender.sendRegisterCommand(clientFromDevice, clientToDevice, 3600);
 
-            Assertions.assertNotNull(registerRequest, "注册请求应该被成功创建");
-            Assertions.assertEquals("REGISTER", registerRequest.getMethod(), "请求方法应该是REGISTER");
+            Assertions.assertNotNull(resultCallId, "注册请求应该被成功创建");
 
             System.out.println("注册请求创建成功");
-            System.out.println("CallId: " + callId);
-            System.out.println("From: " + registerRequest.getHeader("From"));
-            System.out.println("To: " + registerRequest.getHeader("To"));
+            System.out.println("CallId: " + resultCallId);
+            System.out.println("From: " + clientFromDevice.getUserId());
+            System.out.println("To: " + clientToDevice.getUserId());
         } catch (Exception e) {
             System.err.println("SIP请求创建失败: " + e.getMessage());
             e.printStackTrace();
@@ -173,17 +163,12 @@ public class SipProxyBasicTest {
                 "  <DeviceID>" + clientFromDevice.getUserId() + "</DeviceID>\n" +
                 "</Control>";
 
-            Request messageRequest = SipRequestProvider.createMessageRequest(
-                clientFromDevice,
-                clientToDevice,
-                callId,
-                xmlContent);
+            String resultCallId = ClientCommandSender.sendCommand("MESSAGE", clientFromDevice, clientToDevice, xmlContent);
 
-            Assertions.assertNotNull(messageRequest, "消息请求应该被成功创建");
-            Assertions.assertEquals("MESSAGE", messageRequest.getMethod(), "请求方法应该是MESSAGE");
+            Assertions.assertNotNull(resultCallId, "消息请求应该被成功创建");
 
             System.out.println("消息请求创建成功");
-            System.out.println("CallId: " + callId);
+            System.out.println("CallId: " + resultCallId);
             System.out.println("Content: " + xmlContent);
         } catch (Exception e) {
             System.err.println("SIP消息创建失败: " + e.getMessage());

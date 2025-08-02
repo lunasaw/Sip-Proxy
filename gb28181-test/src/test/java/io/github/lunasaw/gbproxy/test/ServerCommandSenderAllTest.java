@@ -1,7 +1,7 @@
 package io.github.lunasaw.gbproxy.test;
 
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
-import io.github.lunasaw.gbproxy.server.transimit.cmd.ServerCommandSender;
+import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.handler.TestClientMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
