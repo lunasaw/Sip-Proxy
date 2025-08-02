@@ -1,6 +1,6 @@
 package io.github.lunasaw.gbproxy.server.service;
 
-import io.github.lunasaw.gbproxy.server.config.ServerProperties;
+import io.github.lunasaw.gbproxy.server.config.SipServerProperties;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
@@ -9,9 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 服务端设备提供器默认实现
@@ -28,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 @Slf4j
 @Service
+@ConditionalOnMissingBean(ServerDeviceSupplier.class)
 public class DefaultServerDeviceSupplier implements ServerDeviceSupplier {
 
     /**
@@ -44,7 +43,7 @@ public class DefaultServerDeviceSupplier implements ServerDeviceSupplier {
      * GB28181服务端配置属性
      */
     @Autowired
-    private ServerProperties serverProperties;
+    private SipServerProperties serverProperties;
 
     /**
      * 初始化服务端发送方设备信息

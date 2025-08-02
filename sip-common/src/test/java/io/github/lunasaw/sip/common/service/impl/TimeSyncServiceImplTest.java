@@ -1,6 +1,6 @@
 package io.github.lunasaw.sip.common.service.impl;
 
-import io.github.lunasaw.sip.common.config.Gb28181Properties;
+import io.github.lunasaw.sip.common.config.SipCommonProperties;
 import io.github.lunasaw.sip.common.service.TimeSyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,20 +24,20 @@ import static org.mockito.Mockito.when;
 class TimeSyncServiceImplTest {
 
     @Mock
-    private Gb28181Properties gb28181Properties;
+    private SipCommonProperties sipCommonProperties;
 
     @Mock
-    private Gb28181Properties.TimeSync timeSyncConfig;
+    private SipCommonProperties.TimeSync timeSyncConfig;
 
     private TimeSyncService timeSyncService;
 
     @BeforeEach
     void setUp() {
         timeSyncService = new TimeSyncServiceImpl();
-        ReflectionTestUtils.setField(timeSyncService, "gb28181Properties", gb28181Properties);
+        ReflectionTestUtils.setField(timeSyncService, "gb28181Properties", sipCommonProperties);
         
         // 设置默认的mock行为
-        when(gb28181Properties.getTimeSync()).thenReturn(timeSyncConfig);
+        when(sipCommonProperties.getTimeSync()).thenReturn(timeSyncConfig);
         when(timeSyncConfig.isEnabled()).thenReturn(true);
         when(timeSyncConfig.getOffsetThreshold()).thenReturn(1000L);
     }

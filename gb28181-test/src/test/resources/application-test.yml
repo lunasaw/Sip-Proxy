@@ -1,65 +1,45 @@
 # SIP代理测试配置文件
 # 用于单元测试的配置 - 简化版本
 
-# GB28181配置
+# SIP协议配置
 sip:
-  gb28181:
-    server:
-      ip: "127.0.0.1"
-      port: 5060
-      maxDevices: 100
-      deviceTimeout: 5m
-      enableTcp: false
-      enableUdp: true
-      domain: "34020000002000000001"
-      serverId: "34020000002000000001"
-      serverName: "GB28181-Server"
+  common:
+    # 时间同步配置
+    time-sync:
+      enabled: true                    # 是否启用时间同步
+      mode: BOTH                       # 时间同步方式: SIP, NTP, BOTH
+      offset-threshold: 1000           # 时间偏差阈值(毫秒)
+      ntp-server: "pool.ntp.org"       # NTP服务器地址
+      ntp-sync-interval: 3600          # NTP校时间隔(秒)
+      register-expire-on-error: 36000  # 时间偏差较大时的注册过期时间(秒)
+      auto-adjust-expire: true         # 是否自动调整注册过期时间
 
-    client:
-      keepAliveInterval: 1m
-      maxRetries: 3
-      retryDelay: 5s
-      registerExpires: 3600
-      clientId: "34020000001320000001"
-      clientName: "GB28181-Client"
-      username: "admin"
-      password: "123456"
+  # SIP相关配置
 
-    performance:
-      messageQueueSize: 100
-      threadPoolSize: 4
-      enableMetrics: false
-      enableAsync: false
-      batchSize: 10
-      processingTimeoutMs: 5000
-      slowQueryThresholdMs: 100
+  server:
+    enabled: true
+    ip: "127.0.0.1"
+    port: 5060
+    maxDevices: 100
+    deviceTimeout: 5m
+    enableTcp: false
+    enableUdp: true
+    domain: "34020000002000000001"
+    serverId: "34020000002000000001"
+    serverName: "GB28181-Server"
+    username: "admin"
+    password: "12345678"
+    realm: 34020000
 
-    cache:
-      deviceMaxSize: 100
-      deviceExpireAfterWrite: 2h
-      deviceExpireAfterAccess: 30m
-      subscribeMaxSize: 50
-      subscribeExpireAfterWrite: 5m
-      subscribeExpireAfterAccess: 2m
-      transactionMaxSize: 20
-      transactionExpireAfterWrite: 1m
-      messageMaxSize: 100
-      messageExpireAfterWrite: 30m
-      messageExpireAfterAccess: 15m
-      enableStats: false
 
-  # 异步处理配置 - 禁用以避免复杂性问题
-  async:
-    enabled: false
-    corePoolSize: 1
-    maxPoolSize: 2
-    keepAliveSeconds: 60
-    queueCapacity: 10
-    threadNamePrefix: "sip-test-async-"
-    timeoutMillis: 5000
-    waitForTasksToCompleteOnShutdown: true
-    awaitTerminationSeconds: 5
-    callerRunsPolicy: true
+  client:
+    enabled: true
+    keepAliveInterval: 1m
+    maxRetries: 3
+    retryDelay: 5s
+    registerExpires: 3600
+    clientId: "34020000001320000001"
+    clientName: "GB28181-Client"
 
   # 连接池配置 - 简化配置
   pool:
@@ -78,7 +58,6 @@ sip:
     forceCleanupOnShutdown: true
     maxWaitMillis: 5000
     validationQuery: "OPTIONS"
-
 # Spring配置
 spring:
   main:

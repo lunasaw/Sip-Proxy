@@ -21,43 +21,9 @@ test:
   scenario-dir: src/test/resources/test-scenarios  # 测试场景配置目录
 
 
-# GB28181协议配置
-gb28181:
-  # 服务端配置
-  server:
-    device:
-      domain: 127.0.0.1
-      server-id: "41010500002000000001"
-      server-name: "GB28181-Server-Test"
-    auth:
-      enable: true
-      realm: "44050100"
-      username: "admin"
-      password: "123456"
-    timeout:
-      register: 60
-      heartbeat: 30
-      invite: 30
-
-  # 客户端配置
-  client:
-    device:
-      domain: 127.0.0.1
-      device-id: "33010602011187000001"
-      device-name: "GB28181-Client-Test"
-      manufacturer: "TestManufacturer"
-      model: "TestModel"
-      firmware: "V1.0.0"
-    auth:
-      username: "admin"
-      password: "123456"
-    timeout:
-      register-expires: 3600
-      keepalive-interval: 60
-
 # SIP协议配置
 sip:
-  gb28181:
+  common:
     # 时间同步配置
     time-sync:
       enabled: true                    # 是否启用时间同步
@@ -67,6 +33,35 @@ sip:
       ntp-sync-interval: 3600          # NTP校时间隔(秒)
       register-expire-on-error: 36000  # 时间偏差较大时的注册过期时间(秒)
       auto-adjust-expire: true         # 是否自动调整注册过期时间
+
+  # SIP相关配置
+
+  server:
+    enabled: true
+    ip: "127.0.0.1"
+    port: 5060
+    maxDevices: 100
+    deviceTimeout: 5m
+    enableTcp: false
+    enableUdp: true
+    domain: "34020000002000000001"
+    serverId: "34020000002000000001"
+    serverName: "GB28181-Server"
+    username: "admin"
+    password: "12345678"
+    realm: 34020000
+
+
+  client:
+    enabled: true
+    domain: 127.0.0.1
+    keepAliveInterval: 1m
+    maxRetries: 3
+    retryDelay: 5s
+    registerExpires: 3600
+    clientId: "34020000001320000001"
+    clientName: "GB28181-Client"
+    port: 5061
 
 # 日志配置
 logging:
@@ -93,7 +88,7 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true

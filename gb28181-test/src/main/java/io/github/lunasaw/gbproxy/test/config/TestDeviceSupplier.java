@@ -58,33 +58,33 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
         log.info("初始化测试设备配置...");
 
         // 客户端设备配置
-        String clientId = testDeviceProperties.getClient().getDevice().getDeviceId();
-        String clientIp = testDeviceProperties.getClient().getDevice().getDomain() != null ? testDeviceProperties.getClient().getDevice().getDomain() : "127.0.0.1";
+        String clientId = testDeviceProperties.getClient().getClientId();
+        String clientIp = testDeviceProperties.getClient().getDomain() != null ? testDeviceProperties.getClient().getDomain() : "127.0.0.1";
         int clientPort = 5061; // 可根据需要从配置读取
-        String clientRealm = testDeviceProperties.getClient().getAuth().getRealm();
-        String clientPassword = testDeviceProperties.getClient().getAuth().getPassword();
+        String clientRealm = testDeviceProperties.getServer().getRealm();
+        String clientPassword = testDeviceProperties.getServer().getPassword();
         FromDevice clientFrom = FromDevice.getInstance(clientId, clientIp, clientPort);
         clientFrom.setRealm(clientRealm);
         clientFrom.setPassword(clientPassword);
         addOrUpdateDevice(clientFrom);
 
-        ToDevice clientTo = ToDevice.getInstance(testDeviceProperties.getServer().getDevice().getServerId(), clientIp, 5060);
+        ToDevice clientTo = ToDevice.getInstance(testDeviceProperties.getServer().getServerId(), clientIp, 5060);
         clientTo.setRealm(clientRealm);
         clientTo.setPassword(clientPassword);
         addOrUpdateDevice(clientTo);
 
         // 服务端设备配置
-        String serverId = testDeviceProperties.getServer().getDevice().getServerId();
-        String serverIp = testDeviceProperties.getServer().getDevice().getDomain() != null ? testDeviceProperties.getServer().getDevice().getDomain() : "127.0.0.1";
+        String serverId = testDeviceProperties.getServer().getServerId();
+        String serverIp = testDeviceProperties.getServer().getDomain() != null ? testDeviceProperties.getServer().getDomain() : "127.0.0.1";
         int serverPort = 5060;
-        String serverRealm = testDeviceProperties.getServer().getAuth().getRealm();
-        String serverPassword = testDeviceProperties.getServer().getAuth().getPassword();
+        String serverRealm = testDeviceProperties.getServer().getRealm();
+        String serverPassword = testDeviceProperties.getServer().getPassword();
         FromDevice serverFrom = FromDevice.getInstance(serverId, serverIp, serverPort);
         serverFrom.setRealm(serverRealm);
         serverFrom.setPassword(serverPassword);
         addOrUpdateDevice(serverFrom);
 
-        ToDevice serverTo = ToDevice.getInstance(testDeviceProperties.getClient().getDevice().getDeviceId(), serverIp, 5061);
+        ToDevice serverTo = ToDevice.getInstance(testDeviceProperties.getClient().getClientId(), serverIp, 5061);
         serverTo.setRealm(serverRealm);
         serverTo.setPassword(serverPassword);
         addOrUpdateDevice(serverTo);

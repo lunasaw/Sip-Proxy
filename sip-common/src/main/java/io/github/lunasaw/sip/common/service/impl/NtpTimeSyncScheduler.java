@@ -1,6 +1,6 @@
 package io.github.lunasaw.sip.common.service.impl;
 
-import io.github.lunasaw.sip.common.config.Gb28181Properties;
+import io.github.lunasaw.sip.common.config.SipCommonProperties;
 import io.github.lunasaw.sip.common.service.TimeSyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ public class NtpTimeSyncScheduler {
     private TimeSyncService timeSyncService;
 
     @Autowired
-    private Gb28181Properties gb28181Properties;
+    private SipCommonProperties sipCommonProperties;
 
     /**
      * 定时执行NTP校时
@@ -31,16 +31,16 @@ public class NtpTimeSyncScheduler {
      */
     @Scheduled(fixedRateString = "#{${sip.gb28181.time-sync.ntp-sync-interval:3600} * 1000}")
     public void performNtpSync() {
-        Gb28181Properties.TimeSync timeSyncConfig = gb28181Properties.getTimeSync();
+        SipCommonProperties.TimeSync timeSyncConfig = sipCommonProperties.getTimeSync();
         
         // 检查是否启用NTP校时
         if (!timeSyncConfig.isEnabled()) {
             return;
         }
 
-        Gb28181Properties.TimeSyncMode mode = timeSyncConfig.getMode();
-        if (mode != Gb28181Properties.TimeSyncMode.NTP && 
-            mode != Gb28181Properties.TimeSyncMode.BOTH) {
+        SipCommonProperties.TimeSyncMode mode = timeSyncConfig.getMode();
+        if (mode != SipCommonProperties.TimeSyncMode.NTP &&
+                mode != SipCommonProperties.TimeSyncMode.BOTH) {
             return;
         }
 
@@ -70,7 +70,7 @@ public class NtpTimeSyncScheduler {
      */
     @Scheduled(fixedRate = 300000) // 5分钟
     public void checkTimeSyncStatus() {
-        Gb28181Properties.TimeSync timeSyncConfig = gb28181Properties.getTimeSync();
+        SipCommonProperties.TimeSync timeSyncConfig = sipCommonProperties.getTimeSync();
         
         if (!timeSyncConfig.isEnabled()) {
             return;
@@ -82,7 +82,7 @@ public class NtpTimeSyncScheduler {
                 log.warn("时间偏差较大: {}ms，超过阈值: {}ms", offset, timeSyncConfig.getOffsetThreshold());
                 
                 // 如果配置了NTP作为备用校时方式，尝试NTP校时
-                if (timeSyncConfig.getMode() == Gb28181Properties.TimeSyncMode.BOTH) {
+                if (timeSyncConfig.getMode() == SipCommonProperties.TimeSyncMode.BOTH) {
                     log.info("尝试使用NTP进行时间校正");
                     timeSyncService.syncTimeFromNtp(timeSyncConfig.getNtpServer());
                 }

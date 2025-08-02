@@ -2,7 +2,7 @@ package io.github.lunasaw.gbproxy.client.transmit.response.register;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.client.config.ClientProperties;
+import io.github.lunasaw.gbproxy.client.config.SipClientProperties;
 import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -44,9 +44,6 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
 
     @Autowired
     private ClientDeviceSupplier deviceSupplier;
-
-    @Autowired
-    private ClientProperties clientProperties;
 
     @Autowired
     private RegisterProcessorHandler registerProcessorHandler;

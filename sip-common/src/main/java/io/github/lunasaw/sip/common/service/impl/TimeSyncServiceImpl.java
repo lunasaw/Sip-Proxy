@@ -1,6 +1,6 @@
 package io.github.lunasaw.sip.common.service.impl;
 
-import io.github.lunasaw.sip.common.config.Gb28181Properties;
+import io.github.lunasaw.sip.common.config.SipCommonProperties;
 import io.github.lunasaw.sip.common.service.TimeSyncService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +37,11 @@ public class TimeSyncServiceImpl implements TimeSyncService {
     private final AtomicReference<LocalDateTime> lastSyncTime = new AtomicReference<>();
 
     @Autowired
-    private Gb28181Properties gb28181Properties;
+    private SipCommonProperties sipCommonProperties;
 
     @Override
     public boolean syncTimeFromSip(String dateHeaderValue) {
-        Gb28181Properties.TimeSync timeSyncConfig = gb28181Properties.getTimeSync();
+        SipCommonProperties.TimeSync timeSyncConfig = sipCommonProperties.getTimeSync();
         if (!timeSyncConfig.isEnabled()) {
             log.debug("时间同步功能已禁用");
             return false;
@@ -86,7 +86,7 @@ public class TimeSyncServiceImpl implements TimeSyncService {
 
     @Override
     public boolean syncTimeFromNtp(String ntpServer) {
-        Gb28181Properties.TimeSync timeSyncConfig = gb28181Properties.getTimeSync();
+        SipCommonProperties.TimeSync timeSyncConfig = sipCommonProperties.getTimeSync();
         if (!timeSyncConfig.isEnabled()) {
             log.debug("时间同步功能已禁用");
             return false;
@@ -171,7 +171,7 @@ public class TimeSyncServiceImpl implements TimeSyncService {
 
     @Override
     public boolean needsTimeSync() {
-        Gb28181Properties.TimeSync timeSyncConfig = gb28181Properties.getTimeSync();
+        SipCommonProperties.TimeSync timeSyncConfig = sipCommonProperties.getTimeSync();
         if (!timeSyncConfig.isEnabled()) {
             return false;
         }

@@ -1,67 +1,10 @@
-# GB28181客户端配置示例
 sip:
   client:
-    # 设备认证配置
-    auth:
-      device-id: "34020000001320000001"
-      device-name: "GB28181-Client"
-      username: "admin"
-      password: "123456"
-      register-expires: 3600
-
-    # SIP协议配置
-    sip:
-      keep-alive-interval: 60s
-      local-port: 5060
-      local-address: "127.0.0.1"
-      remote-port: 5060
-      remote-address: "127.0.0.1"
-      transport: "UDP"
-      enable-tls: false
-      # tls-cert-path: "/path/to/cert.pem"
-      # tls-key-path: "/path/to/key.pem"
-
-    # 网络连接配置
-    network:
-      connect-timeout: 10s
-      read-timeout: 30s
-      write-timeout: 10s
-      max-connections: 100
-      idle-timeout: 5m
-      keep-alive: true
-      keep-alive-interval: 30s
-
-    # 性能配置
-    performance:
-      message-queue-size: 1000
-      core-thread-size: 10
-      max-thread-size: 200
-      thread-keep-alive-time: 1m
-      enable-metrics: true
-      enable-async: true
-      batch-size: 100
-      processing-timeout-ms: 5000
-      slow-query-threshold-ms: 100
-
-    # 缓存配置
-    cache:
-      device-max-size: 50000
-      device-expire-after-write: 2h
-      device-expire-after-access: 30m
-      subscribe-max-size: 5000
-      subscribe-expire-after-write: 5m
-      subscribe-expire-after-access: 2m
-      transaction-max-size: 2000
-      transaction-expire-after-write: 1m
-      message-max-size: 10000
-      message-expire-after-write: 30m
-      message-expire-after-access: 15m
-      enable-stats: true
-
-    # 重试配置
-    retry:
-      max-retries: 3
-      retry-delay: 5s
-      retry-multiplier: 2.0
-      max-retry-delay: 1m
-      enable-exponential-backoff: true
+    enabled: true
+    domain: 127.0.0.1
+    keepAliveInterval: 1m
+    maxRetries: 3
+    retryDelay: 5s
+    registerExpires: 3600
+    clientId: "34020000001320000001"
+    clientName: "GB28181-Client"

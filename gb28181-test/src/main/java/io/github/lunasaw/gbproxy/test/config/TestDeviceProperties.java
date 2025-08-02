@@ -1,43 +1,20 @@
 package io.github.lunasaw.gbproxy.test.config;
 
+import io.github.lunasaw.gbproxy.client.config.SipClientProperties;
+import io.github.lunasaw.gbproxy.server.config.SipServerProperties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * @author weidian
+ */
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "gb28181")
+@ConfigurationProperties(prefix = "sip")
 public class TestDeviceProperties {
-    private ServerConfig server;
-    private ClientConfig client;
 
-    @Data
-    public static class ServerConfig {
-        private DeviceConfig device;
-        private AuthConfig auth;
-    }
+    private SipServerProperties server;
+    private SipClientProperties client;
 
-    @Data
-    public static class ClientConfig {
-        private DeviceConfig device;
-        private AuthConfig auth;
-    }
-
-    @Data
-    public static class DeviceConfig {
-        private String domain;
-        private String serverId;
-        private String deviceId;
-        private String deviceName;
-        private String manufacturer;
-        private String model;
-        private String firmware;
-    }
-
-    @Data
-    public static class AuthConfig {
-        private String username;
-        private String password;
-        private String realm;
-    }
 }

@@ -1,0 +1,16 @@
+## 下游链接的需要的配置，即当前节点的配置
+sip:
+  server:
+    enabled: true
+    ip: "127.0.0.1"
+    port: 5060
+    maxDevices: 100
+    deviceTimeout: 5m
+    enableTcp: false
+    enableUdp: true
+    domain: "34020000002000000001"
+    serverId: "34020000002000000001"
+    serverName: "GB28181-Server"
+    username: "admin"
+    password: "12345678"
+    realm: 34020000
