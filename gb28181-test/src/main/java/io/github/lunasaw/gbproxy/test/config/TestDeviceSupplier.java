@@ -88,8 +88,6 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
         serverTo.setRealm(serverRealm);
         serverTo.setPassword(serverPassword);
         addOrUpdateDevice(serverTo);
-
-        log.info("测试设备初始化完成，共初始化 {} 个设备", getDeviceCount());
     }
 
     /**
@@ -127,7 +125,6 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
         return device;
     }
 
-    @Override
     public List<Device> getDevices() {
         return Lists.newArrayList(userIdMap.values());
     }
@@ -141,7 +138,6 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
         return device;
     }
 
-    @Override
     public void addOrUpdateDevice(Device device) {
         if (device == null) {
             log.warn("尝试添加空设备");
@@ -160,7 +156,6 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
             device.getUserId(), device.getIp(), device.getPort());
     }
 
-    @Override
     public void removeDevice(String userId) {
         Device removedDevice = userIdMap.remove(userId);
         if (removedDevice != null) {
@@ -170,7 +165,6 @@ public class TestDeviceSupplier implements DeviceSupplier, ClientDeviceSupplier,
         }
     }
 
-    @Override
     public int getDeviceCount() {
         return userIdMap.size();
     }

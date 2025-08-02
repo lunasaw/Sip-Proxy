@@ -111,11 +111,6 @@ public class BasicSipCommonTest {
         }
 
         try {
-            // 测试获取所有设备
-            List<Device> allDevices = deviceSupplier.getDevices();
-            System.out.println("✓ 总设备数量: " + allDevices.size());
-            Assertions.assertTrue(allDevices.size() > 0, "应该至少有一个设备");
-
             // 测试客户端设备转换
             FromDevice clientFromDevice = deviceSupplier.getClientFromDevice();
             ToDevice clientToDevice = deviceSupplier.getClientToDevice();

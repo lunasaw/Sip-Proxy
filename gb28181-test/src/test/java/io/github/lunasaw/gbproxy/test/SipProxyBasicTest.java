@@ -115,11 +115,6 @@ public class SipProxyBasicTest {
                 Assertions.assertNotNull(toDevice.getUserId(), "To设备ID不能为空");
                 System.out.println("To设备获取成功: " + toDevice.getUserId());
             }
-
-            // 测试获取所有设备
-            List<Device> allDevices = deviceSupplier.getDevices();
-            System.out.println("总设备数量: " + allDevices.size());
-
         } catch (Exception e) {
             System.err.println("设备获取测试失败: " + e.getMessage());
             e.printStackTrace();

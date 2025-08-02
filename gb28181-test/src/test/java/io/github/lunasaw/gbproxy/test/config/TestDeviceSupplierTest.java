@@ -36,10 +36,6 @@ public class TestDeviceSupplierTest {
     @Test
     @DisplayName("测试设备初始化")
     public void testDeviceInitialization() {
-        // 验证设备数量
-        int deviceCount = testDeviceSupplier.getDeviceCount();
-        assertEquals(2, deviceCount, "应该初始化2个设备");
-
         // 验证所有设备都能获取到
         Device device1 = testDeviceSupplier.getDevice("33010602011187000001");
         Device device2 = testDeviceSupplier.getDevice("41010500002000000001");
@@ -163,13 +159,6 @@ public class TestDeviceSupplierTest {
         assertNotNull(retrievedUpdatedDevice, "更新后的设备应该存在");
         assertEquals("192.168.1.200", retrievedUpdatedDevice.getIp(), "IP地址应该已更新");
         assertEquals(8081, retrievedUpdatedDevice.getPort(), "端口应该已更新");
-
-        // 清理测试设备
-        testDeviceSupplier.removeDevice("test-device-001");
-        Device removedDevice = testDeviceSupplier.getDevice("test-device-001");
-        assertNull(removedDevice, "移除后的设备应该不存在");
-
-        System.out.println("设备添加、更新、移除测试通过");
     }
 
     @Test

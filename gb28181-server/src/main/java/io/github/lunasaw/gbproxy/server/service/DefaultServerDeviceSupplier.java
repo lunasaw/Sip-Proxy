@@ -76,11 +76,6 @@ public class DefaultServerDeviceSupplier implements ServerDeviceSupplier {
     }
 
     @Override
-    public List<Device> getDevices() {
-        return new CopyOnWriteArrayList<>(deviceMap.values());
-    }
-
-    @Override
     public Device getDevice(String userId) {
         if (userId == null) {
             log.warn("获取设备时userId为空");
@@ -91,37 +86,6 @@ public class DefaultServerDeviceSupplier implements ServerDeviceSupplier {
             log.debug("未找到设备: {}", userId);
         }
         return device;
-    }
-
-    @Override
-    public void addOrUpdateDevice(Device device) {
-        if (device == null || device.getUserId() == null) {
-            log.warn("添加或更新设备时参数无效");
-            return;
-        }
-
-        deviceMap.put(device.getUserId(), device);
-        log.info("设备添加或更新成功: {}", device.getUserId());
-    }
-
-    @Override
-    public void removeDevice(String userId) {
-        if (userId == null) {
-            log.warn("移除设备时userId为空");
-            return;
-        }
-
-        Device removedDevice = deviceMap.remove(userId);
-        if (removedDevice != null) {
-            log.info("设备移除成功: {}", userId);
-        } else {
-            log.debug("设备不存在，移除失败: {}", userId);
-        }
-    }
-
-    @Override
-    public int getDeviceCount() {
-        return deviceMap.size();
     }
 
     @Override
@@ -142,17 +106,6 @@ public class DefaultServerDeviceSupplier implements ServerDeviceSupplier {
     @Override
     public String getName() {
         return "DefaultServerDeviceSupplier";
-    }
-
-    /**
-     * 获取设备提供器的统计信息
-     *
-     * @return 统计信息字符串
-     */
-    public String getStatistics() {
-        return String.format("设备总数: %d, 服务端设备: %s",
-                getDeviceCount(),
-                serverFromDevice != null ? serverFromDevice.getUserId() : "未初始化");
     }
 
     /**

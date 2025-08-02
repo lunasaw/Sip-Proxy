@@ -21,14 +21,6 @@ import java.util.List;
 public interface DeviceSupplier {
 
     /**
-     * 获取当前可用的设备列表
-     * 该方法会被定期调用以获取最新的设备信息
-     *
-     * @return 设备列表，如果没有可用设备则返回空列表
-     */
-    List<Device> getDevices();
-
-    /**
      * 根据用户ID获取指定设备
      * 这是设备获取的核心方法，业务方通过userId获取设备数据
      *
@@ -37,27 +29,6 @@ public interface DeviceSupplier {
      */
     Device getDevice(String userId);
 
-    /**
-     * 添加或更新设备
-     * 根据设备中的userId进行添加或更新操作
-     *
-     * @param device 设备信息
-     */
-    void addOrUpdateDevice(Device device);
-
-    /**
-     * 移除设备
-     *
-     * @param userId 用户ID
-     */
-    void removeDevice(String userId);
-
-    /**
-     * 获取设备数量
-     *
-     * @return 设备数量
-     */
-    int getDeviceCount();
 
     /**
      * 获取设备提供器的名称标识
