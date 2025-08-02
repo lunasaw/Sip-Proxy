@@ -57,8 +57,6 @@ public interface ServerMessageProcessorHandler {
         // 默认实现为空，由业务方根据需要实现
     }
 
-
-
     /**
      * 更新设备心跳信息
      * @param deviceKeepLiveNotify

@@ -2,6 +2,7 @@ package io.github.lunasaw.gbproxy.server.transmit.request.invite;
 
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@ConditionalOnMissingBean(ServerInviteRequestHandler.class)
 public class DefaultServerInviteRequestHandler implements ServerInviteRequestHandler {
 
     @Override

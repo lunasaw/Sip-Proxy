@@ -1,5 +1,6 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message;
 
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.RequestEvent;
 
@@ -30,10 +31,13 @@ public class ServerMessageRequestProcessor extends SipMessageRequestProcessorAbs
     @Autowired
     private ServerMessageProcessorHandler serverMessageProcessorHandler;
 
+    @Autowired
+    private ServerDeviceSupplier serverDeviceSupplier;
+
     @Override
     public void process(RequestEvent evt) {
         try {
-            log.debug("处理MESSAGE请求：evt = {}", evt);
+            log.info("处理MESSAGE请求：evt = {}", evt);
 
             // 验证设备权限
             if (!serverMessageProcessorHandler.validateDevicePermission(evt)) {
@@ -43,7 +47,7 @@ public class ServerMessageRequestProcessor extends SipMessageRequestProcessorAbs
             }
 
             // 获取发送设备信息
-            FromDevice fromDevice = serverMessageProcessorHandler.getFromDevice();
+            FromDevice fromDevice = serverDeviceSupplier.getServerFromDevice();
             if (fromDevice == null) {
                 log.warn("MESSAGE请求无法获取发送设备信息");
                 serverMessageProcessorHandler.handleMessageError(evt, "无法获取发送设备信息");
