@@ -61,9 +61,30 @@ public class DeviceResponse extends DeviceBase {
     @XmlElement(name = "SumNum")
     private int              sumNum;
 
+    @XmlElement(name = "Name")
+    private String name;
+
     @XmlElement(name = "Item")
     @XmlElementWrapper(name = "DeviceList")
     private List<DeviceItem> deviceItemList;
+
+    /**
+     * 兼容性方法：设置设备列表
+     *
+     * @param deviceItems 设备项列表
+     */
+    public void setDeviceList(List<DeviceItem> deviceItems) {
+        this.deviceItemList = deviceItems;
+    }
+
+    /**
+     * 兼容性方法：获取设备列表
+     *
+     * @return 设备项列表
+     */
+    public List<DeviceItem> getDeviceList() {
+        return this.deviceItemList;
+    }
 
     public DeviceResponse(String cmdType, String sn, String deviceId) {
         super(cmdType, sn, deviceId);

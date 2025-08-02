@@ -1,7 +1,7 @@
 package io.github.lunasaw.gbproxy.test.handler;
 
-import io.github.lunasaw.gbproxy.server.transimit.request.register.RegisterInfo;
-import io.github.lunasaw.gbproxy.server.transimit.request.register.ServerRegisterProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.RegisterInfo;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.ServerRegisterProcessorHandler;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;

@@ -8,7 +8,7 @@ import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.extern.slf4j.Slf4j;

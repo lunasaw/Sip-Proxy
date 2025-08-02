@@ -9,7 +9,6 @@ import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.layer.SipLayer;
 
-import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,10 +18,7 @@ import org.springframework.test.context.TestPropertySource;
 import javax.sip.SipListener;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 基础SIP通用功能测试
@@ -53,7 +49,7 @@ public class BasicSipCommonTest {
     protected SipListener sipListener;
 
     @Autowired(required = false)
-    protected io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor serverMessageRequestProcessor;
+    protected io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageRequestProcessor serverMessageRequestProcessor;
 
     @BeforeEach
     public void setUp() {

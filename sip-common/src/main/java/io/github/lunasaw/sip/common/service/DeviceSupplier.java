@@ -2,13 +2,14 @@ package io.github.lunasaw.sip.common.service;
 
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.ToDevice;
+import org.springframework.util.Assert;
 
 import java.util.List;
 
 /**
  * 设备提供器接口
  * 用于动态获取设备列表的hook机制，支持外部实现自定义的设备获取逻辑
- *
+ * <p>
  * 设计原则：
  * 1. 业务方通过userId获取设备数据，项目本身不关心设备类型
  * 2. 简化接口设计，减少不必要的复杂性
@@ -65,6 +66,13 @@ public interface DeviceSupplier {
      */
     default String getName() {
         return this.getClass().getSimpleName();
+    }
+
+    default ToDevice getToDevice(String deviceId) {
+        Assert.notNull(deviceId, "设备Id不能为空");
+        Device device = getDevice(deviceId);
+        Assert.notNull(device, "查询不到设备信息");
+        return getToDevice(device);
     }
 
     default ToDevice getToDevice(Device device) {

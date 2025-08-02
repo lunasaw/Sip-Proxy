@@ -1,7 +1,7 @@
 package io.github.lunasaw.gbproxy.server.cmd;
 
 import io.github.lunasaw.gbproxy.server.Gb28181Server;
-import io.github.lunasaw.gbproxy.server.transimit.cmd.ServerSendCmd;
+import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerSendCmd;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.layer.SipLayer;

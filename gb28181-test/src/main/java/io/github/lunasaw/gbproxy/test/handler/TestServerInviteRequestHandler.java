@@ -1,6 +1,6 @@
 package io.github.lunasaw.gbproxy.test.handler;
 
-import io.github.lunasaw.gbproxy.server.transimit.request.invite.ServerInviteRequestHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.invite.ServerInviteRequestHandler;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;

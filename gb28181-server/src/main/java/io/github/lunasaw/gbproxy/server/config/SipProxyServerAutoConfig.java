@@ -1,21 +1,21 @@
 package io.github.lunasaw.gbproxy.server.config;
 
-import io.github.lunasaw.gbproxy.server.transimit.request.bye.DefaultServerByeProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.bye.ServerByeProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.info.DefaultServerInfoProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.info.ServerInfoProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.DefaultServerMessageProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.message.ServerMessageRequestProcessor;
-import io.github.lunasaw.gbproxy.server.transimit.request.notify.DefaultServerNotifyProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.notify.ServerNotifyProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.register.DefaultServerRegisterProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.request.register.ServerRegisterProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.response.invite.DefaultInviteResponseProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.response.invite.InviteResponseProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.DefaultSubscribeResponseProcessorHandler;
-import io.github.lunasaw.gbproxy.server.transimit.response.subscribe.SubscribeResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.bye.DefaultServerByeProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.bye.ServerByeProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.info.DefaultServerInfoProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.info.ServerInfoProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.message.DefaultServerMessageProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
+import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageRequestProcessor;
+import io.github.lunasaw.gbproxy.server.transmit.request.notify.DefaultServerNotifyProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.notify.ServerNotifyProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.DefaultServerRegisterProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.ServerRegisterProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.response.invite.DefaultInviteResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.response.invite.InviteResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.response.subscribe.DefaultSubscribeResponseProcessorHandler;
+import io.github.lunasaw.gbproxy.server.transmit.response.subscribe.SubscribeResponseProcessorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -49,13 +49,6 @@ public class SipProxyServerAutoConfig implements InitializingBean, ApplicationCo
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ServerMessageProcessorHandler messageProcessorServer() {
-        return new DefaultServerMessageProcessorHandler();
-    }
-
 
     @Bean
     @ConditionalOnMissingBean
