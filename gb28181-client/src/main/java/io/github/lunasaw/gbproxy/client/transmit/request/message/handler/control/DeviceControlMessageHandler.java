@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -32,6 +33,7 @@ public class DeviceControlMessageHandler extends MessageClientHandlerAbstract {
     private String cmdType = CMD_TYPE;
 
     @Autowired
+    @Lazy
     private DeviceControlRequestHandler deviceControlRequestHandler;
 
     public DeviceControlMessageHandler(MessageRequestHandler messageRequestHandler) {

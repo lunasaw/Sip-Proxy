@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,6 +28,7 @@ public class ByeResponseProcessor extends ClientAbstractSipResponseProcessor {
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private ClientByeProcessorHandler clientByeProcessorHandler;
 
     /**

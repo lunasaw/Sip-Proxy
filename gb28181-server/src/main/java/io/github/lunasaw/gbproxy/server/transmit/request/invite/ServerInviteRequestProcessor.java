@@ -1,6 +1,7 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.invite;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
 import javax.sip.header.ContentTypeHeader;
 import javax.sip.message.Response;
@@ -34,6 +35,7 @@ public class ServerInviteRequestProcessor extends SipRequestProcessorAbstract {
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private ServerInviteRequestHandler serverInviteRequestHandler;
 
     /**

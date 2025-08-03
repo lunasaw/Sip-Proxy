@@ -2,6 +2,7 @@ package io.github.lunasaw.gbproxy.client.transmit.request.bye;
 
 import io.github.lunasaw.gbproxy.client.transmit.response.bye.ClientByeProcessorHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import javax.sip.Dialog;
 import javax.sip.RequestEvent;
 import javax.sip.message.Response;
@@ -33,6 +34,7 @@ public class ByeRequestProcessorClient extends SipRequestProcessorAbstract {
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private ClientByeProcessorHandler clientByeProcessorHandler;
 
     /**
