@@ -9,6 +9,7 @@ import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -27,7 +28,7 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
 
     private String cmdType = CMD_TYPE;
 
-    public MediaStatusNotifyMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+    public MediaStatusNotifyMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
         super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
 

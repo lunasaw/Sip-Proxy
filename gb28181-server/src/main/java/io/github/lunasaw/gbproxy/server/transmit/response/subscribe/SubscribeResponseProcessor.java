@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.server.transmit.response.ServerAbstractSipResponseProcessor;
@@ -31,6 +32,7 @@ public class SubscribeResponseProcessor extends ServerAbstractSipResponseProcess
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private SubscribeResponseProcessorHandler subscribeResponseProcessorHandler;
 
     /**

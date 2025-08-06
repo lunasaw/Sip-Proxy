@@ -13,6 +13,7 @@ import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -30,7 +31,7 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
 
     public static final String CMD_TYPE = "Keepalive";
 
-    public KeepaliveNotifyMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+    public KeepaliveNotifyMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
         super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
 

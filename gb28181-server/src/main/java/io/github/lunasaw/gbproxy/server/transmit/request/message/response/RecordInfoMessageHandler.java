@@ -8,6 +8,7 @@ import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -26,7 +27,7 @@ public class RecordInfoMessageHandler extends MessageServerHandlerAbstract {
 
     private String cmdType = CMD_TYPE;
 
-    public RecordInfoMessageHandler(ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
+    public RecordInfoMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
         super(serverMessageProcessorHandler, serverDeviceSupplier);
     }
 

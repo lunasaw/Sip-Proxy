@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
 import javax.sip.header.*;
 import javax.sip.message.Request;
@@ -45,6 +46,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private ServerRegisterProcessorHandler serverRegisterProcessorHandler;
 
     /**

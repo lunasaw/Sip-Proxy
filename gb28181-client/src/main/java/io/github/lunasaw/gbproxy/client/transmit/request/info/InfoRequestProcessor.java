@@ -4,6 +4,7 @@ import javax.sip.RequestEvent;
 import javax.sip.message.Response;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
@@ -33,6 +34,7 @@ public class InfoRequestProcessor extends SipRequestProcessorAbstract {
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private InfoRequestHandler infoRequestHandler;
 
     /**

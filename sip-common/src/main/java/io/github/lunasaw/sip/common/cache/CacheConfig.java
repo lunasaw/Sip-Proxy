@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.cache;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -24,6 +25,7 @@ public class CacheConfig {
      * 默认缓存管理器 - 使用ConcurrentMapCacheManager作为后备
      */
     @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager() {
         return new ConcurrentMapCacheManager("devices", "subscribes", "transactions", "sipMessages");
     }

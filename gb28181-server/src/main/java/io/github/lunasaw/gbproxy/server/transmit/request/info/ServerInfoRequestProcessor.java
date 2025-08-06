@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.server.transmit.request.info;
 import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.RequestEvent;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
@@ -29,6 +30,7 @@ public class ServerInfoRequestProcessor extends ServerAbstractSipRequestProcesso
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private ServerInfoProcessorHandler serverInfoProcessorHandler;
 
     /**

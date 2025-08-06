@@ -2,6 +2,7 @@ package io.github.lunasaw.gbproxy.server.transmit.request.notify;
 
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
 
 import org.springframework.stereotype.Component;
@@ -29,6 +30,7 @@ public class ServerNotifyRequestProcessor extends SipMessageRequestProcessorAbst
     private String method = METHOD;
 
     @Autowired
+    @Lazy
     private ServerNotifyProcessorHandler serverNotifyProcessorHandler;
 
     @Autowired

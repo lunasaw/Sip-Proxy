@@ -1,148 +1,146 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 Claude Code (claude.ai/code) 在处理此代码仓库时提供指导。
 
-## Project Overview
+## 项目概述
 
-SIP Proxy is a GB28181-2016 communication framework built with Java 17 and Spring Boot 3.3.1. It's a multi-module Maven
-project that provides complete SIP protocol communication capabilities for building video surveillance and security
-systems.
+SIP Proxy 是一个基于 Java 17 和 Spring Boot 3.3.1 构建的 GB28181-2016 通信框架。它是一个多模块 Maven
+项目，为构建视频监控和安防系统提供完整的 SIP 协议通信能力。
 
-## Build & Development Commands
+## 构建和开发命令
 
-### Build Commands
+### 构建命令
 
-- `mvn clean compile` - Clean and compile all modules
-- `mvn clean package` - Build all modules into JAR files
-- `mvn clean install` - Install modules to local repository
+- `mvn clean compile` - 清理并编译所有模块
+- `mvn clean package` - 将所有模块构建为 JAR 文件
+- `mvn clean install` - 将模块安装到本地仓库
 
-### Test Commands
+### 测试命令
 
-- `mvn test` - Run unit tests
-- `mvn verify` - Run integration tests (failsafe plugin)
-- `mvn test -Dspring.profiles.active=test` - Run tests with test profile
+- `mvn test` - 运行单元测试
+- `mvn verify` - 运行集成测试 (failsafe 插件)
+- `mvn test -Dspring.profiles.active=test` - 使用测试配置文件运行测试
 
-### Run Commands
+### 运行命令
 
-- `mvn spring-boot:run` - Run Spring Boot application
-- Main class for test module: `io.github.lunasaw.gbproxy.test.TestFrameworkVerifyApplication`
+- `mvn spring-boot:run` - 运行 Spring Boot 应用程序
+- 测试模块主类：`io.github.lunasaw.gbproxy.test.TestFrameworkVerifyApplication`
 
-### Module Build
+### 模块构建
 
-- Individual modules can be built with: `mvn clean install -pl <module-name>`
-- Build specific module: `mvn clean install -pl gb28181-test`
+- 可以使用以下命令构建单个模块：`mvn clean install -pl <module-name>`
+- 构建特定模块：`mvn clean install -pl gb28181-test`
 
-## Architecture Overview
+## 架构概述
 
-### Module Structure
+### 模块结构
 
 ```
-sip-proxy (parent)
-├── sip-common          - Core SIP protocol stack and utilities
-├── gb28181-common      - GB28181 protocol data models  
-├── gb28181-client      - GB28181 device client implementation
-├── gb28181-server      - GB28181 platform server implementation
-└── gb28181-test        - Integration tests and examples
+sip-proxy (父项目)
+├── sip-common          - 核心 SIP 协议栈和工具
+├── gb28181-common      - GB28181 协议数据模型  
+├── gb28181-client      - GB28181 设备客户端实现
+├── gb28181-server      - GB28181 平台服务器实现
+└── gb28181-test        - 集成测试和示例
 ```
 
-### Dependency Hierarchy
+### 依赖层次结构
 
-- `gb28181-client` and `gb28181-server` depend on `sip-common` and `gb28181-common`
-- `gb28181-test` depends on all other modules
-- `sip-common` is the foundation module with no internal dependencies
+- `gb28181-client` 和 `gb28181-server` 依赖于 `sip-common` 和 `gb28181-common`
+- `gb28181-test` 依赖于所有其他模块
+- `sip-common` 是基础模块，没有内部依赖
 
-### Core Technology Stack
+### 核心技术栈
 
-- **Java 17** (Jakarta EE packages, not javax)
+- **Java 17** (使用 Jakarta EE 包，不是 javax)
 - **Spring Boot 3.3.1**
-- **JAIN-SIP 1.3.0-91** - SIP protocol stack
-- **Caffeine 3.1.8** - High-performance caching
-- **Micrometer 1.12.0** - Metrics and monitoring
-- **Maven** - Build tool
+- **JAIN-SIP 1.3.0-91** - SIP 协议栈
+- **Caffeine 3.1.8** - 高性能缓存
+- **Micrometer 1.12.0** - 指标和监控
+- **Maven** - 构建工具
 
-## Key Architecture Patterns
+## 关键架构模式
 
-### SIP Message Processing Flow
+### SIP 消息处理流程
 
 ```
 SIP Message → AbstractSipListener → XXXRequestProcessor → XXXRequestHandler → Business Logic
 ```
 
-### Active vs Passive Services
+### 主动与被动服务
 
-- **Active Services**: `ClientSendCmd`, `ServerSendCmd` - Send SIP commands outbound
-- **Passive Processing**: `XXXRequestProcessor`, `XXXResponseProcessor` - Handle incoming SIP messages
+- **主动服务**：`ClientSendCmd`、`ServerSendCmd` - 发送出站 SIP 命令
+- **被动处理**：`XXXRequestProcessor`、`XXXResponseProcessor` - 处理传入的 SIP 消息
 
-### Message Processing Layers
+### 消息处理层
 
-1. **SIP Listener Layer**: `AbstractSipListener` - Unified SIP event dispatch
-2. **Protocol Layer**: `SipRequest` handling - Protocol-level processing
-3. **Message Type Layer**: `XXXRequestProcessor` - Handle different SIP message types
-4. **Business Subtype Layer**: `XXXRequestSubProcessor` - Handle cmdType routing within MESSAGE
-5. **Business Logic Layer**: `XXXRequestHandler` - Actual business implementation
+1. **SIP 监听器层**：`AbstractSipListener` - 统一的 SIP 事件分发
+2. **协议层**：`SipRequest` 处理 - 协议级处理
+3. **消息类型层**：`XXXRequestProcessor` - 处理不同的 SIP 消息类型
+4. **业务子类型层**：`XXXRequestSubProcessor` - 处理 MESSAGE 内的 cmdType 路由
+5. **业务逻辑层**：`XXXRequestHandler` - 实际的业务实现
 
-## Important Development Conventions
+## 重要开发约定
 
-### Java/Spring Requirements
+### Java/Spring 要求
 
-- **Mandatory**: Use `jakarta` packages instead of `javax` (Spring Boot 3.x requirement)
-- **Mandatory**: Use `@MockitoBean` instead of deprecated `@MockBean` in tests
-- Use `@Slf4j` for logging, Lombok for boilerplate code
-- Follow the established processor/handler separation pattern
+- **强制**：使用 `jakarta` 包而不是 `javax` (Spring Boot 3.x 要求)
+- **强制**：在测试中使用 `@MockitoBean` 而不是已弃用的 `@MockBean`
+- 使用 `@Slf4j` 进行日志记录，使用 Lombok 处理样板代码
+- 遵循既定的处理器/处理程序分离模式
 
-### SIP Protocol Specifics
+### SIP 协议特性
 
-- Client and server modules have separate device configurations for testing
-- SIP request handling requires strong typing: cast `Request` to `SIPRequest` when accessing implementation-specific
-  methods
-- Async SIP listeners must properly handle TraceId propagation in executor threads
+- 客户端和服务器模块在测试中有单独的设备配置
+- SIP 请求处理需要强类型：在访问实现特定方法时将 `Request` 转换为 `SIPRequest`
+- 异步 SIP 监听器必须在执行器线程中正确处理 TraceId 传播
 
-### Testing Patterns
+### 测试模式
 
-- Set up SIP listening points before message sending tests: `sipLayer.setSipListener()` and
+- 在消息发送测试之前设置 SIP 监听点：`sipLayer.setSipListener()` 和
   `sipLayer.addListeningPoint()`
-- Use separate client/server device configs in tests to avoid confusion
-- Integration tests use TestContainers and include both unit and integration test plugins
+- 在测试中使用单独的客户端/服务器设备配置以避免混淆
+- 集成测试使用 TestContainers，包括单元测试和集成测试插件
 
-## Key Interfaces and Extension Points
+## 关键接口和扩展点
 
-### Device Management
+### 设备管理
 
-- `DeviceSupplier` - Interface for providing device information
-- `ClientDeviceSupplier`, `ServerDeviceSupplier` - Module-specific implementations
+- `DeviceSupplier` - 提供设备信息的接口
+- `ClientDeviceSupplier`、`ServerDeviceSupplier` - 模块特定的实现
 
-### Message Processing Extension
+### 消息处理扩展
 
-- Extend `AbstractSipRequestProcessor` for new SIP message types
-- Implement `XXXProcessorHandler` interfaces for business logic
-- Server processors extend `ServerAbstractSipResponseProcessor`
-- Client processors extend `ClientAbstractSipResponseProcessor`
+- 为新的 SIP 消息类型扩展 `AbstractSipRequestProcessor`
+- 为业务逻辑实现 `XXXProcessorHandler` 接口
+- 服务器处理器扩展 `ServerAbstractSipResponseProcessor`
+- 客户端处理器扩展 `ClientAbstractSipResponseProcessor`
 
-### Configuration
+### 配置
 
-- Main config: `application.yml`
-- SIP protocol config under `sip:` namespace
-- GB28181 protocol config under `gb28181:` namespace
-- Environment-specific configs: `application-{env}.yml`
+- 主配置：`application.yml`
+- SIP 协议配置在 `sip:` 命名空间下
+- GB28181 协议配置在 `gb28181:` 命名空间下
+- 环境特定配置：`application-{env}.yml`
 
-## Common Development Tasks
+## 常见开发任务
 
-### Adding New SIP Message Handler
+### 添加新的 SIP 消息处理器
 
-1. Create `XXXRequestProcessor` extending appropriate base class
-2. Create `XXXRequestHandler` interface for business logic
-3. Implement business logic in handler
-4. Register processor with SIP listener
+1. 创建扩展适当基类的 `XXXRequestProcessor`
+2. 为业务逻辑创建 `XXXRequestHandler` 接口
+3. 在处理程序中实现业务逻辑
+4. 向 SIP 监听器注册处理器
 
-### Testing SIP Functionality
+### 测试 SIP 功能
 
-1. Set up test listening points in `@BeforeEach`
-2. Use separate client/server device configurations
-3. Cast `Request` to `SIPRequest` for implementation-specific methods
-4. Verify TraceId handling in async operations
+1. 在 `@BeforeEach` 中设置测试监听点
+2. 使用单独的客户端/服务器设备配置
+3. 为实现特定方法将 `Request` 转换为 `SIPRequest`
+4. 验证异步操作中的 TraceId 处理
 
-### Performance Optimization
+### 性能优化
 
-- Leverage Caffeine caching for frequently accessed data
-- Use async processing patterns with proper TraceId management
-- Monitor with Micrometer metrics integration
+- 利用 Caffeine 缓存处理频繁访问的数据
+- 使用具有适当 TraceId 管理的异步处理模式
+- 使用 Micrometer 指标集成进行监控
