@@ -1,5 +1,6 @@
 package io.github.lunasaw.gb28181.common.entity.query;
 
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import jakarta.xml.bind.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,7 +30,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @XmlRootElement(name = "Query")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class TalkQuery {
+public class TalkQuery extends XmlBean {
     
     /**
      * 命令类型：语音对讲（必选）

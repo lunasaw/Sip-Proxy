@@ -1,6 +1,7 @@
 package io.github.lunasaw.gb28181.common.entity.response;
 
 import jakarta.xml.bind.annotation.*;
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,7 +35,7 @@ import java.util.List;
 @AllArgsConstructor
 @XmlRootElement(name = "Response")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class PresetQueryResponse {
+public class PresetQueryResponse extends XmlBean {
     @XmlElement(name = "CmdType")
     private final String cmdType = "PresetQuery";
 

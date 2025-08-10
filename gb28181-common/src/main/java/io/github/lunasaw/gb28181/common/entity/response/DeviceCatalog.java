@@ -5,6 +5,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +17,7 @@ import lombok.Setter;
 @Setter
 @XmlRootElement(name = "Item")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DeviceCatalog {
+public class DeviceCatalog extends XmlBean {
 
     /**
      * 设备/区域/系(必选)

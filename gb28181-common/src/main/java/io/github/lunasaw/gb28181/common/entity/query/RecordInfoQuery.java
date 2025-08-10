@@ -1,5 +1,6 @@
 package io.github.lunasaw.gb28181.common.entity.query;
 
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import jakarta.xml.bind.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,7 +31,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @XmlRootElement(name = "Query")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class RecordInfoQuery {
+public class RecordInfoQuery extends XmlBean {
     @XmlElement(name = "CmdType")
     private final String cmdType = "RecordInfo";
 
