@@ -164,7 +164,7 @@ public class ResponseCmd {
         /**
          * 构建响应对象
          */
-        private Response buildResponse() {
+        public Response buildResponse() {
             try {
                 Assert.notNull(request, "请求不能为null");
 

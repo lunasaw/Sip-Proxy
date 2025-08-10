@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @NoArgsConstructor
-public class DefaultSipListener extends AsyncSipListener {
+public class DefaultSipListener extends TransactionAwareAsyncSipListener {
 
     /**
      * 构造函数
