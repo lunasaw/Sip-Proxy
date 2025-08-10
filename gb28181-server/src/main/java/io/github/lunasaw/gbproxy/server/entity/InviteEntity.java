@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.server.entity;
 import io.github.lunasaw.gb28181.common.entity.enums.InviteSessionNameEnum;
 import io.github.lunasaw.gb28181.common.entity.enums.ManufacturerEnum;
 import io.github.lunasaw.gb28181.common.entity.enums.StreamModeEnum;
+import io.github.lunasaw.sip.common.utils.SipUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -84,7 +85,10 @@ public class InviteEntity {
         content.append("u=").append(userId).append(":0\r\n");
         content.append("c=IN IP4 ").append(sdpIp).append("\r\n");
         if (InviteSessionNameEnum.PLAY_BACK.equals(inviteSessionNameEnum)) {
-            content.append("t=").append(startTime).append(" ").append(endTime).append("\r\n");
+            // 将 ISO 8601 时间格式转换为 NTP 时间戳
+            long startTimeNtp = SipUtils.toNtpTimestamp(startTime);
+            long endTimeNtp = SipUtils.toNtpTimestamp(endTime);
+            content.append("t=").append(startTimeNtp).append(" ").append(endTimeNtp).append("\r\n");
         } else {
             content.append("t=0 0\r\n");
         }

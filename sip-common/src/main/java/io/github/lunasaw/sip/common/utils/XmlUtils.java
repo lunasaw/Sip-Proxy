@@ -70,7 +70,10 @@ public class XmlUtils {
     public static String getCmdType(String xmlStr) {
         SAXReader reader = new SAXReader();
 
-        Document document = reader.read(new StringReader(xmlStr));
+        // 清理XML字符串，移除BOM和前导空白字符
+        String cleanXmlStr = cleanXmlString(xmlStr);
+
+        Document document = reader.read(new StringReader(cleanXmlStr));
         // 获取根元素
         Element root = document.getRootElement();
         // 获取CmdType子元素
@@ -82,12 +85,38 @@ public class XmlUtils {
         return cmdType.getText();
     }
 
+    /**
+     * 清理XML字符串，移除BOM和前导/尾随空白字符
+     *
+     * @param xmlStr 原始XML字符串
+     * @return 清理后的XML字符串
+     */
+    private static String cleanXmlString(String xmlStr) {
+        if (xmlStr == null) {
+            return null;
+        }
+
+        // 移除BOM标记 (UTF-8: EF BB BF, UTF-16BE: FE FF, UTF-16LE: FF FE)
+        String cleaned = xmlStr;
+        if (!cleaned.isEmpty() && cleaned.charAt(0) == '\uFEFF') {
+            cleaned = cleaned.substring(1);
+        }
+
+        // 移除前导和尾随空白字符（包括空格、制表符、换行符等）
+        cleaned = cleaned.trim();
+
+        return cleaned;
+    }
+
 
     @SneakyThrows
     public static String getRootType(String xmlStr) {
         SAXReader reader = new SAXReader();
 
-        Document document = reader.read(new StringReader(xmlStr));
+        // 清理XML字符串，移除BOM和前导空白字符
+        String cleanXmlStr = cleanXmlString(xmlStr);
+
+        Document document = reader.read(new StringReader(cleanXmlStr));
         // 获取根元素
         Element root = document.getRootElement();
 

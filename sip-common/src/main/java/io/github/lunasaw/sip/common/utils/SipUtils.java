@@ -2,6 +2,8 @@ package io.github.lunasaw.sip.common.utils;
 
 import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -35,6 +37,9 @@ import io.github.lunasaw.sip.common.entity.SipTransaction;
  * @author luna
  */
 public class SipUtils {
+
+    // NTP时间戳偏移量 (1900年1月1日到1970年1月1日的秒数)
+    private static final long NTP_TIMESTAMP_OFFSET = 2208988800L;
 
     public static String getUserIdFromToHeader(Response response) {
         ToHeader toHeader = (ToHeader)response.getHeader(ToHeader.NAME);
@@ -213,5 +218,41 @@ public class SipUtils {
     public static <T> T parseResponse(ResponseEvent evt, String charset, Class<T> clazz) {
         Response response = evt.getResponse();
         return getObj(charset, clazz, response.getRawContent());
+    }
+
+    /**
+     * 将 LocalDateTime 转换为 NTP 时间戳（SDP 时间格式）
+     *
+     * @param dateTime 本地时间
+     * @return NTP 时间戳（秒）
+     */
+    public static long toNtpTimestamp(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return 0;
+        }
+        // 转换为 UTC 时间戳（秒）
+        long unixTimestamp = dateTime.toEpochSecond(ZoneOffset.UTC);
+        // 加上 NTP 偏移量得到 NTP 时间戳
+        return unixTimestamp + NTP_TIMESTAMP_OFFSET;
+    }
+
+    /**
+     * 将时间字符串转换为 NTP 时间戳（SDP 时间格式）
+     * 支持 ISO 8601 格式：2024-01-01T08:00:00
+     *
+     * @param timeString 时间字符串
+     * @return NTP 时间戳（秒）
+     */
+    public static long toNtpTimestamp(String timeString) {
+        if (StringUtils.isBlank(timeString)) {
+            return 0;
+        }
+        try {
+            LocalDateTime dateTime = LocalDateTime.parse(timeString);
+            return toNtpTimestamp(dateTime);
+        } catch (Exception e) {
+            // 如果解析失败，返回0（SDP中表示永久会话）
+            return 0;
+        }
     }
 }
