@@ -206,6 +206,7 @@ public abstract class AbstractSipListener implements SipListener {
     public void processRequest(RequestEvent requestEvent) {
         Timer.Sample sample = sipMetrics != null ? sipMetrics.startTimer() : null;
         String method = requestEvent.getRequest().getMethod();
+        ServerTransaction serverTransaction = null;
 
         try {
             // 记录方法调用
@@ -224,9 +225,26 @@ public abstract class AbstractSipListener implements SipListener {
                 return;
             }
 
-            // 同步处理请求
+            // 对于需要事务的请求方法，立即创建服务器事务
+            if (shouldCreateTransaction(method)) {
+                try {
+                    serverTransaction = requestEvent.getServerTransaction();
+                    if (serverTransaction == null) {
+                        // 获取SipProvider并创建服务器事务
+                        SipProvider sipProvider = (SipProvider) requestEvent.getSource();
+                        serverTransaction = sipProvider.getNewServerTransaction(requestEvent.getRequest());
+                        log.debug("为方法 {} 创建服务器事务: {}", method, serverTransaction);
+                    }
+                } catch (Exception e) {
+                    log.warn("无法为方法 {} 创建服务器事务: {}", method, e.getMessage());
+                    // 继续执行，但serverTransaction为null
+                }
+            }
+
+            // 同步处理请求，传入预创建的事务
             for (SipRequestProcessor sipRequestProcessor : sipRequestProcessors) {
-                sipRequestProcessor.process(requestEvent);
+                // 使用新的重载方法，支持传入服务器事务
+                sipRequestProcessor.process(requestEvent, serverTransaction);
             }
 
             if (sipMetrics != null) {
@@ -431,6 +449,18 @@ public abstract class AbstractSipListener implements SipListener {
         if (timeOutSubscribe != null) {
             timeOutSubscribe.response(eventResult);
         }
+    }
+
+    /**
+     * 判断是否需要为特定方法创建服务器事务
+     *
+     * @param method SIP方法名
+     * @return 是否需要创建事务
+     */
+    protected boolean shouldCreateTransaction(String method) {
+        // MESSAGE、INFO、NOTIFY等需要响应的方法需要事务支持
+        // ACK方法通常不需要服务器事务
+        return !"ACK".equals(method);
     }
 
     // ==================== 子类可重写的方法 ====================

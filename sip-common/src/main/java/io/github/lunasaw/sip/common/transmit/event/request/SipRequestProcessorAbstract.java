@@ -16,6 +16,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.sip.RequestEvent;
+import javax.sip.ServerTransaction;
 import javax.sip.message.Response;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -51,6 +52,10 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
     }
 
     public void doMessageHandForEvt(RequestEvent evt, FromDevice fromDevice) {
+        doMessageHandForEvt(evt, fromDevice, null);
+    }
+
+    public void doMessageHandForEvt(RequestEvent evt, FromDevice fromDevice, ServerTransaction serverTransaction) {
         SIPRequest request = (SIPRequest) evt.getRequest();
 
         String charset = Optional.of(fromDevice).map(Device::getCharset).orElse(Constant.UTF_8);
@@ -87,11 +92,12 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
             messageHandler.setXmlStr(xmlStr);
             messageHandler.handForEvt(evt);
             if (messageHandler.needResponseAck()) {
-                messageHandler.responseAck(evt);
+                // 如果有预创建的事务，使用它；否则使用原有逻辑
+                messageHandler.responseAck(evt, serverTransaction);
             }
         } catch (Exception e) {
             log.error("process::evt = {}, e", evt, e);
-            messageHandler.responseError(evt, Response.SERVER_INTERNAL_ERROR, e.getMessage());
+            messageHandler.responseError(evt, Response.SERVER_INTERNAL_ERROR, e.getMessage(), serverTransaction);
         }
     }
 }

@@ -1,5 +1,7 @@
 package io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.impl;
 
+import java.util.Optional;
+
 import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerCommandStrategy;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategyReq;
 import io.github.lunasaw.sip.common.transmit.SipSender;
@@ -23,6 +25,15 @@ public class InfoCommandStrategy extends AbstractServerCommandStrategy {
     @Override
     public String getCommandDescription() {
         return "INFO请求";
+    }
+
+    @Override
+    protected String buildCommandContent(ServerCommandStrategyReq req) {
+        // INFO命令使用controlBody参数而不是content参数
+        return Optional.ofNullable(req.getParamMap())
+                .map(map -> map.get("controlBody"))
+                .map(Object::toString)
+                .orElse(req.getContent());
     }
 
     @Override

@@ -29,6 +29,11 @@ public class InfoRequestBuilder extends AbstractSipRequestBuilder {
         SipMessage sipMessage = SipMessage.getInfoBody();
         sipMessage.setMethod(Request.INFO);
         sipMessage.setContent(content);
+
+        // 确保callId不为null，如果为null则生成一个新的
+        if (callId == null || callId.trim().isEmpty()) {
+            callId = SipRequestUtils.getNewCallId();
+        }
         sipMessage.setCallId(callId);
 
         return build(fromDevice, toDevice, sipMessage);

@@ -279,6 +279,54 @@ public class ResponseCmd {
     }
 
     /**
+     * 快速发送简单响应（使用预创建的事务）
+     *
+     * @param statusCode        状态码
+     * @param requestEvent      请求事件
+     * @param serverTransaction 预创建的服务器事务
+     */
+    public static void sendResponse(int statusCode, RequestEvent requestEvent, ServerTransaction serverTransaction) {
+        response(statusCode)
+                .requestEvent(requestEvent)
+                .serverTransaction(serverTransaction)
+                .send();
+    }
+
+    /**
+     * 快速发送带短语的响应（使用预创建的事务）
+     *
+     * @param statusCode        状态码
+     * @param phrase            响应短语
+     * @param requestEvent      请求事件
+     * @param serverTransaction 预创建的服务器事务
+     */
+    public static void sendResponse(int statusCode, String phrase, RequestEvent requestEvent, ServerTransaction serverTransaction) {
+        response(statusCode)
+                .phrase(phrase)
+                .requestEvent(requestEvent)
+                .serverTransaction(serverTransaction)
+                .send();
+    }
+
+    /**
+     * 快速发送带内容的响应（使用预创建的事务）
+     *
+     * @param statusCode        状态码
+     * @param content           响应内容
+     * @param contentTypeHeader 内容类型头
+     * @param requestEvent      请求事件
+     * @param serverTransaction 预创建的服务器事务
+     */
+    public static void sendResponse(int statusCode, String content, ContentTypeHeader contentTypeHeader, RequestEvent requestEvent, ServerTransaction serverTransaction) {
+        response(statusCode)
+                .content(content)
+                .contentType(contentTypeHeader)
+                .requestEvent(requestEvent)
+                .serverTransaction(serverTransaction)
+                .send();
+    }
+
+    /**
      * 快速发送简单响应（使用事务）
      */
     public static void sendResponse(int statusCode, RequestEvent requestEvent) {
