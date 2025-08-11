@@ -7,13 +7,12 @@ import java.util.List;
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
 import javax.sip.address.SipURI;
-import javax.sip.header.ContactHeader;
-import javax.sip.header.ContentTypeHeader;
-import javax.sip.header.Header;
-import javax.sip.header.ViaHeader;
+import javax.sip.header.*;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
+import gov.nist.javax.sip.header.CallID;
+import gov.nist.javax.sip.header.CallInfo;
 import org.apache.commons.lang3.StringUtils;
 
 import com.luna.common.check.Assert;
@@ -196,16 +195,18 @@ public class ResponseCmd {
          * 如果存在事务上下文，则确保响应使用原请求的Call-ID
          */
         private void ensureCallIdConsistency(Response response) {
+            // SIP响应必须与原始请求完全匹配，不能修改任何头部信息
+            // MESSAGE_FACTORY.createResponse已经确保了完全的头部匹配
+            // 这里只做调试验证，不做任何修改
             try {
                 String contextCallId = SipTransactionContext.getCurrentCallId();
                 if (StringUtils.isNotBlank(contextCallId)) {
                     // 验证响应的Call-ID是否与事务上下文一致
-                    String responseCallId = response.getHeader("Call-ID").toString();
+                    String responseCallId = ((CallID) response.getHeader("Call-ID")).getCallId();
                     if (!contextCallId.equals(responseCallId)) {
-                        log.warn("响应Call-ID与事务上下文不一致: response={}, context={}, 将保持原请求Call-ID",
+                        log.warn("响应Call-ID与事务上下文不一致: response={}, context={}, 但保持原请求Call-ID不变以确保事务匹配",
                                 responseCallId, contextCallId);
-                        // 这里实际上SipRequestUtils.createResponse已经确保了Call-ID一致性
-                        // 这个检查主要用于调试和验证
+                        // 关键：不修改Call-ID！响应必须与原始请求的事务完全匹配
                     } else {
                         log.debug("响应Call-ID与事务上下文一致: {}", contextCallId);
                     }
@@ -222,6 +223,11 @@ public class ResponseCmd {
             try {
                 ServerTransaction transaction = getServerTransaction();
                 if (transaction != null) {
+                    // 验证事务与响应的匹配性
+                    log.debug("发送事务响应: transaction={}, response-callId={}, response-cseq={}",
+                            transaction,
+                            response.getHeader("Call-ID"),
+                            response.getHeader("CSeq"));
                     transaction.sendResponse(response);
                 } else {
                     // 如果没有事务，降级到无事务模式
@@ -252,31 +258,39 @@ public class ResponseCmd {
          * 获取服务器事务
          */
         private ServerTransaction getServerTransaction() {
-            if (serverTransaction != null) {
-                return serverTransaction;
-            }
 
+            // 其次尝试从RequestEvent中获取事务
             if (requestEvent != null) {
                 serverTransaction = requestEvent.getServerTransaction();
                 if (serverTransaction != null) {
+                    log.debug("从RequestEvent获取服务器事务: {}", serverTransaction);
                     return serverTransaction;
                 }
-            }
-
-            // 如果没有现有事务，尝试创建新事务
-            try {
-                String targetIp = ip;
-                if (StringUtils.isBlank(targetIp)) {
-                    SIPRequest sipRequest = (SIPRequest) request;
-                    // 安全获取本地地址，避免NullPointerException
-                    targetIp = getTargetIp(sipRequest);
+                if (request == null) {
+                    request = requestEvent.getRequest();
                 }
-
-                return SipSender.getServerTransaction(request, targetIp);
-            } catch (Exception e) {
-                log.warn("无法创建服务器事务: {}", e.getMessage());
-                return null;
             }
+
+            // 关键修复：尝试从SIPRequest直接获取事务（NIST-SIP实现特定方法）
+            if (request instanceof SIPRequest) {
+                try {
+                    // 使用NIST-SIP的内部方法直接从请求对象获取事务
+                    Object transaction = ((SIPRequest) request).getTransaction();
+                    if (transaction instanceof ServerTransaction) {
+                        serverTransaction = (ServerTransaction) transaction;
+                        log.debug("从SIPRequest直接获取服务器事务: {}", serverTransaction);
+                        return serverTransaction;
+                    } else if (transaction != null) {
+                        log.warn("SIPRequest.getTransaction()返回了非ServerTransaction类型: {}", transaction.getClass());
+                    }
+                } catch (Exception e) {
+                    log.debug("从SIPRequest获取事务时发生异常: {}", e.getMessage());
+                }
+            }
+
+            // 禁止创建新事务！这会导致"Response does not belong to this transaction"错误
+            // 因为新创建的事务与原始请求的Branch参数和SentBy信息不匹配
+            return null;
         }
     }
 

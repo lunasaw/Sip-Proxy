@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
 import javax.sip.ServerTransaction;
+import javax.sip.message.Request;
 
 import org.springframework.stereotype.Component;
 

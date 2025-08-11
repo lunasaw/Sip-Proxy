@@ -210,16 +210,16 @@ public abstract class AbstractSipListener implements SipListener {
         ServerTransaction serverTransaction = null;
 
         try {
-            // 全局注入SIP事务上下文 - 在最顶层入口处注入Call-ID
+            // 全局注入SIP事务上下文 - 在最顶层入口处注入完整事务信息
             try {
-                CallIdHeader callIdHeader = (CallIdHeader) requestEvent.getRequest().getHeader(CallIdHeader.NAME);
-                if (callIdHeader != null) {
-                    String callId = callIdHeader.getCallId();
-                    SipTransactionContext.setCallId(callId);
-                    log.debug("全局注入SIP事务上下文: callId={}, method={}, thread={}",
-                            callId, method, Thread.currentThread().getName());
+                SipTransactionContext.SipTransactionInfo transactionInfo =
+                        SipTransactionContext.SipTransactionInfo.fromRequestEvent(requestEvent);
+                if (transactionInfo != null) {
+                    SipTransactionContext.setTransactionInfo(transactionInfo);
+                    log.debug("全局注入SIP事务上下文: {}, method={}, thread={}",
+                            transactionInfo, method, Thread.currentThread().getName());
                 } else {
-                    log.warn("无法获取Call-ID header，方法: {}", method);
+                    log.warn("无法提取SIP事务信息，方法: {}", method);
                 }
             } catch (Exception e) {
                 log.warn("全局注入SIP事务上下文失败: method={}, error={}", method, e.getMessage());

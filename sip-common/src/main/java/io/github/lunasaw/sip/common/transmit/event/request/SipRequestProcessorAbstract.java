@@ -97,12 +97,17 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
             return;
         }
         try {
-            messageHandler.setXmlStr(xmlStr);
-            messageHandler.handForEvt(evt);
+            // GB28181协议要求：先发送200 OK响应(Step 2)，然后再处理业务逻辑(Step 3)
             if (messageHandler.needResponseAck()) {
-                // 如果有预创建的事务，使用它；否则使用原有逻辑
+                // 立即发送200 OK响应，确保事务一致性
+                log.debug("立即发送200 OK响应，CmdType={}, rootType={}", cmdType, rootType);
                 messageHandler.responseAck(evt, serverTransaction);
             }
+
+            // 处理业务逻辑
+            messageHandler.setXmlStr(xmlStr);
+            messageHandler.handForEvt(evt);
+            
         } catch (Exception e) {
             log.error("process::evt = {}, e", evt, e);
             messageHandler.responseError(evt, Response.SERVER_INTERNAL_ERROR, e.getMessage(), serverTransaction);
