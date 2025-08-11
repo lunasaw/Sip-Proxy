@@ -1,5 +1,6 @@
 package io.github.lunasaw.sip.common.layer;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -8,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.*;
 
+import jakarta.annotation.PreDestroy;
 import lombok.Setter;
 import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.InitializingBean;
@@ -41,6 +43,9 @@ public class SipLayer implements InitializingBean {
     // 记录SipStack实例，避免重复创建
     private static final Map<String, SipStackImpl>    sipStackMap       = new ConcurrentHashMap<>();
 
+    // 标记是否正在关闭
+    private static volatile boolean isShuttingDown = false;
+
     @Getter
     private static final List<String>                 monitorIpList     = Lists.newArrayList("0.0.0.0");
 
@@ -50,9 +55,22 @@ public class SipLayer implements InitializingBean {
 
     public static SipProviderImpl getUdpSipProvider(String ip) {
         if (ObjectUtils.isEmpty(ip)) {
-            return null;
+            return udpSipProviderMap.values().stream().findFirst().orElse(null);
         }
-        return udpSipProviderMap.get(ip);
+
+        // 首先尝试精确匹配
+        SipProviderImpl provider = udpSipProviderMap.get(ip);
+        if (provider != null) {
+            return provider;
+        }
+
+        // 如果请求IP是0.0.0.0，尝试获取任意可用的Provider
+        if ("0.0.0.0".equals(ip)) {
+            return udpSipProviderMap.values().stream().findFirst().orElse(null);
+        }
+
+        // 如果Provider是0.0.0.0监听的，可以处理任意IP的请求
+        return udpSipProviderMap.get("0.0.0.0");
     }
 
     public static SipProviderImpl getUdpSipProvider() {
@@ -71,13 +89,38 @@ public class SipLayer implements InitializingBean {
 
     public static SipProviderImpl getTcpSipProvider(String ip) {
         if (ObjectUtils.isEmpty(ip)) {
-            return null;
+            return tcpSipProviderMap.values().stream().findFirst().orElse(null);
         }
-        return tcpSipProviderMap.get(ip);
+
+        // 首先尝试精确匹配
+        SipProviderImpl provider = tcpSipProviderMap.get(ip);
+        if (provider != null) {
+            return provider;
+        }
+
+        // 如果请求IP是0.0.0.0，尝试获取任意可用的Provider
+        if ("0.0.0.0".equals(ip)) {
+            return tcpSipProviderMap.values().stream().findFirst().orElse(null);
+        }
+
+        // 如果Provider是0.0.0.0监听的，可以处理任意IP的请求
+        return tcpSipProviderMap.get("0.0.0.0");
     }
 
     public static String getMonitorIp() {
         return monitorIpList.get(0);
+    }
+
+    public static boolean isShuttingDown() {
+        return isShuttingDown;
+    }
+
+    public static Map<String, SipProviderImpl> getTcpSipProviderMap() {
+        return new HashMap<>(tcpSipProviderMap);
+    }
+
+    public static Map<String, SipProviderImpl> getUdpSipProviderMap() {
+        return new HashMap<>(udpSipProviderMap);
     }
 
     /**
@@ -253,6 +296,9 @@ public class SipLayer implements InitializingBean {
     public synchronized void clearAllListeningPoints() {
         log.info("[SIP SERVER] 开始清理所有监听点");
 
+        // 设置关闭标志
+        isShuttingDown = true;
+
         // 清理所有TCP Provider
         tcpSipProviderMap.clear();
 
@@ -294,5 +340,12 @@ public class SipLayer implements InitializingBean {
     @Override
     public void afterPropertiesSet() {
 
+    }
+
+    @PreDestroy
+    public void destroy() {
+        log.info("[SIP SERVER] 开始关闭SIP服务");
+        clearAllListeningPoints();
+        log.info("[SIP SERVER] SIP服务关闭完成");
     }
 }
