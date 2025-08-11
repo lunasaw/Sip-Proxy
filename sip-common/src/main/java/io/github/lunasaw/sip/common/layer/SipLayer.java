@@ -9,9 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sip.*;
 
+import com.google.common.collect.Lists;
 import jakarta.annotation.PreDestroy;
 import lombok.Setter;
-import org.assertj.core.util.Lists;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;

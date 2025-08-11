@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -41,7 +42,7 @@ public class SubscribeCatalogQueryMessageHandler extends SubscribeHandlerAbstrac
 
     public static final String CMD_TYPE = CmdTypeEnum.CATALOG.getType();
 
-    public SubscribeCatalogQueryMessageHandler(SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
+    public SubscribeCatalogQueryMessageHandler(@Lazy SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
         super(subscribeRequestHandler, deviceSupplier);
     }
 
