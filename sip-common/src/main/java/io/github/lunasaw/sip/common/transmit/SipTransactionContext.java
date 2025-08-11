@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.transmit;
 
 import io.github.lunasaw.sip.common.entity.SipTransaction;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.apm.toolkit.trace.TraceContext;
 
@@ -25,7 +26,7 @@ public class SipTransactionContext {
      * Key: CallId + FromTag + CSeq
      * Value: 事务上下文信息
      */
-    private static final ConcurrentHashMap<String, TransactionContextInfo> TRANSACTION_CONTEXTS = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<String, TransactionContextInfo> TRANSACTION_CONTEXTS = new ConcurrentHashMap<>();
 
     /**
      * 读写锁保护事务操作
@@ -38,8 +39,10 @@ public class SipTransactionContext {
     private static final ThreadLocal<TransactionContextInfo> CURRENT_CONTEXT = new ThreadLocal<>();
 
     /**
+     *
      * 事务上下文信息
      */
+    @Data
     public static class TransactionContextInfo {
         private final String contextKey;
         private final SipTransaction sipTransaction;
@@ -60,43 +63,6 @@ public class SipTransactionContext {
             this.traceId = TraceContext.traceId();
             this.createTime = System.currentTimeMillis();
             this.lastKnownState = serverTransaction != null ? serverTransaction.getState() : null;
-        }
-
-        // Getters
-        public String getContextKey() {
-            return contextKey;
-        }
-
-        public SipTransaction getSipTransaction() {
-            return sipTransaction;
-        }
-
-        public ServerTransaction getServerTransaction() {
-            return serverTransaction;
-        }
-
-        public RequestEvent getOriginalEvent() {
-            return originalEvent;
-        }
-
-        public Request getOriginalRequest() {
-            return originalRequest;
-        }
-
-        public String getTraceId() {
-            return traceId;
-        }
-
-        public long getCreateTime() {
-            return createTime;
-        }
-
-        public TransactionState getLastKnownState() {
-            return lastKnownState;
-        }
-
-        public boolean isValid() {
-            return isValid;
         }
 
         /**

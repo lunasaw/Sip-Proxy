@@ -230,14 +230,39 @@ public abstract class AbstractSipListener implements SipListener {
                 try {
                     serverTransaction = requestEvent.getServerTransaction();
                     if (serverTransaction == null) {
-                        // 获取SipProvider并创建服务器事务
                         SipProvider sipProvider = (SipProvider) requestEvent.getSource();
                         serverTransaction = sipProvider.getNewServerTransaction(requestEvent.getRequest());
                         log.debug("为方法 {} 创建服务器事务: {}", method, serverTransaction);
                     }
+                } catch (TransactionAlreadyExistsException e) {
+                    // 事务已存在，重新获取现有事务
+                    log.debug("事务已存在，使用现有事务: {}", e.getMessage());
+                    try {
+                        serverTransaction = requestEvent.getServerTransaction();
+                        if (serverTransaction != null) {
+                            log.debug("成功获取现有服务器事务: {}", serverTransaction);
+                        } else {
+                            log.warn("获取现有服务器事务失败，事务为null");
+                        }
+                    } catch (Exception ex) {
+                        log.warn("重新获取现有事务时发生异常: {}", ex.getMessage());
+                        serverTransaction = null;
+                    }
+                } catch (TransactionUnavailableException e) {
+                    log.warn("事务不可用，方法 {}: {}", method, e.getMessage());
+                    serverTransaction = null;
                 } catch (Exception e) {
-                    log.warn("无法为方法 {} 创建服务器事务: {}", method, e.getMessage());
-                    // 继续执行，但serverTransaction为null
+                    log.warn("为方法 {} 创建服务器事务时发生未知异常: {}", method, e.getMessage());
+                    // 尝试获取现有事务作为回退策略
+                    try {
+                        serverTransaction = requestEvent.getServerTransaction();
+                        if (serverTransaction != null) {
+                            log.debug("回退策略成功，使用现有事务: {}", serverTransaction);
+                        }
+                    } catch (Exception ex) {
+                        log.warn("回退策略失败: {}", ex.getMessage());
+                        serverTransaction = null;
+                    }
                 }
             }
 

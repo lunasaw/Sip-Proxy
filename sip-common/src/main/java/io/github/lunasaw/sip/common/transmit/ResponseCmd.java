@@ -20,6 +20,7 @@ import com.luna.common.check.Assert;
 
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -180,10 +181,37 @@ public class ResponseCmd {
 
                 SipRequestUtils.setResponseHeader(response, headers);
 
+                // 确保响应使用与原请求相同的Call-ID（事务一致性）
+                ensureCallIdConsistency(response);
+
                 return response;
             } catch (Exception e) {
                 log.error("构建响应对象失败: statusCode={}, phrase={}", statusCode, phrase, e);
                 throw new RuntimeException("构建响应对象失败", e);
+            }
+        }
+
+        /**
+         * 确保Call-ID一致性
+         * 如果存在事务上下文，则确保响应使用原请求的Call-ID
+         */
+        private void ensureCallIdConsistency(Response response) {
+            try {
+                String contextCallId = SipTransactionContext.getCurrentCallId();
+                if (StringUtils.isNotBlank(contextCallId)) {
+                    // 验证响应的Call-ID是否与事务上下文一致
+                    String responseCallId = response.getHeader("Call-ID").toString();
+                    if (!contextCallId.equals(responseCallId)) {
+                        log.warn("响应Call-ID与事务上下文不一致: response={}, context={}, 将保持原请求Call-ID",
+                                responseCallId, contextCallId);
+                        // 这里实际上SipRequestUtils.createResponse已经确保了Call-ID一致性
+                        // 这个检查主要用于调试和验证
+                    } else {
+                        log.debug("响应Call-ID与事务上下文一致: {}", contextCallId);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("检查Call-ID一致性时发生异常，将继续执行", e);
             }
         }
 

@@ -45,8 +45,6 @@ public class ServerMessageRequestProcessor extends SipMessageRequestProcessorAbs
     @Override
     public void process(RequestEvent evt, ServerTransaction serverTransaction) {
         try {
-            log.info("处理MESSAGE请求：evt = {}, serverTransaction = {}", evt, serverTransaction);
-
             // 验证设备权限
             if (!serverMessageProcessorHandler.validateDevicePermission(evt)) {
                 log.warn("MESSAGE请求权限验证失败");

@@ -17,9 +17,11 @@ import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.event.Event;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.ClientCommandStrategy;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.ClientCommandStrategyFactory;
 
+import javax.sip.RequestEvent;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,6 +56,31 @@ public class ClientCommandSender {
             strategy = ClientCommandStrategyFactory.getMessageStrategy();
         }
         return strategy.execute(fromDevice, toDevice, params);
+    }
+
+    /**
+     * 使用策略模式发送命令（支持事务上下文）
+     * 通过RequestEvent复用原请求的Call-ID，确保事务一致性
+     *
+     * @param commandType  命令类型
+     * @param fromDevice   发送设备
+     * @param toDevice     接收设备
+     * @param requestEvent 原始请求事件，用于复用Call-ID
+     * @param params       命令参数
+     * @return callId
+     */
+    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice,
+                                     RequestEvent requestEvent, Object... params) {
+        try {
+            // 设置事务上下文（显式模式）
+            SipTransactionContext.setRequestEvent(requestEvent);
+
+            // 执行命令发送
+            return sendCommand(commandType, fromDevice, toDevice, params);
+        } finally {
+            // 清理事务上下文，避免内存泄漏
+            SipTransactionContext.clear();
+        }
     }
 
     /**
@@ -180,6 +207,21 @@ public class ClientCommandSender {
      */
     public static String sendDeviceInfoCommand(FromDevice fromDevice, ToDevice toDevice, DeviceInfo deviceInfo) {
         return sendCommand("MESSAGE", fromDevice, toDevice, deviceInfo);
+    }
+
+    /**
+     * 发送设备信息响应命令（支持事务上下文）
+     * 通过RequestEvent复用原请求的Call-ID，确保事务一致性
+     *
+     * @param fromDevice   发送设备
+     * @param toDevice     接收设备
+     * @param deviceInfo   设备信息
+     * @param requestEvent 原始请求事件，用于复用Call-ID
+     * @return callId
+     */
+    public static String sendDeviceInfoCommand(FromDevice fromDevice, ToDevice toDevice,
+                                               DeviceInfo deviceInfo, RequestEvent requestEvent) {
+        return sendCommand("MESSAGE", fromDevice, toDevice, requestEvent, deviceInfo);
     }
 
     /**

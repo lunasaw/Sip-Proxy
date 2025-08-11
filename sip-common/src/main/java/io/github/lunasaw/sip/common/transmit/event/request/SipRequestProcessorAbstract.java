@@ -9,6 +9,7 @@ import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandler;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +59,27 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
     public void doMessageHandForEvt(RequestEvent evt, FromDevice fromDevice, ServerTransaction serverTransaction) {
         SIPRequest request = (SIPRequest) evt.getRequest();
 
+        // 注入SIP事务上下文（隐式模式）
+        try {
+            String callId = request.getCallId().getCallId();
+            SipTransactionContext.setCallId(callId);
+            log.debug("注入SIP事务上下文: callId={}, thread={}", callId, Thread.currentThread().getName());
+        } catch (Exception e) {
+            log.warn("注入SIP事务上下文失败", e);
+        }
+
+        try {
+            processMessageRequest(evt, fromDevice, serverTransaction, request);
+        } finally {
+            // 清理SIP事务上下文，避免内存泄漏
+            SipTransactionContext.clear();
+        }
+    }
+
+    /**
+     * 处理SIP MESSAGE请求的核心逻辑
+     */
+    private void processMessageRequest(RequestEvent evt, FromDevice fromDevice, ServerTransaction serverTransaction, SIPRequest request) {
         String charset = Optional.of(fromDevice).map(Device::getCharset).orElse(Constant.UTF_8);
 
         // 解析xml
