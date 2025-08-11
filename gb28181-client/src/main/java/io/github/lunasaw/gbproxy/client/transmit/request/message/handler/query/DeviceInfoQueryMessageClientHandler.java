@@ -57,7 +57,7 @@ public class DeviceInfoQueryMessageClientHandler extends MessageClientHandlerAbs
             DeviceInfo deviceInfo = messageRequestHandler.getDeviceInfo(userId);
             deviceInfo.setSn(sn);
 
-            // 发送响应
+            // 发送响应（使用全局ThreadLocal中的Call-ID）
             ClientCommandSender.sendDeviceInfoCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceInfo);
 
         } catch (Exception e) {

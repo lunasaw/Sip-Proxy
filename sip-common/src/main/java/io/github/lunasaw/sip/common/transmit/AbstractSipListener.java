@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.transmit;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import io.github.lunasaw.sip.common.metrics.SipMetrics;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import io.github.lunasaw.sip.common.transmit.event.EventResult;
@@ -19,8 +20,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.skywalking.apm.toolkit.trace.Trace;
 
 import javax.sip.*;
-import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.CSeqHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.util.ArrayList;
@@ -209,6 +210,20 @@ public abstract class AbstractSipListener implements SipListener {
         ServerTransaction serverTransaction = null;
 
         try {
+            // 全局注入SIP事务上下文 - 在最顶层入口处注入Call-ID
+            try {
+                CallIdHeader callIdHeader = (CallIdHeader) requestEvent.getRequest().getHeader(CallIdHeader.NAME);
+                if (callIdHeader != null) {
+                    String callId = callIdHeader.getCallId();
+                    SipTransactionContext.setCallId(callId);
+                    log.debug("全局注入SIP事务上下文: callId={}, method={}, thread={}",
+                            callId, method, Thread.currentThread().getName());
+                } else {
+                    log.warn("无法获取Call-ID header，方法: {}", method);
+                }
+            } catch (Exception e) {
+                log.warn("全局注入SIP事务上下文失败: method={}, error={}", method, e.getMessage());
+            }
             // 记录方法调用
             if (sipMetrics != null) {
                 sipMetrics.recordMethodCall(method);
@@ -285,6 +300,15 @@ public abstract class AbstractSipListener implements SipListener {
             // 调用子类异常处理
             handleRequestException(requestEvent, e);
         } finally {
+            // 清理SIP事务上下文，避免内存泄漏
+            try {
+                SipTransactionContext.clear();
+                log.debug("清理SIP事务上下文: method={}, thread={}",
+                        method, Thread.currentThread().getName());
+            } catch (Exception e) {
+                log.warn("清理SIP事务上下文失败: method={}, error={}", method, e.getMessage());
+            }
+            
             if (sipMetrics != null && sample != null) {
                 sipMetrics.recordRequestProcessingTime(sample);
             }

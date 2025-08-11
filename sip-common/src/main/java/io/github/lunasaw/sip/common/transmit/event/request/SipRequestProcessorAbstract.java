@@ -59,21 +59,7 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
     public void doMessageHandForEvt(RequestEvent evt, FromDevice fromDevice, ServerTransaction serverTransaction) {
         SIPRequest request = (SIPRequest) evt.getRequest();
 
-        // 注入SIP事务上下文（隐式模式）
-        try {
-            String callId = request.getCallId().getCallId();
-            SipTransactionContext.setCallId(callId);
-            log.debug("注入SIP事务上下文: callId={}, thread={}", callId, Thread.currentThread().getName());
-        } catch (Exception e) {
-            log.warn("注入SIP事务上下文失败", e);
-        }
-
-        try {
-            processMessageRequest(evt, fromDevice, serverTransaction, request);
-        } finally {
-            // 清理SIP事务上下文，避免内存泄漏
-            SipTransactionContext.clear();
-        }
+        processMessageRequest(evt, fromDevice, serverTransaction, request);
     }
 
     /**
