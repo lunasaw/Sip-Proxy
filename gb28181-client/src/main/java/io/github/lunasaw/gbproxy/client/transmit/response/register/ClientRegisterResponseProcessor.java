@@ -25,6 +25,7 @@ import javax.sip.header.DateHeader;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import java.util.Calendar;
 
 /**
  * Register响应处理器
@@ -176,7 +177,15 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
             }
 
             // 获取Date头域的值
-            String dateValue = dateHeader.getDate().toString();
+            Calendar calendar = dateHeader.getDate();
+            // 将Calendar转换为标准的ISO格式字符串
+            String dateValue = String.format("%04d-%02d-%02dT%02d:%02d:%02d",
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH) + 1, // Calendar.MONTH 是从0开始的
+                    calendar.get(Calendar.DAY_OF_MONTH),
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    calendar.get(Calendar.SECOND));
             log.debug("收到Date头域：{}", dateValue);
 
             // 执行时间同步

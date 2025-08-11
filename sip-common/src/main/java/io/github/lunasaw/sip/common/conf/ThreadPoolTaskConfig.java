@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.conf;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -21,6 +22,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class ThreadPoolTaskConfig {
 
     public static final int cpuNum = Runtime.getRuntime().availableProcessors();
+
+    @Value("${sip.shutdown.await-termination-seconds:30}")
+    private int awaitTerminationSeconds;
 
     /**
      *   默认情况下，在创建了线程池后，线程池中的线程数为0，当有任务来之后，就会创建一个线程去执行任务，
@@ -63,7 +67,7 @@ public class ThreadPoolTaskConfig {
         executor.setThreadNamePrefix("sip-msg-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(30);
+        executor.setAwaitTerminationSeconds(awaitTerminationSeconds);
         executor.initialize();
         return executor;
     }
@@ -101,7 +105,7 @@ public class ThreadPoolTaskConfig {
         // CallerRunsPolicy：由调用线程（提交任务的线程）处理该任务
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(30);
+        executor.setAwaitTerminationSeconds(awaitTerminationSeconds);
         // 初始化
         executor.initialize();
         return executor;

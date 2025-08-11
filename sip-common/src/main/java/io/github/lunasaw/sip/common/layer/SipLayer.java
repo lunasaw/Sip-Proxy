@@ -263,25 +263,25 @@ public class SipLayer implements InitializingBean {
     public synchronized void removeListeningPoint(String monitorIp, int port) {
         String key = getListeningPointKey(monitorIp, port);
 
-        // 清理TCP Provider
+        // 快速清理TCP Provider
         SipProviderImpl tcpProvider = tcpSipProviderMap.remove(monitorIp);
         if (tcpProvider != null) {
             try {
                 tcpProvider.removeSipListener(sipListener);
-                log.info("[SIP SERVER] 清理TCP监听点: {}:{}", monitorIp, port);
+                log.debug("[SIP SERVER] 清理TCP监听点: {}:{}", monitorIp, port);
             } catch (Exception e) {
-                log.warn("[SIP SERVER] 清理TCP监听点时发生异常: {}", e.getMessage());
+                log.debug("[SIP SERVER] 清理TCP监听点异常: {}", e.getMessage());
             }
         }
 
-        // 清理UDP Provider
+        // 快速清理UDP Provider
         SipProviderImpl udpProvider = udpSipProviderMap.remove(monitorIp);
         if (udpProvider != null) {
             try {
                 udpProvider.removeSipListener(sipListener);
-                log.info("[SIP SERVER] 清理UDP监听点: {}:{}", monitorIp, port);
+                log.debug("[SIP SERVER] 清理UDP监听点: {}:{}", monitorIp, port);
             } catch (Exception e) {
-                log.warn("[SIP SERVER] 清理UDP监听点时发生异常: {}", e.getMessage());
+                log.debug("[SIP SERVER] 清理UDP监听点异常: {}", e.getMessage());
             }
         }
 
@@ -294,15 +294,33 @@ public class SipLayer implements InitializingBean {
      * 清理所有监听点
      */
     public synchronized void clearAllListeningPoints() {
-        log.info("[SIP SERVER] 开始清理所有监听点");
+        log.debug("[SIP SERVER] 开始清理所有监听点");
 
         // 设置关闭标志
         isShuttingDown = true;
 
-        // 清理所有TCP Provider
+        // 快速清理所有TCP Provider
+        for (SipProviderImpl provider : tcpSipProviderMap.values()) {
+            try {
+                if (sipListener != null) {
+                    provider.removeSipListener(sipListener);
+                }
+            } catch (Exception e) {
+                log.debug("[SIP SERVER] 清理TCP Provider异常: {}", e.getMessage());
+            }
+        }
         tcpSipProviderMap.clear();
 
-        // 清理所有UDP Provider
+        // 快速清理所有UDP Provider
+        for (SipProviderImpl provider : udpSipProviderMap.values()) {
+            try {
+                if (sipListener != null) {
+                    provider.removeSipListener(sipListener);
+                }
+            } catch (Exception e) {
+                log.debug("[SIP SERVER] 清理UDP Provider异常: {}", e.getMessage());
+            }
+        }
         udpSipProviderMap.clear();
 
         // 清理监听点记录
@@ -313,7 +331,7 @@ public class SipLayer implements InitializingBean {
         // 清理SipStack实例
         sipStackMap.clear();
 
-        log.info("[SIP SERVER] 所有监听点清理完成");
+        log.debug("[SIP SERVER] 所有监听点清理完成");
     }
 
     /**
@@ -344,8 +362,12 @@ public class SipLayer implements InitializingBean {
 
     @PreDestroy
     public void destroy() {
-        log.info("[SIP SERVER] 开始关闭SIP服务");
-        clearAllListeningPoints();
-        log.info("[SIP SERVER] SIP服务关闭完成");
+        log.debug("[SIP SERVER] 开始关闭SIP服务");
+        try {
+            clearAllListeningPoints();
+            log.debug("[SIP SERVER] SIP服务关闭完成");
+        } catch (Exception e) {
+            log.debug("[SIP SERVER] SIP服务关闭异常: {}", e.getMessage());
+        }
     }
 }

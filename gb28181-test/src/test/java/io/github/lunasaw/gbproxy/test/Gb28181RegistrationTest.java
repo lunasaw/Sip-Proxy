@@ -58,6 +58,19 @@ public class Gb28181RegistrationTest extends BasicSipCommonTest {
     @Override
     public void setUp() {
         super.setUp();
+
+        // 额外的SIP监听点设置，确保监听点存在
+        if (sipLayer != null) {
+            try {
+                // 确保监听点存在
+                sipLayer.addListeningPoint("127.0.0.1", 5060);
+                sipLayer.addListeningPoint("127.0.0.1", 5061);
+                System.out.println("🔧 额外确保SIP监听点设置完成: 5060, 5061");
+            } catch (Exception e) {
+                System.out.println("⚠️ SIP监听点设置异常: " + e.getMessage());
+            }
+        }
+        
         // 重置测试状态
         TestServerRegisterProcessorHandler.resetTestState();
         lastResponse.set(null);

@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class TimeSyncServiceImpl implements TimeSyncService {
 
-    private static final DateTimeFormatter SIP_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final DateTimeFormatter SIP_DATE_FORMATTER_WITH_MILLIS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final DateTimeFormatter SIP_DATE_FORMATTER_WITHOUT_MILLIS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     
     // NTP时间戳偏移量 (1900年1月1日到1970年1月1日的秒数)
     private static final long NTP_TIMESTAMP_OFFSET = 2208988800L;
@@ -38,6 +39,23 @@ public class TimeSyncServiceImpl implements TimeSyncService {
 
     @Autowired
     private SipCommonProperties sipCommonProperties;
+
+    /**
+     * 解析SIP Date头域时间，支持有无毫秒两种格式
+     *
+     * @param dateTime 时间字符串
+     * @return 解析后的LocalDateTime
+     * @throws DateTimeParseException 解析失败时抛出异常
+     */
+    private LocalDateTime parseSipDateTime(String dateTime) throws DateTimeParseException {
+        try {
+            // 首先尝试解析带毫秒的格式
+            return LocalDateTime.parse(dateTime, SIP_DATE_FORMATTER_WITH_MILLIS);
+        } catch (DateTimeParseException e) {
+            // 如果失败，尝试解析不带毫秒的格式
+            return LocalDateTime.parse(dateTime, SIP_DATE_FORMATTER_WITHOUT_MILLIS);
+        }
+    }
 
     @Override
     public boolean syncTimeFromSip(String dateHeaderValue) {
@@ -53,8 +71,8 @@ public class TimeSyncServiceImpl implements TimeSyncService {
         }
 
         try {
-            // 解析SIP Date头域的时间
-            LocalDateTime serverTime = LocalDateTime.parse(dateHeaderValue.trim(), SIP_DATE_FORMATTER);
+            // 解析SIP Date头域的时间，支持有无毫秒两种格式
+            LocalDateTime serverTime = parseSipDateTime(dateHeaderValue.trim());
             LocalDateTime localTime = LocalDateTime.now();
             
             // 计算时间偏差
