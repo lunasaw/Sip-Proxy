@@ -15,7 +15,7 @@ import org.springframework.context.annotation.ComponentScan;
  * 启动方式：
  * 1. IDE运行：直接运行main方法
  * 2. Maven运行：mvn spring-boot:run -pl gb28181-test
- * 3. JAR运行：java -jar gb28181-test-1.2.5-SNAPSHOT.jar
+ * 3. JAR运行：java -jar gb28181-test-1.2.5.jar
  * <p>
  * 参数说明：
  * --test.mode=auto|manual        测试模式：自动化/手动
