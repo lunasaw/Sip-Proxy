@@ -1,5 +1,6 @@
 package io.github.lunasaw.gb28181.common.entity.response;
 
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import jakarta.xml.bind.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,7 +32,7 @@ import java.util.List;
 @AllArgsConstructor
 @XmlRootElement(name = "Response")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class DeviceInfoResponse {
+public class DeviceInfoResponse extends XmlBean {
     @XmlElement(name = "CmdType")
     private final String cmdType = "DeviceInfo";
 

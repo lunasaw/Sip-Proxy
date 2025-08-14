@@ -4,6 +4,7 @@ import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceSubscribe;
+import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeHandlerAbstract;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestHandler;
 import io.github.lunasaw.sip.common.entity.Device;
@@ -17,6 +18,8 @@ import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -31,7 +34,7 @@ import javax.sip.message.Response;
  * @author luna
  * @date 2023/10/19
  */
-@Component
+@Component("subscribeCatalogQueryMessageHandler")
 @Slf4j
 @Getter
 @Setter
@@ -39,7 +42,7 @@ public class SubscribeCatalogQueryMessageHandler extends SubscribeHandlerAbstrac
 
     public static final String CMD_TYPE = CmdTypeEnum.CATALOG.getType();
 
-    public SubscribeCatalogQueryMessageHandler(SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
+    public SubscribeCatalogQueryMessageHandler(@Lazy SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
         super(subscribeRequestHandler, deviceSupplier);
     }
 

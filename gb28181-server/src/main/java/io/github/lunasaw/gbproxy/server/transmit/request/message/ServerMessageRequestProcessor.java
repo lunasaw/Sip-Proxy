@@ -4,6 +4,8 @@ import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
+import javax.sip.ServerTransaction;
+import javax.sip.message.Request;
 
 import org.springframework.stereotype.Component;
 
@@ -38,9 +40,12 @@ public class ServerMessageRequestProcessor extends SipMessageRequestProcessorAbs
 
     @Override
     public void process(RequestEvent evt) {
-        try {
-            log.info("处理MESSAGE请求：evt = {}", evt);
+        process(evt, null);
+    }
 
+    @Override
+    public void process(RequestEvent evt, ServerTransaction serverTransaction) {
+        try {
             // 验证设备权限
             if (!serverMessageProcessorHandler.validateDevicePermission(evt)) {
                 log.warn("MESSAGE请求权限验证失败");
@@ -56,8 +61,8 @@ public class ServerMessageRequestProcessor extends SipMessageRequestProcessorAbs
                 return;
             }
 
-            // 处理MESSAGE请求
-            doMessageHandForEvt(evt, fromDevice);
+            // 处理MESSAGE请求，传入预创建的事务
+            doMessageHandForEvt(evt, fromDevice, serverTransaction);
 
         } catch (Exception e) {
             log.error("处理MESSAGE请求异常：evt = {}", evt, e);

@@ -9,6 +9,7 @@ import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandler;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.sip.RequestEvent;
+import javax.sip.ServerTransaction;
 import javax.sip.message.Response;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -51,8 +53,19 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
     }
 
     public void doMessageHandForEvt(RequestEvent evt, FromDevice fromDevice) {
+        doMessageHandForEvt(evt, fromDevice, null);
+    }
+
+    public void doMessageHandForEvt(RequestEvent evt, FromDevice fromDevice, ServerTransaction serverTransaction) {
         SIPRequest request = (SIPRequest) evt.getRequest();
 
+        processMessageRequest(evt, fromDevice, serverTransaction, request);
+    }
+
+    /**
+     * 处理SIP MESSAGE请求的核心逻辑
+     */
+    private void processMessageRequest(RequestEvent evt, FromDevice fromDevice, ServerTransaction serverTransaction, SIPRequest request) {
         String charset = Optional.of(fromDevice).map(Device::getCharset).orElse(Constant.UTF_8);
 
         // 解析xml
@@ -84,14 +97,20 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
             return;
         }
         try {
+            // GB28181协议要求：先发送200 OK响应(Step 2)，然后再处理业务逻辑(Step 3)
+            if (messageHandler.needResponseAck()) {
+                // 立即发送200 OK响应，确保事务一致性
+                log.debug("立即发送200 OK响应，CmdType={}, rootType={}", cmdType, rootType);
+                messageHandler.responseAck(evt, serverTransaction);
+            }
+
+            // 处理业务逻辑
             messageHandler.setXmlStr(xmlStr);
             messageHandler.handForEvt(evt);
-            if (messageHandler.needResponseAck()) {
-                messageHandler.responseAck(evt);
-            }
+            
         } catch (Exception e) {
             log.error("process::evt = {}, e", evt, e);
-            messageHandler.responseError(evt, Response.SERVER_INTERNAL_ERROR, e.getMessage());
+            messageHandler.responseError(evt, Response.SERVER_INTERNAL_ERROR, e.getMessage(), serverTransaction);
         }
     }
 }

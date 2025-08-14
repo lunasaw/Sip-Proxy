@@ -36,10 +36,11 @@ public abstract class AsyncSipListener extends AbstractSipListener {
     /**
      * 创建默认线程池
      * 使用本地创建的线程池，不依赖Spring注入
+     * 注意：方法为protected以支持测试时通过反射调用（CGLIB代理需要）
      *
      * @return 默认线程池
      */
-    private ThreadPoolTaskExecutor createDefaultThreadPool() {
+    protected ThreadPoolTaskExecutor createDefaultThreadPool() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
         // 设置线程池参数

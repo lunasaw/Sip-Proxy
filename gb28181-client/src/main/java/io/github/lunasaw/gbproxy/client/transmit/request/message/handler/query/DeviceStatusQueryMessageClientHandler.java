@@ -53,7 +53,7 @@ public class DeviceStatusQueryMessageClientHandler extends MessageClientHandlerA
             String userId = deviceSession.getUserId();
             String sipId = deviceSession.getSipId();
 
-            log.debug("处理设备状态查询: userId={}, sipId={}", userId, sipId);
+            log.info("处理设备状态查询: userId={}, sipId={}", userId, sipId);
 
             // 解析查询请求
             DeviceQuery deviceQuery = parseXml(DeviceQuery.class);

@@ -82,12 +82,34 @@ public abstract class MessageHandlerAbstract implements MessageHandler, Initiali
         ResponseCmd.doResponseCmd(Response.OK, "OK", event);
     }
 
+    @Override
+    public void responseAck(RequestEvent event, javax.sip.ServerTransaction serverTransaction) {
+        if (serverTransaction != null) {
+            // 使用预创建的事务
+            ResponseCmd.sendResponse(Response.OK, "OK", event, serverTransaction);
+        } else {
+            // 降级到原有方法
+            responseAck(event);
+        }
+    }
+
     public void responseError(RequestEvent event) {
         ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, "SERVER ERROR", event);
     }
 
     public void responseError(RequestEvent event, Integer code, String error) {
         ResponseCmd.doResponseCmd(code, error, event);
+    }
+
+    @Override
+    public void responseError(RequestEvent event, Integer code, String error, javax.sip.ServerTransaction serverTransaction) {
+        if (serverTransaction != null) {
+            // 使用预创建的事务
+            ResponseCmd.sendResponse(code, error, event, serverTransaction);
+        } else {
+            // 降级到原有方法
+            responseError(event, code, error);
+        }
     }
 
     public <T> T parseXml(Class<T> clazz) {

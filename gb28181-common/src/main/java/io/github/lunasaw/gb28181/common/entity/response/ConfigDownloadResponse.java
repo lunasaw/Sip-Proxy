@@ -1,6 +1,7 @@
 package io.github.lunasaw.gb28181.common.entity.response;
 
 import jakarta.xml.bind.annotation.*;
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,7 +28,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @XmlRootElement(name = "Response")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ConfigDownloadResponse {
+public class ConfigDownloadResponse extends XmlBean {
     @XmlElement(name = "CmdType")
     private final String cmdType = "ConfigDownload";
 

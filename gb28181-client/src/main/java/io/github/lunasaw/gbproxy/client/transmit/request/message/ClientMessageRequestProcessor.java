@@ -42,7 +42,7 @@ public class ClientMessageRequestProcessor extends SipMessageRequestProcessorAbs
             String fromUserId = SipUtils.getUserIdFromFromHeader(request);
             String toUserId = SipUtils.getUserIdFromToHeader(request);
 
-            log.debug("收到MESSAGE请求: from={}, to={}", fromUserId, toUserId);
+            log.info("收到MESSAGE请求: from={}, to={}", fromUserId, toUserId);
             // 获取FromDevice
             FromDevice clientFromDevice = clientDeviceSupplier.getClientFromDevice();
             // 比较 toUserId 和 clientFromDevice 的 userId 是否一致 表示收到的消息就是要处理的消息

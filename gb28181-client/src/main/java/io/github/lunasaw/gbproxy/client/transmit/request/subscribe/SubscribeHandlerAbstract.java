@@ -10,6 +10,7 @@ import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstrac
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -22,12 +23,13 @@ import javax.sip.RequestEvent;
 public abstract class SubscribeHandlerAbstract extends MessageHandlerAbstract {
 
     @Autowired
+    @Lazy
     protected SubscribeRequestHandler subscribeRequestHandler;
 
     @Autowired
     protected ClientDeviceSupplier clientDeviceSupplier;
 
-    public SubscribeHandlerAbstract(SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
+    public SubscribeHandlerAbstract(@Lazy SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
         this.subscribeRequestHandler = subscribeRequestHandler;
         this.clientDeviceSupplier = deviceSupplier;
     }

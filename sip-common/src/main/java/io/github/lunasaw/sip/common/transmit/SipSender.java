@@ -8,6 +8,7 @@ import io.github.lunasaw.sip.common.transmit.request.SipRequestBuilderFactory;
 import io.github.lunasaw.sip.common.transmit.strategy.SipRequestStrategy;
 import io.github.lunasaw.sip.common.transmit.strategy.SipRequestStrategyFactory;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -269,10 +270,18 @@ public class SipSender {
             this.fromDevice = fromDevice;
             this.toDevice = toDevice;
             this.method = method;
-            if (StringUtils.isBlank(toDevice.getCallId())) {
-                this.callId = SipRequestUtils.getNewCallId();
-            } else {
+
+            // Call-ID优先级：ThreadLocal事务上下文 > ToDevice.callId > 新生成
+            String contextCallId = SipTransactionContext.getCurrentCallId();
+            if (StringUtils.isNotBlank(contextCallId)) {
+                this.callId = contextCallId;
+                log.debug("使用SIP事务上下文的Call-ID: {}", contextCallId);
+            } else if (StringUtils.isNotBlank(toDevice.getCallId())) {
                 this.callId = toDevice.getCallId();
+                log.debug("使用ToDevice的Call-ID: {}", this.callId);
+            } else {
+                this.callId = SipRequestUtils.getNewCallId();
+                log.debug("生成新的Call-ID: {}", this.callId);
             }
         }
 

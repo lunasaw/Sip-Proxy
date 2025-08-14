@@ -40,6 +40,12 @@ public class SipTransactionManager {
      * @return 服务器事务
      */
     public static ServerTransaction getServerTransaction(Request request, String ip) {
+        // 检查是否正在关闭
+        if (SipLayer.isShuttingDown()) {
+            log.debug("服务正在关闭，跳过事务创建");
+            return null;
+        }
+        
         if (ip == null) {
             ip = SipLayer.getMonitorIp();
         }
@@ -50,16 +56,22 @@ public class SipTransactionManager {
         try {
             ServerTransaction serverTransaction = null;
             if (isTcp) {
-                SipProviderImpl sipProvider = Objects.requireNonNull(SipLayer.getTcpSipProvider(ip),
-                    "[发送信息失败] 未找到tcp://的监听信息");
+                SipProviderImpl sipProvider = SipLayer.getTcpSipProvider(ip);
+                if (sipProvider == null) {
+                    log.warn("[发送信息失败] 未找到tcp://{}的监听信息，可能服务正在关闭", ip);
+                    return null;
+                }
                 SipStackImpl stack = (SipStackImpl)sipProvider.getSipStack();
                 serverTransaction = (SIPServerTransaction)stack.findTransaction((SIPRequest)request, true);
                 if (serverTransaction == null) {
                     serverTransaction = sipProvider.getNewServerTransaction(request);
                 }
             } else {
-                SipProviderImpl udpSipProvider = Objects.requireNonNull(SipLayer.getUdpSipProvider(ip),
-                    "[发送信息失败] 未找到udp://的监听信息");
+                SipProviderImpl udpSipProvider = SipLayer.getUdpSipProvider(ip);
+                if (udpSipProvider == null) {
+                    log.warn("[发送信息失败] 未找到udp://{}的监听信息，可能服务正在关闭", ip);
+                    return null;
+                }
                 SipStackImpl stack = (SipStackImpl)udpSipProvider.getSipStack();
                 serverTransaction = (SIPServerTransaction)stack.findTransaction((SIPRequest)request, true);
                 if (serverTransaction == null) {
@@ -69,7 +81,8 @@ public class SipTransactionManager {
             return serverTransaction;
         } catch (Exception e) {
             log.error("获取服务器事务失败", e);
-            throw new RuntimeException("获取服务器事务失败", e);
+            // 返回null而不是抛出异常，让调用者处理
+            return null;
         }
     }
 

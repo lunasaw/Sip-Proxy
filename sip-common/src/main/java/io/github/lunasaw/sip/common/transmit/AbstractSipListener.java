@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.transmit;
 
 import com.alibaba.fastjson2.JSON;
+import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import io.github.lunasaw.sip.common.metrics.SipMetrics;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import io.github.lunasaw.sip.common.transmit.event.EventResult;
@@ -19,8 +20,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.skywalking.apm.toolkit.trace.Trace;
 
 import javax.sip.*;
-import javax.sip.header.CSeqHeader;
 import javax.sip.header.CallIdHeader;
+import javax.sip.header.CSeqHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 import java.util.ArrayList;
@@ -206,8 +207,23 @@ public abstract class AbstractSipListener implements SipListener {
     public void processRequest(RequestEvent requestEvent) {
         Timer.Sample sample = sipMetrics != null ? sipMetrics.startTimer() : null;
         String method = requestEvent.getRequest().getMethod();
+        ServerTransaction serverTransaction = null;
 
         try {
+            // 全局注入SIP事务上下文 - 在最顶层入口处注入完整事务信息
+            try {
+                SipTransactionContext.SipTransactionInfo transactionInfo =
+                        SipTransactionContext.SipTransactionInfo.fromRequestEvent(requestEvent);
+                if (transactionInfo != null) {
+                    SipTransactionContext.setTransactionInfo(transactionInfo);
+                    log.debug("全局注入SIP事务上下文: {}, method={}, thread={}",
+                            transactionInfo, method, Thread.currentThread().getName());
+                } else {
+                    log.warn("无法提取SIP事务信息，方法: {}", method);
+                }
+            } catch (Exception e) {
+                log.warn("全局注入SIP事务上下文失败: method={}, error={}", method, e.getMessage());
+            }
             // 记录方法调用
             if (sipMetrics != null) {
                 sipMetrics.recordMethodCall(method);
@@ -224,9 +240,51 @@ public abstract class AbstractSipListener implements SipListener {
                 return;
             }
 
-            // 同步处理请求
+            // 对于需要事务的请求方法，立即创建服务器事务
+            if (shouldCreateTransaction(method)) {
+                try {
+                    serverTransaction = requestEvent.getServerTransaction();
+                    if (serverTransaction == null) {
+                        SipProvider sipProvider = (SipProvider) requestEvent.getSource();
+                        serverTransaction = sipProvider.getNewServerTransaction(requestEvent.getRequest());
+                        log.debug("为方法 {} 创建服务器事务: {}", method, serverTransaction);
+                    }
+                } catch (TransactionAlreadyExistsException e) {
+                    // 事务已存在，重新获取现有事务
+                    log.debug("事务已存在，使用现有事务: {}", e.getMessage());
+                    try {
+                        serverTransaction = requestEvent.getServerTransaction();
+                        if (serverTransaction != null) {
+                            log.debug("成功获取现有服务器事务: {}", serverTransaction);
+                        } else {
+                            log.warn("获取现有服务器事务失败，事务为null");
+                        }
+                    } catch (Exception ex) {
+                        log.warn("重新获取现有事务时发生异常: {}", ex.getMessage());
+                        serverTransaction = null;
+                    }
+                } catch (TransactionUnavailableException e) {
+                    log.warn("事务不可用，方法 {}: {}", method, e.getMessage());
+                    serverTransaction = null;
+                } catch (Exception e) {
+                    log.warn("为方法 {} 创建服务器事务时发生未知异常: {}", method, e.getMessage());
+                    // 尝试获取现有事务作为回退策略
+                    try {
+                        serverTransaction = requestEvent.getServerTransaction();
+                        if (serverTransaction != null) {
+                            log.debug("回退策略成功，使用现有事务: {}", serverTransaction);
+                        }
+                    } catch (Exception ex) {
+                        log.warn("回退策略失败: {}", ex.getMessage());
+                        serverTransaction = null;
+                    }
+                }
+            }
+
+            // 同步处理请求，传入预创建的事务
             for (SipRequestProcessor sipRequestProcessor : sipRequestProcessors) {
-                sipRequestProcessor.process(requestEvent);
+                // 使用新的重载方法，支持传入服务器事务
+                sipRequestProcessor.process(requestEvent, serverTransaction);
             }
 
             if (sipMetrics != null) {
@@ -242,6 +300,15 @@ public abstract class AbstractSipListener implements SipListener {
             // 调用子类异常处理
             handleRequestException(requestEvent, e);
         } finally {
+            // 清理SIP事务上下文，避免内存泄漏
+            try {
+                SipTransactionContext.clear();
+                log.debug("清理SIP事务上下文: method={}, thread={}",
+                        method, Thread.currentThread().getName());
+            } catch (Exception e) {
+                log.warn("清理SIP事务上下文失败: method={}, error={}", method, e.getMessage());
+            }
+            
             if (sipMetrics != null && sample != null) {
                 sipMetrics.recordRequestProcessingTime(sample);
             }
@@ -431,6 +498,18 @@ public abstract class AbstractSipListener implements SipListener {
         if (timeOutSubscribe != null) {
             timeOutSubscribe.response(eventResult);
         }
+    }
+
+    /**
+     * 判断是否需要为特定方法创建服务器事务
+     *
+     * @param method SIP方法名
+     * @return 是否需要创建事务
+     */
+    protected boolean shouldCreateTransaction(String method) {
+        // MESSAGE、INFO、NOTIFY等需要响应的方法需要事务支持
+        // ACK方法通常不需要服务器事务
+        return !"ACK".equals(method);
     }
 
     // ==================== 子类可重写的方法 ====================

@@ -1,6 +1,7 @@
 package io.github.lunasaw.gb28181.common.entity.notify;
 
 import jakarta.xml.bind.annotation.*;
+import io.github.lunasaw.gb28181.common.entity.xml.XmlBean;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor
 @XmlRootElement(name = "Notify")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class KeepaliveNotify {
+public class KeepaliveNotify extends XmlBean {
     @XmlElement(name = "CmdType")
     private final String cmdType = "Keepalive";
 
