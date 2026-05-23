@@ -11,7 +11,9 @@
       "Bash(mkdir:*)",
       "Bash(grep:*)",
       "Bash(ls:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ],
     "deny": []
   }
