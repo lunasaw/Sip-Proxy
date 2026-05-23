@@ -39,8 +39,8 @@ class SipTransactionContextTest {
 
     @BeforeEach
     void setUp() {
-        SipTransactionContext.TRANSACTION_CONTEXTS.clear();
-        SipTransactionContext.clearCurrentContext();
+        SipTransactionRegistry.TRANSACTION_CONTEXTS.clear();
+        SipTransactionRegistry.clearCurrentContext();
 
         when(requestEvent.getRequest()).thenReturn(request);
         when(request.getHeader("Call-ID")).thenReturn(callIdHeader);
@@ -57,67 +57,67 @@ class SipTransactionContextTest {
 
     @AfterEach
     void tearDown() {
-        SipTransactionContext.TRANSACTION_CONTEXTS.clear();
-        SipTransactionContext.clearCurrentContext();
+        SipTransactionRegistry.TRANSACTION_CONTEXTS.clear();
+        SipTransactionRegistry.clearCurrentContext();
     }
 
     @Test
     void createContext_storesAndSetsCurrentContext() {
-        SipTransactionContext.TransactionContextInfo ctx =
-                SipTransactionContext.createContext(requestEvent, serverTransaction);
+        SipTransactionRegistry.TransactionContextInfo ctx =
+                SipTransactionRegistry.createContext(requestEvent, serverTransaction);
 
         assertThat(ctx).isNotNull();
-        assertThat(SipTransactionContext.TRANSACTION_CONTEXTS).containsKey(ctx.getContextKey());
-        assertThat(SipTransactionContext.getCurrentContext()).isSameAs(ctx);
+        assertThat(SipTransactionRegistry.TRANSACTION_CONTEXTS).containsKey(ctx.getContextKey());
+        assertThat(SipTransactionRegistry.getCurrentContext()).isSameAs(ctx);
     }
 
     @Test
     void getContext_unknownKey_returnsNull() {
-        assertThat(SipTransactionContext.getContext("nonexistent")).isNull();
+        assertThat(SipTransactionRegistry.getContext("nonexistent")).isNull();
     }
 
     @Test
     void getContext_existingKey_returnsContext() {
-        SipTransactionContext.TransactionContextInfo ctx =
-                SipTransactionContext.createContext(requestEvent, serverTransaction);
-        assertThat(SipTransactionContext.getContext(ctx.getContextKey())).isSameAs(ctx);
+        SipTransactionRegistry.TransactionContextInfo ctx =
+                SipTransactionRegistry.createContext(requestEvent, serverTransaction);
+        assertThat(SipTransactionRegistry.getContext(ctx.getContextKey())).isSameAs(ctx);
     }
 
     @Test
     void removeContext_removesFromMapAndInvalidates() {
-        SipTransactionContext.TransactionContextInfo ctx =
-                SipTransactionContext.createContext(requestEvent, serverTransaction);
+        SipTransactionRegistry.TransactionContextInfo ctx =
+                SipTransactionRegistry.createContext(requestEvent, serverTransaction);
         String key = ctx.getContextKey();
 
-        SipTransactionContext.removeContext(key);
+        SipTransactionRegistry.removeContext(key);
 
-        assertThat(SipTransactionContext.TRANSACTION_CONTEXTS).doesNotContainKey(key);
+        assertThat(SipTransactionRegistry.TRANSACTION_CONTEXTS).doesNotContainKey(key);
         assertThat(ctx.isValid()).isFalse();
     }
 
     @Test
     void clearCurrentContext_makesGetCurrentContextReturnNull() {
-        SipTransactionContext.createContext(requestEvent, serverTransaction);
-        SipTransactionContext.clearCurrentContext();
-        assertThat(SipTransactionContext.getCurrentContext()).isNull();
+        SipTransactionRegistry.createContext(requestEvent, serverTransaction);
+        SipTransactionRegistry.clearCurrentContext();
+        assertThat(SipTransactionRegistry.getCurrentContext()).isNull();
     }
 
     @Test
     void cleanupExpiredContexts_removesInvalidContexts() {
-        SipTransactionContext.TransactionContextInfo ctx =
-                SipTransactionContext.createContext(requestEvent, serverTransaction);
+        SipTransactionRegistry.TransactionContextInfo ctx =
+                SipTransactionRegistry.createContext(requestEvent, serverTransaction);
         String key = ctx.getContextKey();
 
         ctx.invalidate();
-        SipTransactionContext.cleanupExpiredContexts();
+        SipTransactionRegistry.cleanupExpiredContexts();
 
-        assertThat(SipTransactionContext.TRANSACTION_CONTEXTS).doesNotContainKey(key);
+        assertThat(SipTransactionRegistry.TRANSACTION_CONTEXTS).doesNotContainKey(key);
     }
 
     @Test
     void getContextStats_returnsFormattedString() {
-        SipTransactionContext.createContext(requestEvent, serverTransaction);
-        String stats = SipTransactionContext.getContextStats();
+        SipTransactionRegistry.createContext(requestEvent, serverTransaction);
+        String stats = SipTransactionRegistry.getContextStats();
         assertThat(stats).contains("总上下文数").contains("有效上下文数");
     }
 }

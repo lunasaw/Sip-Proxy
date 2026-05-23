@@ -6,8 +6,8 @@ import io.github.lunasaw.sip.common.constant.Constant;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.transmit.TransactionAwareResponseCmd;
-import io.github.lunasaw.sip.common.transmit.SipTransactionContext;
-import io.github.lunasaw.sip.common.transmit.SipTransactionContext.TransactionContextInfo;
+import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry;
+import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry.TransactionContextInfo;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -222,7 +222,7 @@ public abstract class TransactionAwareMessageHandlerAbstract implements MessageH
      * 获取当前事务上下文信息
      */
     protected TransactionContextInfo getCurrentTransactionContext() {
-        return SipTransactionContext.getCurrentContext();
+        return SipTransactionRegistry.getCurrentContext();
     }
 
     /**

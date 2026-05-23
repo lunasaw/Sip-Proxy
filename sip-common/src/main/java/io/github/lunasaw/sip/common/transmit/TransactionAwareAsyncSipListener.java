@@ -1,7 +1,9 @@
 package io.github.lunasaw.sip.common.transmit;
 
 import io.github.lunasaw.sip.common.layer.SipLayer;
-import io.github.lunasaw.sip.common.transmit.SipTransactionContext.TransactionContextInfo;
+import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry;
+import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry.TransactionContextInfo;
+import io.github.lunasaw.sip.common.transmit.SipServerTransactionProvider;
 import io.github.lunasaw.sip.common.utils.TraceUtils;
 import io.micrometer.core.instrument.Timer;
 import lombok.Getter;
@@ -58,8 +60,8 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
         contextCleanupScheduler.scheduleAtFixedRate(() -> {
             try {
                 log.info("开始定期清理过期事务上下文");
-                SipTransactionContext.cleanupExpiredContexts();
-                log.info("定期清理事务上下文完成: 清理了过期上下文, 统计信息: {}", SipTransactionContext.getContextStats());
+                SipTransactionRegistry.cleanupExpiredContexts();
+                log.info("定期清理事务上下文完成: 清理了过期上下文, 统计信息: {}", SipTransactionRegistry.getContextStats());
             } catch (Exception e) {
                 log.error("清理事务上下文失败", e);
             }
@@ -95,14 +97,14 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
                     ServerTransaction serverTransaction = requestEvent.getServerTransaction();
                     if (serverTransaction == null) {
                         // 尝试获取或创建服务器事务
-                        serverTransaction = SipTransactionManager.getServerTransaction(requestEvent.getRequest());
+                        serverTransaction = SipServerTransactionProvider.getServerTransaction(requestEvent.getRequest());
                         if (serverTransaction == null) {
                             log.debug("无法获取服务器事务，可能服务正在关闭，继续处理");
                         }
                     }
 
                     if (serverTransaction != null) {
-                        transactionContext = SipTransactionContext.createContext(requestEvent, serverTransaction);
+                        transactionContext = SipTransactionRegistry.createContext(requestEvent, serverTransaction);
                         log.info("成功创建事务上下文: key={}, method={}, transactionId={}",
                                 transactionContext.getContextKey(), method, serverTransaction.getBranchId());
                     } else {
@@ -130,7 +132,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
 
                     // 传递事务上下文到当前线程
                     if (finalContext != null) {
-                        SipTransactionContext.setCurrentContext(finalContext);
+                        SipTransactionRegistry.setCurrentContext(finalContext);
                         currentContext = finalContext;
                         log.info("成功传递事务上下文到异步线程: key={}, threadName={}",
                                 finalContext.getContextKey(), Thread.currentThread().getName());
@@ -163,7 +165,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
                     log.info("清理异步线程上下文: method={}, contextKey={}, threadName={}",
                             method, currentContext != null ? currentContext.getContextKey() : "none",
                             Thread.currentThread().getName());
-                    SipTransactionContext.clearCurrentContext();
+                    SipTransactionRegistry.clearCurrentContext();
                     TraceUtils.clearTraceId();
                 }
             });
@@ -211,7 +213,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
                 try {
                     // 从响应中提取上下文键信息
                     String contextKey = generateContextKeyFromResponse(response);
-                    existingContext = SipTransactionContext.getContext(contextKey);
+                    existingContext = SipTransactionRegistry.getContext(contextKey);
                     if (existingContext != null) {
                         log.info("找到匹配的事务上下文: key={}, status={}, contextAge={}ms",
                                 contextKey, status, System.currentTimeMillis() - existingContext.getCreateTime());
@@ -234,7 +236,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
 
                     // 传递事务上下文到当前线程
                     if (finalContext != null) {
-                        SipTransactionContext.setCurrentContext(finalContext);
+                        SipTransactionRegistry.setCurrentContext(finalContext);
                         log.info("成功传递事务上下文到响应处理线程: key={}, threadName={}",
                                 finalContext.getContextKey(), Thread.currentThread().getName());
                     } else {
@@ -266,7 +268,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
                     log.info("清理响应处理线程上下文: status={}, contextKey={}, threadName={}",
                             status, finalContext != null ? finalContext.getContextKey() : "none",
                             Thread.currentThread().getName());
-                    SipTransactionContext.clearCurrentContext();
+                    SipTransactionRegistry.clearCurrentContext();
                     TraceUtils.clearTraceId();
                 }
             });
@@ -350,7 +352,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
      * 获取事务上下文统计信息
      */
     public String getTransactionContextStats() {
-        return SipTransactionContext.getContextStats();
+        return SipTransactionRegistry.getContextStats();
     }
 
     /**
@@ -358,7 +360,7 @@ public abstract class TransactionAwareAsyncSipListener extends AsyncSipListener 
      */
     public void cleanupTransactionContexts() {
         log.info("开始手动清理事务上下文");
-        SipTransactionContext.cleanupExpiredContexts();
+        SipTransactionRegistry.cleanupExpiredContexts();
         log.info("手动清理事务上下文完成: 清理了过期上下文, 统计信息: {}", getTransactionContextStats());
     }
 

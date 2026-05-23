@@ -241,13 +241,13 @@ public class SipSender {
      * 获取服务器事务（兼容性方法）
      */
     public static ServerTransaction getServerTransaction(Request request) {
-        return SipTransactionManager.getServerTransaction(request);
+        return SipServerTransactionProvider.getServerTransaction(request);
     }
 
     // ==================== 事务管理方法 ====================
 
     public static ServerTransaction getServerTransaction(Request request, String ip) {
-        return SipTransactionManager.getServerTransaction(request, ip);
+        return SipServerTransactionProvider.getServerTransaction(request, ip);
     }
 
     /**
