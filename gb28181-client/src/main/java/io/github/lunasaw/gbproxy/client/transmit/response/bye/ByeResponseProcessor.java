@@ -3,20 +3,15 @@ package io.github.lunasaw.gbproxy.client.transmit.response.bye;
 import javax.sip.ResponseEvent;
 
 import gov.nist.javax.sip.message.SIPResponse;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientByeEvent;
 import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
-/**
- * BYE响应处理器
- * 只负责SIP协议层面的处理，业务逻辑通过ByeProcessorHandler接口实现
- *
- * @author luna
- */
 @Slf4j
 @Getter
 @Setter
@@ -28,14 +23,8 @@ public class ByeResponseProcessor extends ClientAbstractSipResponseProcessor {
     private String method = METHOD;
 
     @Autowired
-    @Lazy
-    private ClientByeProcessorHandler clientByeProcessorHandler;
+    private ApplicationEventPublisher publisher;
 
-    /**
-     * 处理BYE响应
-     *
-     * @param evt 响应事件
-     */
     @Override
     public void process(ResponseEvent evt) {
         try {
@@ -44,7 +33,7 @@ public class ByeResponseProcessor extends ClientAbstractSipResponseProcessor {
             int statusCode = response.getStatusCode();
 
             if (callId != null) {
-                clientByeProcessorHandler.handleByeResponse(callId, statusCode, evt);
+                publisher.publishEvent(new ClientByeEvent(this, callId, statusCode));
                 log.info("处理BYE响应：callId = {}, statusCode = {}", callId, statusCode);
             } else {
                 log.warn("BYE响应处理失败：callId为空");

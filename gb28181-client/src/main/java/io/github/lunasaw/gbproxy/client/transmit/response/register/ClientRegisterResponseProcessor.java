@@ -2,7 +2,10 @@ package io.github.lunasaw.gbproxy.client.transmit.response.register;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.client.config.SipClientProperties;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientRegisterChallengeEvent;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientRegisterFailureEvent;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientRegisterSuccessEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -52,6 +55,9 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
     private RegisterProcessorHandler registerProcessorHandler;
 
     @Autowired
+    private ApplicationEventPublisher publisher;
+
+    @Autowired
     private TimeSyncService timeSyncService;
 
     /**
@@ -78,7 +84,7 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
                 // 处理注册成功，包括时间同步
                 handleRegisterSuccess(response, toUserId);
             } else {
-                registerProcessorHandler.handleRegisterFailure(toUserId, statusCode);
+                publisher.publishEvent(new ClientRegisterFailureEvent(this, toUserId, statusCode));
                 log.warn("Register失败：toUserId = {}, statusCode = {}", toUserId, statusCode);
             }
         } catch (Exception e) {
@@ -98,8 +104,8 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
             ResponseEventExt eventExt = (ResponseEventExt) evt;
             SIPResponse response = (SIPResponse) evt.getResponse();
 
-            // 调用业务处理器
-            registerProcessorHandler.handleUnauthorized(evt, toUserId, callId);
+            // 发布挑战事件
+            publisher.publishEvent(new ClientRegisterChallengeEvent(this, toUserId, callId));
 
             // 协议层面的重新认证处理
             processReAuthentication(eventExt, toUserId, callId);
@@ -151,8 +157,8 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
      */
     private void handleRegisterSuccess(SIPResponse response, String toUserId) {
         try {
-            // 调用业务处理器
-            registerProcessorHandler.registerSuccess(toUserId);
+            // 发布注册成功事件
+            publisher.publishEvent(new ClientRegisterSuccessEvent(this, toUserId));
             log.info("Register成功：toUserId = {}", toUserId);
 
             // 处理SIP校时 - 从Date头域同步时间

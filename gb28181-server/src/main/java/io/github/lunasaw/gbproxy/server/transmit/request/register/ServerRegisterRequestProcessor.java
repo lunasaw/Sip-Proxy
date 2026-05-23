@@ -12,6 +12,12 @@ import javax.sip.message.Request;
 import javax.sip.message.Response;
 
 import java.util.ArrayList;
+import org.springframework.context.ApplicationEventPublisher;
+
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceOfflineEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceOnlineEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRegisterChallengeEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRegisterEvent;
 import org.springframework.stereotype.Component;
 
 import com.luna.common.date.DateUtils;
@@ -49,6 +55,9 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
     @Lazy
     private ServerRegisterProcessorHandler serverRegisterProcessorHandler;
 
+    @Autowired
+    private ApplicationEventPublisher publisher;
+
     /**
      * 处理REGISTER请求
      * 只负责SIP协议层面的处理，业务逻辑通过ServerRegisterProcessorHandler接口实现
@@ -72,7 +81,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
 
             // 处理注销请求
             if (!isRegister) {
-                serverRegisterProcessorHandler.handleDeviceOffline(userId, registerInfo, sipTransaction, evt);
+                publisher.publishEvent(new DeviceOfflineEvent(this, userId, registerInfo, sipTransaction));
                 return;
             }
 
@@ -96,7 +105,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
             // 续订请求，直接响应成功
             List<Header> okHeaderList = getRegisterOkHeaderList(request);
             ResponseCmd.response(Response.OK).phrase("OK").requestEvent(evt).headers(okHeaderList).send();
-            serverRegisterProcessorHandler.handleDeviceOnline(userId, sipTransaction, evt);
+            publisher.publishEvent(new DeviceOnlineEvent(this, userId, sipTransaction));
             return;
         }
 
@@ -119,8 +128,8 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
         // 注册成功
         List<Header> okHeaderList = getRegisterOkHeaderList(request);
         ResponseCmd.response(Response.OK).phrase("OK").requestEvent(evt).headers(okHeaderList).send();
-        serverRegisterProcessorHandler.handleRegisterInfoUpdate(userId, registerInfo, evt);
-        serverRegisterProcessorHandler.handleDeviceOnline(userId, sipTransaction, evt);
+        publisher.publishEvent(new DeviceRegisterEvent(this, userId, registerInfo));
+        publisher.publishEvent(new DeviceOnlineEvent(this, userId, sipTransaction));
     }
 
     /**
@@ -134,7 +143,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
                             "3402000000", nonce, DigestServerAuthenticationHelper.DEFAULT_ALGORITHM);
 
             ResponseCmd.response(Response.UNAUTHORIZED).phrase("Unauthorized").requestEvent(evt).header(wwwAuthenticateHeader).send();
-            serverRegisterProcessorHandler.handleUnauthorized(userId, evt);
+            publisher.publishEvent(new DeviceRegisterChallengeEvent(this, userId));
         } catch (Exception e) {
             log.error("发送认证挑战失败：用户ID = {}", userId, e);
         }
