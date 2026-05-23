@@ -65,14 +65,14 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
 
             // 构建响应
             ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();
-            ResponseCmd.doResponseCmd(Response.OK, "OK", content, contentTypeHeader, evt);
+            ResponseCmd.sendResponse(Response.OK, content, contentTypeHeader, evt);
 
             log.info("✅ 客户端INVITE请求处理完成: callId={}", callId);
 
         } catch (Exception e) {
             log.error("处理INVITE请求时发生异常: evt = {}", evt, e);
             // 发送500错误响应
-            ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, "Internal Server Error", evt);
+            ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, "Internal Server Error", evt);
         }
     }
 }

@@ -53,7 +53,7 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
         if (device == null) {
             // 未注册的设备回复失败
             log.warn("device not register, userId: {}", userId);
-            ResponseCmd.doResponseCmd(Response.NOT_FOUND, event);
+            ResponseCmd.sendResponse(Response.NOT_FOUND, event);
             return;
         }
         DeviceKeepLiveNotify deviceKeepLiveNotify = parseXml(DeviceKeepLiveNotify.class);

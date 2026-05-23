@@ -55,7 +55,7 @@ public class ByeRequestProcessorClient extends SipRequestProcessorAbstract {
             log.debug("收到BYE请求: from={}, to={}, callId={}", fromUserId, toUserId, callId);
 
             // 发送200 OK响应
-            ResponseCmd.doResponseCmd(Response.OK, evt);
+            ResponseCmd.sendResponse(Response.OK, evt);
 
             // 检查对话状态
             Dialog dialog = evt.getDialog();
@@ -67,7 +67,7 @@ public class ByeRequestProcessorClient extends SipRequestProcessorAbstract {
         } catch (Exception e) {
             log.error("处理BYE请求时发生异常: evt = {}", evt, e);
             // 发送500错误响应
-            ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, evt);
+            ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, evt);
         }
     }
 }

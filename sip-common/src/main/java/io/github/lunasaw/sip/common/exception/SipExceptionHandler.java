@@ -39,7 +39,7 @@ public class SipExceptionHandler {
             String reasonPhrase = exception.getErrorType().getDescription();
 
             try {
-                ResponseCmd.doResponseCmd(statusCode, reasonPhrase, requestEvent);
+                ResponseCmd.sendResponse(statusCode, reasonPhrase, requestEvent);
                 log.info("已发送SIP错误响应: {} {}", statusCode, reasonPhrase);
             } catch (Exception e) {
                 log.error("发送SIP错误响应失败", e);
@@ -59,7 +59,7 @@ public class SipExceptionHandler {
 
         if (requestEvent != null) {
             try {
-                ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, "内部服务器错误", requestEvent);
+                ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, "内部服务器错误", requestEvent);
                 log.info("已发送SIP错误响应: {} 内部服务器错误", Response.SERVER_INTERNAL_ERROR);
             } catch (Exception e) {
                 log.error("发送SIP错误响应失败", e);

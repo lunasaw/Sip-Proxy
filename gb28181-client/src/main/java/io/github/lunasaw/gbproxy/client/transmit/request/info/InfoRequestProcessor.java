@@ -62,12 +62,12 @@ public class InfoRequestProcessor extends SipRequestProcessorAbstract {
             infoRequestHandler.receiveInfo(userId, content);
 
             // 发送200 OK响应
-            ResponseCmd.doResponseCmd(Response.OK, evt);
+            ResponseCmd.sendResponse(Response.OK, evt);
 
         } catch (Exception e) {
             log.error("处理INFO请求时发生异常: evt = {}", evt, e);
             // 发送500错误响应
-            ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, e.getMessage(), evt);
+            ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, e.getMessage(), evt);
         }
     }
 }

@@ -79,7 +79,7 @@ public abstract class MessageHandlerAbstract implements MessageHandler, Initiali
     }
 
     public void responseAck(RequestEvent event) {
-        ResponseCmd.doResponseCmd(Response.OK, "OK", event);
+        ResponseCmd.sendResponse(Response.OK, "OK", event);
     }
 
     @Override
@@ -94,11 +94,11 @@ public abstract class MessageHandlerAbstract implements MessageHandler, Initiali
     }
 
     public void responseError(RequestEvent event) {
-        ResponseCmd.doResponseCmd(Response.SERVER_INTERNAL_ERROR, "SERVER ERROR", event);
+        ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, "SERVER ERROR", event);
     }
 
     public void responseError(RequestEvent event, Integer code, String error) {
-        ResponseCmd.doResponseCmd(code, error, event);
+        ResponseCmd.sendResponse(code, error, event);
     }
 
     @Override

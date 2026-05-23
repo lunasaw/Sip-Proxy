@@ -11,7 +11,7 @@ import javax.sip.header.*;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
 
-import org.assertj.core.util.Lists;
+import java.util.ArrayList;
 import org.springframework.stereotype.Component;
 
 import com.luna.common.date.DateUtils;
@@ -95,7 +95,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
         if (existingTransaction != null && callId.equals(existingTransaction.getCallId())) {
             // 续订请求，直接响应成功
             List<Header> okHeaderList = getRegisterOkHeaderList(request);
-            ResponseCmd.doResponseCmd(Response.OK, "OK", evt, okHeaderList);
+            ResponseCmd.response(Response.OK).phrase("OK").requestEvent(evt).headers(okHeaderList).send();
             serverRegisterProcessorHandler.handleDeviceOnline(userId, sipTransaction, evt);
             return;
         }
@@ -112,13 +112,13 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
         if (!serverRegisterProcessorHandler.validatePassword(userId, extractPassword(request), evt)) {
             // 密码验证失败，返回403
             log.warn("REGISTER请求密码验证失败：用户ID = {}", userId);
-            ResponseCmd.doResponseCmd(Response.FORBIDDEN, "wrong password", evt);
+            ResponseCmd.sendResponse(Response.FORBIDDEN, "wrong password", evt);
             return;
         }
 
         // 注册成功
         List<Header> okHeaderList = getRegisterOkHeaderList(request);
-        ResponseCmd.doResponseCmd(Response.OK, "OK", evt, okHeaderList);
+        ResponseCmd.response(Response.OK).phrase("OK").requestEvent(evt).headers(okHeaderList).send();
         serverRegisterProcessorHandler.handleRegisterInfoUpdate(userId, registerInfo, evt);
         serverRegisterProcessorHandler.handleDeviceOnline(userId, sipTransaction, evt);
     }
@@ -133,7 +133,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
                     SipRequestUtils.createWWWAuthenticateHeader(DigestServerAuthenticationHelper.DEFAULT_SCHEME,
                             "3402000000", nonce, DigestServerAuthenticationHelper.DEFAULT_ALGORITHM);
 
-            ResponseCmd.doResponseCmd(Response.UNAUTHORIZED, "Unauthorized", evt, wwwAuthenticateHeader);
+            ResponseCmd.response(Response.UNAUTHORIZED).phrase("Unauthorized").requestEvent(evt).header(wwwAuthenticateHeader).send();
             serverRegisterProcessorHandler.handleUnauthorized(userId, evt);
         } catch (Exception e) {
             log.error("发送认证挑战失败：用户ID = {}", userId, e);
@@ -175,7 +175,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
 
     private List<Header> getRegisterOkHeaderList(Request request) {
 
-        List<Header> list = Lists.newArrayList();
+        List<Header> list = new ArrayList<>();
         // 添加date头
         SIPDateHeader dateHeader = new SIPDateHeader();
         // 使用自己修改的
