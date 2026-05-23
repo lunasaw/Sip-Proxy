@@ -18,7 +18,10 @@ import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategy;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategyFactory;
+import io.github.lunasaw.sip.common.transmit.SipSender;
+import gov.nist.javax.sip.message.SIPResponse;
 
+import javax.sip.address.SipURI;
 import java.util.Date;
 import java.util.Map;
 
@@ -601,5 +604,9 @@ public class ServerCommandSender {
      */
     public static CommandBuilder builder() {
         return new CommandBuilder();
+    }
+
+    public static String deviceAck(FromDevice fromDevice, SipURI sipURI, SIPResponse sipResponse) {
+        return SipSender.doAckRequest(fromDevice, sipURI, sipResponse);
     }
 }

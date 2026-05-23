@@ -2,7 +2,7 @@ package io.github.lunasaw.gbproxy.server.transmit.response.invite;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerSendCmd;
+import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
@@ -65,7 +65,7 @@ public class DefaultInviteResponseProcessorHandler implements InviteResponseProc
                     evt.getRemoteIpAddress() + ":" + evt.getRemotePort());
 
             // 回复ack
-            ServerSendCmd.deviceAck(fromDevice, requestUri, response);
+            ServerCommandSender.deviceAck(fromDevice, requestUri, response);
             log.info("发送ACK响应：requestUri = {}, callId = {}", requestUri, callId);
         } catch (SdpParseException e) {
             log.error("处理INVITE OK响应异常：callId = {}", callId, e);
