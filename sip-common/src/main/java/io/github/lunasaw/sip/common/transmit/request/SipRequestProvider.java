@@ -11,7 +11,7 @@ import javax.sip.header.*;
 import javax.sip.message.Request;
 
 import org.apache.commons.lang3.StringUtils;
-import org.assertj.core.util.Lists;
+import java.util.ArrayList;
 import org.springframework.util.DigestUtils;
 
 import com.luna.common.check.Assert;
@@ -88,7 +88,7 @@ public class SipRequestProvider {
         // via
         ViaHeader viaHeader =
                 SipRequestUtils.createViaHeader(fromDevice.getIp(), fromDevice.getPort(), toDevice.getTransport(), sipMessage.getViaTag());
-        List<ViaHeader> viaHeaders = Lists.newArrayList(viaHeader);
+        List<ViaHeader> viaHeaders = new ArrayList<>(java.util.Arrays.asList(viaHeader));
         // from
         FromHeader fromHeader = SipRequestUtils.createFromHeader(fromDevice.getUserId(), fromDevice.getHostAddress(), fromDevice.getFromTag());
         // to
@@ -114,7 +114,7 @@ public class SipRequestProvider {
         int localPort = sipResponse.getLocalPort();
         ViaHeader viaHeader =
                 SipRequestUtils.createViaHeader(hostAddress, localPort, sipResponse.getTopmostViaHeader().getTransport(), sipMessage.getViaTag());
-        List<ViaHeader> viaHeaders = Lists.newArrayList(viaHeader);
+        List<ViaHeader> viaHeaders = new ArrayList<>(java.util.Arrays.asList(viaHeader));
 
         // Forwards
         MaxForwardsHeader maxForwards = SipRequestUtils.createMaxForwardsHeader();
