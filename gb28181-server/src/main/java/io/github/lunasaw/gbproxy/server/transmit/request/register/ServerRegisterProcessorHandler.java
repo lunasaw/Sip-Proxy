@@ -13,8 +13,4 @@ public interface ServerRegisterProcessorHandler {
     default SipTransaction getDeviceTransaction(String userId) {
         return null;
     }
-
-    default Integer getDeviceExpire(String userId) {
-        return 3600;
-    }
 }

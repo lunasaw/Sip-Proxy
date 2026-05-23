@@ -136,9 +136,15 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
             return;
         }
 
-        Request originalRequest = evt.getClientTransaction().getRequest();
-        ExpiresHeader expiresHeader = (ExpiresHeader) originalRequest.getHeader(ExpiresHeader.NAME);
-        int expire = expiresHeader != null ? expiresHeader.getExpires() : 3600;
+        int expire = 3600;
+        javax.sip.ClientTransaction clientTransaction = evt.getClientTransaction();
+        if (clientTransaction != null) {
+            Request originalRequest = clientTransaction.getRequest();
+            ExpiresHeader expiresHeader = (ExpiresHeader) originalRequest.getHeader(ExpiresHeader.NAME);
+            if (expiresHeader != null) {
+                expire = expiresHeader.getExpires();
+            }
+        }
         Request registerRequestWithAuth = SipRequestBuilderFactory.createRegisterRequestWithAuth(
                 fromDevice, toDevice, callIdHeader.getCallId(), expire, www);
 
