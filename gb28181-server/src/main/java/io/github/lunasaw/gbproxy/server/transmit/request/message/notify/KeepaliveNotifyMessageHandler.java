@@ -1,9 +1,11 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
 import gov.nist.javax.sip.message.SIPRequest;
+import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceKeepLiveNotify;
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceKeepaliveEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRemoteAddressEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
@@ -13,7 +15,7 @@ import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -31,8 +33,8 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
 
     public static final String CMD_TYPE = "Keepalive";
 
-    public KeepaliveNotifyMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
-        super(serverMessageProcessorHandler, serverDeviceSupplier);
+    public KeepaliveNotifyMessageHandler(ApplicationEventPublisher publisher, ServerDeviceSupplier serverDeviceSupplier) {
+        super(publisher, serverDeviceSupplier);
     }
 
     @Override
@@ -55,10 +57,10 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
             return;
         }
         DeviceKeepLiveNotify deviceKeepLiveNotify = parseXml(DeviceKeepLiveNotify.class);
-        serverMessageProcessorHandler.keepLiveDevice(deviceKeepLiveNotify);
+        publisher.publishEvent(new DeviceKeepaliveEvent(this, deviceKeepLiveNotify.getDeviceId(), deviceKeepLiveNotify));
 
         RemoteAddressInfo remoteAddressInfo = SipUtils.getRemoteAddressFromRequest((SIPRequest) event.getRequest());
-        serverMessageProcessorHandler.updateRemoteAddress(userId, remoteAddressInfo);
+        publisher.publishEvent(new DeviceRemoteAddressEvent(this, userId, remoteAddressInfo));
 
         // 发送200 OK响应
         responseAck(event);

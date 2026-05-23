@@ -1,15 +1,15 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
+import io.github.lunasaw.gbproxy.server.transmit.event.DeviceAlarmEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -28,8 +28,8 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
     public static final String CMD_TYPE = "Alarm";
 
-    public AlarmNotifyMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
-        super(serverMessageProcessorHandler, serverDeviceSupplier);
+    public AlarmNotifyMessageHandler(ApplicationEventPublisher publisher, ServerDeviceSupplier serverDeviceSupplier) {
+        super(publisher, serverDeviceSupplier);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
         DeviceAlarmNotify deviceAlarmNotify = parseXml(DeviceAlarmNotify.class);
 
-        serverMessageProcessorHandler.updateDeviceAlarm(deviceAlarmNotify);
+        publisher.publishEvent(new DeviceAlarmEvent(this, deviceAlarmNotify.deviceId, deviceAlarmNotify));
     }
 
     @Override
