@@ -24,6 +24,19 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>sip-common</artifactId>
+            <version>${sip-proxy-common.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>luna-common</artifactId>
+        </dependency>
         <!-- Jakarta XML Bind API - 符合Java 17和项目规范 -->
         <dependency>
             <groupId>jakarta.xml.bind</groupId>

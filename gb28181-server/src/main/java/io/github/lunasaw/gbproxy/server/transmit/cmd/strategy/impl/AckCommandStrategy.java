@@ -1,38 +1,23 @@
 package io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.impl;
 
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerCommandStrategy;
-import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategyReq;
 import io.github.lunasaw.sip.common.transmit.SipSender;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-/**
- * ACK消息类型策略实现
- * 处理ACK请求相关命令
- *
- * @author luna
- * @date 2024/01/01
- */
-@Slf4j
+@Component
 public class AckCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override
-    public String getCommandType() {
-        return "ACK";
-    }
+    public String getCommandType() { return "ACK"; }
 
     @Override
-    public String getCommandDescription() {
-        return "ACK请求";
-    }
-
-    @Override
-    protected String sendCommand(ServerCommandStrategyReq req) {
-        // 发送ACK请求
-        if (req.getContent() != null) {
-            return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice(), req.getContent(),
-                    req.getContent(), req.getErrorEvent(), req.getOkEvent());
-        } else {
-            return SipSender.doAckRequest(req.getFromDevice(), req.getToDevice());
+    protected String doSend(CommandContext ctx) {
+        String callId = ctx.getExtra("callId", String.class);
+        if (ctx.getContent() != null) {
+            return SipSender.doAckRequest(ctx.getFromDevice(), ctx.getToDevice(),
+                ctx.getContent(), callId, ctx.getErrorEvent(), ctx.getOkEvent());
         }
+        return SipSender.doAckRequest(ctx.getFromDevice(), ctx.getToDevice());
     }
 }
