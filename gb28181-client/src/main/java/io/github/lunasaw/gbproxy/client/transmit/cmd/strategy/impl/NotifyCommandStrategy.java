@@ -5,7 +5,7 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("clientNotifyCommandStrategy")
 public class NotifyCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override

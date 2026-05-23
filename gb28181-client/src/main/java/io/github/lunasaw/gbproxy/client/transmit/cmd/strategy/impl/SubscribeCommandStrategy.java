@@ -6,7 +6,7 @@ import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("clientSubscribeCommandStrategy")
 public class SubscribeCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override

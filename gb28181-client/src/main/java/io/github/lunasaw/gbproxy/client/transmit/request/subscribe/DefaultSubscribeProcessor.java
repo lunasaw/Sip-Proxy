@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * @date 2023/12/29
  */
 @Component
-@ConditionalOnMissingBean(SubscribeRequestHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestHandler")
 public class DefaultSubscribeProcessor implements SubscribeRequestHandler {
     @Override
     public void putSubscribe(String userId, SubscribeInfo subscribeInfo) {

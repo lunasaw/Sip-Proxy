@@ -19,12 +19,12 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
 import javax.sip.header.DateHeader;
+import javax.sip.header.ExpiresHeader;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -49,10 +49,6 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
 
     @Autowired
     private ClientDeviceSupplier deviceSupplier;
-
-    @Autowired
-    @Lazy
-    private RegisterProcessorHandler registerProcessorHandler;
 
     @Autowired
     private ApplicationEventPublisher publisher;
@@ -140,7 +136,9 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
             return;
         }
 
-        Integer expire = registerProcessorHandler.getExpire(toUserId);
+        Request originalRequest = evt.getClientTransaction().getRequest();
+        ExpiresHeader expiresHeader = (ExpiresHeader) originalRequest.getHeader(ExpiresHeader.NAME);
+        int expire = expiresHeader != null ? expiresHeader.getExpires() : 3600;
         Request registerRequestWithAuth = SipRequestBuilderFactory.createRegisterRequestWithAuth(
                 fromDevice, toDevice, callIdHeader.getCallId(), expire, www);
 

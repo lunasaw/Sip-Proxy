@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnMissingBean(InfoRequestHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.client.transmit.request.info.InfoRequestHandler")
 public class DefaultClientInfoRequestHandler implements InfoRequestHandler {
 
     /**

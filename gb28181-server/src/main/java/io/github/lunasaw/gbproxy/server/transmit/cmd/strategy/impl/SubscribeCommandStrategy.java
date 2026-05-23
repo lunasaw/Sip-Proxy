@@ -5,7 +5,7 @@ import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("serverSubscribeCommandStrategy")
 public class SubscribeCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnMissingBean(MessageRequestHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler")
 public class CustomMessageRequestHandler implements MessageRequestHandler {
 
     @Override

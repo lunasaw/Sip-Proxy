@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnMissingBean(ServerInviteRequestHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.server.transmit.request.invite.ServerInviteRequestHandler")
 public class DefaultServerInviteRequestHandler implements ServerInviteRequestHandler {
 
     @Override

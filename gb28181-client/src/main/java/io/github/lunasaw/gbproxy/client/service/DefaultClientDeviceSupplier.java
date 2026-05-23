@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
-@ConditionalOnMissingBean(ClientDeviceSupplier.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.sip.common.service.ClientDeviceSupplier")
 public class DefaultClientDeviceSupplier implements ClientDeviceSupplier {
 
     /**

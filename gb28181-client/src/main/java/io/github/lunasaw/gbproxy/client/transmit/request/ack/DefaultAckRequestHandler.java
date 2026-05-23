@@ -10,7 +10,7 @@ import javax.sip.RequestEvent;
  * @date 2023/12/29
  */
 @Component
-@ConditionalOnMissingBean(AckRequestHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.client.transmit.request.ack.AckRequestHandler")
 public class DefaultAckRequestHandler implements AckRequestHandler {
     @Override
     public void processAck(RequestEvent evt) {

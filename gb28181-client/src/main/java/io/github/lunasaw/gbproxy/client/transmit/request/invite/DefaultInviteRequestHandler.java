@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
  * @date 2025/7/13
  */
 @Component
-@ConditionalOnMissingBean(InviteRequestHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.client.transmit.request.invite.InviteRequestHandler")
 public class DefaultInviteRequestHandler implements InviteRequestHandler {
     @Override
     public void inviteSession(String callId, SdpSessionDescription sessionDescription) {

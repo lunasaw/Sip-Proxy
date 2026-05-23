@@ -26,7 +26,7 @@ import javax.sip.address.SipURI;
  */
 @Slf4j
 @Component
-@ConditionalOnMissingBean(InviteResponseProcessorHandler.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.gbproxy.server.transmit.response.invite.InviteResponseProcessorHandler")
 public class DefaultInviteResponseProcessorHandler implements InviteResponseProcessorHandler {
 
     @Autowired

@@ -23,9 +23,6 @@ mvn test -pl gb28181-client -Dtest=CancelRequestProcessorTest
 
 # Single module
 mvn clean install -pl gb28181-test
-
-# Run test application
-# Main class: io.github.lunasaw.gbproxy.test.TestFrameworkVerifyApplication
 ```
 
 ## Module Structure
@@ -57,15 +54,20 @@ SIP Message
 
 - **`ClientSendCmd`** / **`ServerSendCmd`** — strategy-pattern command senders for outbound SIP messages.
 
+### Bootstrapping
+
+Annotate your `@SpringBootApplication` class with `@EnableSipProxy` to activate auto-configuration for either client or server.
+
 ### Key Extension Points
 
 | Interface/Base Class | Purpose |
 |---|---|
-| `DeviceSupplier` | Provide device identity info; implement `ClientDeviceSupplier` or `ServerDeviceSupplier` |
+| `DeviceSupplier` | Provide device identity info; override `DefaultClientDeviceSupplier` or `DefaultServerDeviceSupplier` |
 | `AbstractSipRequestProcessor` | Base for new inbound message type processors |
 | `XXXProcessorHandler` | Business logic interface per message type |
 | `ServerAbstractSipResponseProcessor` | Base for server-side response processors |
 | `ClientAbstractSipResponseProcessor` | Base for client-side response processors |
+| `ClientCommandStrategy` / `ServerCommandStrategy` | Add custom outbound command strategies via `ClientCommandStrategyFactory` / `ServerCommandStrategyFactory` |
 
 ## Development Conventions
 
