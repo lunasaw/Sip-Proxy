@@ -89,15 +89,20 @@ public class RegisterRequestBuilder extends AbstractSipRequestBuilder {
         String cNonce = null;
         String nc = "00000001";
         if (qop != null) {
-            if ("auth".equalsIgnoreCase(qop)) {
+            if ("auth".equalsIgnoreCase(qop) || "auth-int".equalsIgnoreCase(qop)) {
                 cNonce = UUID.randomUUID().toString();
-            } else if ("auth-int".equalsIgnoreCase(qop)) {
-                // TODO: 实现auth-int逻辑
             }
         }
 
         String HA1 = DigestUtils.md5DigestAsHex((userId + ":" + realm + ":" + password).getBytes());
-        String HA2 = DigestUtils.md5DigestAsHex((Request.REGISTER + ":" + requestURI.toString()).getBytes());
+        // auth-int: HA2 = MD5(method:uri:MD5(body))，body 为空时 MD5("") 固定值
+        String HA2;
+        if ("auth-int".equalsIgnoreCase(qop)) {
+            String bodyHash = DigestUtils.md5DigestAsHex("".getBytes());
+            HA2 = DigestUtils.md5DigestAsHex((Request.REGISTER + ":" + requestURI + ":" + bodyHash).getBytes());
+        } else {
+            HA2 = DigestUtils.md5DigestAsHex((Request.REGISTER + ":" + requestURI.toString()).getBytes());
+        }
 
         StringBuilder reStr = new StringBuilder(200);
         reStr.append(HA1);
