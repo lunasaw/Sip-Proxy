@@ -14,6 +14,11 @@ public class SubscribeCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override
     protected String doSend(CommandContext ctx) {
+        SubscribeInfo subscribeInfo = ctx.getExtra("subscribeInfo", SubscribeInfo.class);
+        if (subscribeInfo != null) {
+            return SipSender.doSubscribeRequest(ctx.getFromDevice(), ctx.getToDevice(),
+                ctx.getContent(), subscribeInfo);
+        }
         return SipSender.doSubscribeRequest(ctx.getFromDevice(), ctx.getToDevice(),
             ctx.getContent(), ctx.getErrorEvent(), ctx.getOkEvent());
     }

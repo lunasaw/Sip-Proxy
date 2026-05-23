@@ -43,10 +43,12 @@ public class CommandContext {
     }
 
     public static CommandContext forAckBye(String role, FromDevice from, ToDevice to, String callId, String commandType) {
+        Map<String, Object> extras = new HashMap<>();
+        if (callId != null) extras.put("callId", callId);
         return CommandContext.builder()
             .role(role).commandType(commandType)
             .fromDevice(from).toDevice(to)
-            .extras(new HashMap<>(Map.of("callId", callId)))
+            .extras(extras)
             .build();
     }
 

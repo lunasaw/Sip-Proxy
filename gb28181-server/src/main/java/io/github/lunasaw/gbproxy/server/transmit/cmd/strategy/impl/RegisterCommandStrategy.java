@@ -14,7 +14,7 @@ public class RegisterCommandStrategy extends AbstractServerCommandStrategy {
     @Override
     protected String doSend(CommandContext ctx) {
         Integer expires = ctx.getExtra("expires", Integer.class);
-        if (expires == null) expires = 32;
+        if (expires == null) expires = 3600;
         return SipSender.doRegisterRequest(ctx.getFromDevice(), ctx.getToDevice(),
             expires, ctx.getContent(), ctx.getErrorEvent(), ctx.getOkEvent());
     }
