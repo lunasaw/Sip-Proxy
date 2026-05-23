@@ -40,6 +40,8 @@ sip:
     registerExpires: 3600
     clientId: "34020000001320000001"
     clientName: "GB28181-Client"
+    domain: "127.0.0.1"
+    port: 5061
 
   # 连接池配置 - 简化配置
   pool:

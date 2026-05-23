@@ -123,7 +123,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>io.github.lunasaw.gbproxy.test.TestFrameworkVerifyApplication</mainClass>
+                    <mainClass>io.github.lunasaw.gbproxy.test.TestApplication</mainClass>
                     <addResources>true</addResources>
                 </configuration>
                 <executions>

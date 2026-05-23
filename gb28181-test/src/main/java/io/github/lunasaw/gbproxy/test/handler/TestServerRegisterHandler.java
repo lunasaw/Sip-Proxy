@@ -23,7 +23,7 @@ public class TestServerRegisterHandler implements ServerRegisterProcessorHandler
 
     private final SipBusinessConfig sessionCache;
 
-    @Value("${sip.server.password:12345678}")
+    @Value("${sip.server.password}")
     private String serverPassword;
 
     @Override
