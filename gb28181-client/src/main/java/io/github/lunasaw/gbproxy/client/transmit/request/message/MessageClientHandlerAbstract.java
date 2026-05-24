@@ -4,11 +4,8 @@ import javax.sip.RequestEvent;
 
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
@@ -19,26 +16,21 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 客户端消息处理器抽象基类
- * 提供客户端消息处理的通用功能
+ * 客户端消息处理器抽象基类。
+ *
+ * <p>v1.5.0 改造：删除 {@code MessageRequestHandler} 字段与构造器入参，handler 改为发布
+ * {@link io.github.lunasaw.gbproxy.client.eventbus.event.ClientQueryEvent} 等 L1 协议事件，
+ * 业务接入由 {@code QueryListener} / {@code ControlListener} / ... 取代旧 {@code MessageRequestHandler} 接口。
  *
  * @author luna
  */
 @Slf4j
 @Getter
 @Component
-@ConditionalOnBean(MessageRequestHandler.class)
 public abstract class MessageClientHandlerAbstract extends MessageHandlerAbstract {
 
     @Autowired
-    public MessageRequestHandler messageRequestHandler;
-
-    @Autowired
     private ClientDeviceSupplier clientDeviceSupplier;
-
-    public MessageClientHandlerAbstract(@Lazy MessageRequestHandler messageRequestHandler) {
-        this.messageRequestHandler = messageRequestHandler;
-    }
 
     @Override
     public String getRootType() {

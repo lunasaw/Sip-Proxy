@@ -1,39 +1,40 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
 import io.github.lunasaw.gb28181.common.entity.query.DeviceConfigDownload;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientQueryEvent;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
 
 /**
- * 设备配置下载消息处理器
- * 负责处理设备配置下载请求
+ * 设备配置下载消息处理器（cmdType=ConfigDownload，rootType=Query；payload=DeviceConfigDownload）。
+ *
+ * <p>v1.5.0 改造：只发布 {@link ClientQueryEvent}，回包由 {@code ClientListenerAdapter}
+ * 路由到 {@code QueryListener.onConfigDownloadQuery}。
+ *
+ * <p>注意：本 handler 与 {@link ConfigDownloadQueryMessageClientHandler} 共用同一 cmdType
+ * （历史并行结构，dispatch map 由后注册的胜出，是 pre-existing 现象，本次重构保留）。
  *
  * @author luna
- * @date 2023/10/19
  */
 @Component
 @Slf4j
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class ConfigDownloadMessageHandler extends MessageClientHandlerAbstract {
 
     public static final String CMD_TYPE = "ConfigDownload";
-
     private String cmdType = CMD_TYPE;
 
-    public ConfigDownloadMessageHandler(MessageRequestHandler messageRequestHandler) {
-        super(messageRequestHandler);
-    }
+    private final ApplicationEventPublisher publisher;
 
     @Override
     public String getRootType() {
@@ -44,21 +45,13 @@ public class ConfigDownloadMessageHandler extends MessageClientHandlerAbstract {
     public void handForEvt(RequestEvent event) {
         try {
             DeviceSession deviceSession = getDeviceSession(event);
-            String userId = deviceSession.getUserId();
-            String sipId = deviceSession.getSipId();
-
-            log.debug("处理设备配置下载: userId={}, sipId={}", userId, sipId);
-
-            // 解析配置下载请求
-            DeviceConfigDownload deviceConfigDownload = parseXml(DeviceConfigDownload.class);
-
-            // 调用业务处理器获取设备配置
-            DeviceConfigResponse deviceConfigResponse = messageRequestHandler.getDeviceConfigResponse(deviceConfigDownload);
-            deviceConfigResponse.setSn(deviceConfigDownload.getSn());
-
-            // 发送响应
-            ClientCommandSender.sendDeviceConfigCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceConfigResponse);
-
+            DeviceConfigDownload query = parseXml(DeviceConfigDownload.class);
+            if (query == null) {
+                log.warn("ConfigDownload 查询解析失败");
+                return;
+            }
+            publisher.publishEvent(new ClientQueryEvent(this,
+                    deviceSession.getUserId(), deviceSession.getSipId(), query));
         } catch (Exception e) {
             log.error("处理设备配置下载时发生异常: event = {}", event, e);
         }

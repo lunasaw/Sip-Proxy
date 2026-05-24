@@ -6,7 +6,7 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
-import io.github.lunasaw.gbproxy.test.handler.TestDeviceControlHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * GB28181-2022 §9.13 设备软件升级集成测试。
  * 流程：
- *   1. server 下发 MESSAGE(DeviceControl/DeviceUpgrade) → client 通过 DeviceControlRequestHandler.handleDeviceUpgrade 接收
+ *   1. server 下发 MESSAGE(DeviceControl/DeviceUpgrade) → client 通过 ControlListener.onDeviceUpgrade 接收
  *   2. client 上报 MESSAGE(Notify/DeviceUpgradeResult) → server 触发 DeviceUpgradeResultEvent
  */
 @SpringBootTest(classes = TestApplication.class)
@@ -35,7 +35,7 @@ class DeviceUpgradeFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestDeviceControlHandler controlHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private TestServerEventHandler eventHandler;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
@@ -63,15 +63,15 @@ class DeviceUpgradeFlowTest {
     @Test
     void deviceUpgradeControl_shouldDeliverFirmwareInfoToClient() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         commandSender.deviceUpgrade(clientId, "V1.0.1", "http://example.com/firmware.bin", "Manufacturer-X", SESSION_ID);
 
         boolean completed = latch.await(3, TimeUnit.SECONDS);
         assertThat(completed).as("设备升级控制应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceUpgradeControl.class);
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceUpgradeControl.class);
 
-        DeviceUpgradeControl received = (DeviceUpgradeControl) controlHandler.getLastCommand();
+        DeviceUpgradeControl received = (DeviceUpgradeControl) testClient.getLastCommand();
         assertThat(received.getDeviceUpgrade()).isNotNull();
         assertThat(received.getDeviceUpgrade().getFirmware()).isEqualTo("V1.0.1");
         assertThat(received.getDeviceUpgrade().getFileURL()).isEqualTo("http://example.com/firmware.bin");

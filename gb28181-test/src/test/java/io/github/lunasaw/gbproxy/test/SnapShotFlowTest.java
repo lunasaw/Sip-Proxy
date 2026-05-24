@@ -5,7 +5,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.UploadSnapShotFinishedNoti
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.gbproxy.test.handler.TestClientEventHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
 import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * GB28181-2022 §9.14 图像抓拍集成测试。
  * 流程：
- *   1. server 下发 MESSAGE(Control/DeviceConfig/SnapShotConfig) → client 触发 ClientSnapShotConfigEvent
+ *   1. server 下发 MESSAGE(Control/DeviceConfig/SnapShotConfig) → client 触发 ConfigListener.onSnapShotConfig
  *   2. client 上报 MESSAGE(Notify/UploadSnapShotFinished) → server 触发 DeviceSnapShotFinishedEvent
  */
 @SpringBootTest(classes = TestApplication.class)
@@ -36,7 +36,7 @@ class SnapShotFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestClientEventHandler clientEventHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private TestServerEventHandler eventHandler;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
@@ -64,15 +64,15 @@ class SnapShotFlowTest {
     @Test
     void snapShotConfig_shouldReachClientAsEvent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        clientEventHandler.reset(latch);
+        testClient.reset(latch);
 
         commandSender.deviceSnapShot(clientId, 3, 2, "http://example.com/upload", SESSION_ID);
 
         boolean completed = latch.await(3, TimeUnit.SECONDS);
         assertThat(completed).as("图像抓拍配置应在3秒内被处理").isTrue();
-        assertThat(clientEventHandler.getLastSnapShotConfig()).isNotNull();
+        assertThat(testClient.getLastSnapShotConfig()).isNotNull();
 
-        SnapShotConfig received = clientEventHandler.getLastSnapShotConfig().getSnapShotConfig();
+        SnapShotConfig received = testClient.getLastSnapShotConfig();
         assertThat(received.getSnapShotConfig()).isNotNull();
         assertThat(received.getSnapShotConfig().getSnapNum()).isEqualTo(3);
         assertThat(received.getSnapShotConfig().getInterval()).isEqualTo(2);

@@ -8,7 +8,7 @@ SIP Proxy is a GB28181-2016 communication framework built on Java 17 and Spring 
 
 It is delivered as a **Maven library**, not a standalone service. Business systems (typically a `sip-gateway` layer the user implements on top) embed it in-process and interact via Spring Events (inbound) and `CommandSender` beans (outbound). A single JVM can act as platform server (`gb28181-server`) and device client (`gb28181-client`) simultaneously for cascading scenarios.
 
-Current version: **1.3.0** (see `CHANGELOG.md` for breaking changes vs 1.2.x).
+Current version: **1.5.0** (see `CHANGELOG.md` for breaking changes vs 1.4.x; v1.5.0 删除 4 个 client 业务接口 + 10 个旧 client 事件，新增 listener 化业务 API。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md))。
 
 ## Build and Development Commands
 
@@ -64,9 +64,23 @@ SIP Message
 
 - **`ClientCommandSender`** / **`ServerCommandSender`** — strategy-pattern command senders for outbound SIP messages. `ServerCommandSender` requires `DeviceSessionCache` to look up device sessions.
 
-### Event Bus
+### Event Bus & Listener API
 
-Business logic is implemented via Spring `@EventListener`. Client-side events (e.g. `ClientRegisterSuccessEvent`, `CatalogEvent`) extend `ApplicationEvent`; server-side events (e.g. `DeviceOnlineEvent`, `DeviceInfoEvent`) extend `DeviceEvent(source, deviceId)`.
+**v1.5.0+**: Business接入有两种等价方式：
+
+1. **Listener 接口（推荐，client/server 形态对称）**
+   - Client 侧：实现 `gb28181-client/api/QueryListener` / `ControlListener` / `ConfigListener` / `SubscribeListener` / `NotifyListener`，或直接继承 `ClientGb28181Adapter`
+   - Server 侧：实现 `gb28181-server/api/DeviceResponseListener` / `DeviceNotifyListener` / `DeviceLifecycleListener` / `DeviceSessionListener`，或直接继承 `ServerGb28181Adapter`
+   - 业务方只 override 关心的方法，框架自动派发与回包（QueryListener 返回非 null 时 Adapter 自动 sendXxxCommand）
+2. **直接监听 L1 协议事件（跨切层 / 高级用法）**
+   - Client 侧 6 个外层事件：`ClientQueryEvent` / `ClientControlEvent` / `ClientKeepaliveEvent` / `ClientConfigEvent` / `ClientSubscribeEvent` / `ClientNotifyEvent`
+   - Client 侧 8 个 SIP method 系事件保留：`ClientInviteEvent` / `ClientByeEvent` / `ClientAckEvent` / `ClientCancelEvent` / `ClientInfoEvent` / `ClientRegister{Success,Failure,Challenge}Event`
+   - Server 侧 32 个 typed `Device*Event` / `ServerInviteEvent` 全部保留（业务侧已广泛使用）
+   - 业务/metrics/audit/tracing 可同时监听同一事件，互不干扰
+
+QueryListener 通过 `ObjectProvider#getIfUnique()` 强制单 bean —— 多实例 fail fast；缺失时首次告警一次后静默走默认空响应。Control / Config / Subscribe / Notify listener 全部调用（观察者模式）。
+
+历史接口 `MessageRequestHandler` / `DeviceControlRequestHandler` / `SubscribeRequestHandler` / `CustomMessageRequestHandler` 已在 v1.5.0 删除。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md)。
 
 ### Bootstrapping
 

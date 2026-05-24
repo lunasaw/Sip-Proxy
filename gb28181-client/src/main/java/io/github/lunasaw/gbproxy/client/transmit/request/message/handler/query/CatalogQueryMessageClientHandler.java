@@ -2,39 +2,38 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.query;
 
 import javax.sip.RequestEvent;
 
-import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.ClientMessageRequestProcessor;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientQueryEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 设备目录查询消息处理器
- * 负责处理设备目录查询请求
+ * 设备目录查询消息处理器（cmdType=Catalog，rootType=Query）。
+ *
+ * <p>v1.5.0 改造：只发布 {@link ClientQueryEvent}，回包由 {@code ClientListenerAdapter}
+ * 路由到 {@code QueryListener.onCatalogQuery} 后统一发送。
  *
  * @author luna
- * @date 2023/10/19
  */
 @Component
 @Slf4j
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class CatalogQueryMessageClientHandler extends MessageClientHandlerAbstract {
 
     public static final String CMD_TYPE = "Catalog";
 
     private String cmdType = CMD_TYPE;
 
-    public CatalogQueryMessageClientHandler(MessageRequestHandler messageRequestHandler) {
-        super(messageRequestHandler);
-    }
+    private final ApplicationEventPublisher publisher;
 
     @Override
     public String getRootType() {
@@ -45,22 +44,13 @@ public class CatalogQueryMessageClientHandler extends MessageClientHandlerAbstra
     public void handForEvt(RequestEvent event) {
         try {
             DeviceSession deviceSession = getDeviceSession(event);
-            String userId = deviceSession.getUserId();
-            String sipId = deviceSession.getSipId();
-
-            log.debug("处理设备目录查询: userId={}, sipId={}", userId, sipId);
-
-            // 解析查询请求
             DeviceQuery deviceQuery = parseXml(DeviceQuery.class);
-            String sn = deviceQuery.getSn();
-
-            // 调用业务处理器获取设备目录信息
-            DeviceResponse deviceResponse = messageRequestHandler.getDeviceItem(userId);
-            deviceResponse.setSn(sn);
-
-            // 发送响应
-            ClientCommandSender.sendCatalogCommand(deviceSession.getFromDevice(), deviceSession.getToDevice(), deviceResponse);
-
+            if (deviceQuery == null) {
+                log.warn("Catalog 查询解析失败");
+                return;
+            }
+            publisher.publishEvent(new ClientQueryEvent(this,
+                    deviceSession.getUserId(), deviceSession.getSipId(), deviceQuery));
         } catch (Exception e) {
             log.error("处理设备目录查询时发生异常: event = {}", event, e);
         }

@@ -5,9 +5,8 @@ import io.github.lunasaw.gb28181.common.entity.response.HomePositionResponse;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.gbproxy.test.handler.TestClientEventHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
-import io.github.lunasaw.gbproxy.test.handler.TestDeviceControlHandler;
 import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -33,8 +32,7 @@ class HomePositionFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestDeviceControlHandler controlHandler;
-    @Autowired private TestClientEventHandler clientEventHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private TestServerEventHandler eventHandler;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
@@ -60,14 +58,14 @@ class HomePositionFlowTest {
     @Test
     void homePositionControl_shouldDeliverToClient() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         commandSender.deviceControlHomePosition(clientId, "1", "60", "3");
 
         boolean completed = latch.await(3, TimeUnit.SECONDS);
         assertThat(completed).as("看守位控制应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceControlPosition.class);
-        DeviceControlPosition received = (DeviceControlPosition) controlHandler.getLastCommand();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlPosition.class);
+        DeviceControlPosition received = (DeviceControlPosition) testClient.getLastCommand();
         assertThat(received.getHomePosition()).isNotNull();
         assertThat(received.getHomePosition().getEnabled()).isEqualTo("1");
         assertThat(received.getHomePosition().getResetTime()).isEqualTo("60");
@@ -77,7 +75,7 @@ class HomePositionFlowTest {
     @Test
     void homePositionQuery_shouldRoundTrip() throws InterruptedException {
         CountDownLatch clientLatch = new CountDownLatch(1);
-        clientEventHandler.reset(clientLatch);
+        testClient.reset(clientLatch);
         CountDownLatch serverLatch = new CountDownLatch(1);
         eventHandler.reset(serverLatch);
 
@@ -85,7 +83,7 @@ class HomePositionFlowTest {
 
         boolean clientCompleted = clientLatch.await(5, TimeUnit.SECONDS);
         assertThat(clientCompleted).as("客户端应在5秒内收到 HomePositionQuery 查询").isTrue();
-        assertThat(clientEventHandler.getLastHomePositionQuery()).isNotNull();
+        assertThat(testClient.getLastHomePositionQuery()).isNotNull();
 
         boolean serverCompleted = serverLatch.await(5, TimeUnit.SECONDS);
         assertThat(serverCompleted).as("服务端应在5秒内收到看守位应答").isTrue();

@@ -6,7 +6,7 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.event.DeviceCruiseTrackEvent;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.gbproxy.test.handler.TestClientEventHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
 import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
@@ -33,7 +33,7 @@ class CruiseTrackFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestClientEventHandler clientEventHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private TestServerEventHandler eventHandler;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
@@ -59,14 +59,14 @@ class CruiseTrackFlowTest {
     @Test
     void cruiseTrackListQuery_shouldRoundTrip() throws InterruptedException {
         CountDownLatch clientLatch = new CountDownLatch(1);
-        clientEventHandler.reset(clientLatch);
+        testClient.reset(clientLatch);
         CountDownLatch serverLatch = new CountDownLatch(1);
         eventHandler.reset(serverLatch);
 
         commandSender.deviceCruiseTrackListQuery(clientId);
 
         assertThat(clientLatch.await(5, TimeUnit.SECONDS)).as("客户端应收到 CruiseTrackListQuery").isTrue();
-        assertThat(clientEventHandler.getLastCruiseTrackListQuery()).isNotNull();
+        assertThat(testClient.getLastCruiseTrackListQuery()).isNotNull();
 
         assertThat(serverLatch.await(5, TimeUnit.SECONDS)).as("服务端应收到巡航轨迹列表应答").isTrue();
         assertThat(eventHandler.getLastCruiseTrack().getType()).isEqualTo(DeviceCruiseTrackEvent.Type.LIST);
@@ -79,14 +79,14 @@ class CruiseTrackFlowTest {
     @Test
     void cruiseTrackQuery_shouldRoundTrip() throws InterruptedException {
         CountDownLatch clientLatch = new CountDownLatch(1);
-        clientEventHandler.reset(clientLatch);
+        testClient.reset(clientLatch);
         CountDownLatch serverLatch = new CountDownLatch(1);
         eventHandler.reset(serverLatch);
 
         commandSender.deviceCruiseTrackQuery(clientId, 0);
 
         assertThat(clientLatch.await(5, TimeUnit.SECONDS)).as("客户端应收到 CruiseTrackQuery").isTrue();
-        assertThat(clientEventHandler.getLastCruiseTrackQuery().getQuery().getNumber()).isEqualTo(0);
+        assertThat(testClient.getLastCruiseTrackQuery().getNumber()).isEqualTo(0);
 
         assertThat(serverLatch.await(5, TimeUnit.SECONDS)).as("服务端应收到巡航轨迹应答").isTrue();
         assertThat(eventHandler.getLastCruiseTrack().getType()).isEqualTo(DeviceCruiseTrackEvent.Type.SINGLE);

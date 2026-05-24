@@ -4,7 +4,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.gbproxy.test.handler.TestClientEventHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
 import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * GB28181-2022 §9.11 报警事件订阅与通知集成测试。
  * 流程：
- *   1. server 发送 SUBSCRIBE(Alarm) → client 触发 ClientAlarmSubscribeEvent
+ *   1. server 发送 SUBSCRIBE(Alarm) → client 触发 SubscribeListener.onAlarmSubscribe
  *   2. client 通过 sendAlarmNotify 主动上报 NOTIFY(Alarm) → server 触发 DeviceAlarmEvent
  */
 @SpringBootTest(classes = TestApplication.class)
@@ -34,7 +34,7 @@ class AlarmSubscribeFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestClientEventHandler clientEventHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private TestServerEventHandler eventHandler;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
@@ -80,7 +80,7 @@ class AlarmSubscribeFlowTest {
     @Test
     void alarmSubscribe_shouldReachClientEvent() throws InterruptedException {
         CountDownLatch clientLatch = new CountDownLatch(1);
-        clientEventHandler.reset(clientLatch);
+        testClient.reset(clientLatch);
 
         commandSender.deviceAlarmSubscribe(clientId, 3600, "Alarm",
                 "1", "4", "2", "5",
@@ -88,8 +88,8 @@ class AlarmSubscribeFlowTest {
 
         boolean clientCompleted = clientLatch.await(5, TimeUnit.SECONDS);
         assertThat(clientCompleted).as("客户端应在5秒内收到报警事件订阅").isTrue();
-        assertThat(clientEventHandler.getLastAlarmSubscribe()).isNotNull();
-        assertThat(clientEventHandler.getLastAlarmSubscribe().getQuery().getDeviceId()).isEqualTo(clientId);
-        assertThat(clientEventHandler.getLastAlarmSubscribe().getQuery().getAlarmMethod()).isEqualTo("2");
+        assertThat(testClient.getLastAlarmSubscribe()).isNotNull();
+        assertThat(testClient.getLastAlarmSubscribe().getDeviceId()).isEqualTo(clientId);
+        assertThat(testClient.getLastAlarmSubscribe().getAlarmMethod()).isEqualTo("2");
     }
 }

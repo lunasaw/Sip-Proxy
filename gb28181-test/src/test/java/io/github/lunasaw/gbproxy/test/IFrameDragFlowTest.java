@@ -8,7 +8,7 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
-import io.github.lunasaw.gbproxy.test.handler.TestDeviceControlHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
@@ -33,7 +33,7 @@ class IFrameDragFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestDeviceControlHandler controlHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
 
@@ -58,27 +58,27 @@ class IFrameDragFlowTest {
     @Test
     void iframeControl_shouldInvokeHandler() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         commandSender.deviceControlIFrame(clientId);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("强制关键帧应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceControlIFame.class);
-        DeviceControlIFame received = (DeviceControlIFame) controlHandler.getLastCommand();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlIFame.class);
+        DeviceControlIFame received = (DeviceControlIFame) testClient.getLastCommand();
         assertThat(received.getIFameCmd()).isEqualTo("Send");
     }
 
     @Test
     void dragZoomIn_shouldInvokeHandler() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         DragZoom zoom = new DragZoom("1920", "1080", "960", "540", "200", "120");
         commandSender.deviceControlDragZoomIn(clientId, zoom);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("拉框放大应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceControlDragIn.class);
-        DeviceControlDragIn received = (DeviceControlDragIn) controlHandler.getLastCommand();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlDragIn.class);
+        DeviceControlDragIn received = (DeviceControlDragIn) testClient.getLastCommand();
         assertThat(received.getDragZoomIn().getLength()).isEqualTo("1920");
         assertThat(received.getDragZoomIn().getMidPointX()).isEqualTo("960");
     }
@@ -86,14 +86,14 @@ class IFrameDragFlowTest {
     @Test
     void dragZoomOut_shouldInvokeHandler() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         DragZoom zoom = new DragZoom("1920", "1080", "100", "100", "50", "30");
         commandSender.deviceControlDragZoomOut(clientId, zoom);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("拉框缩小应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceControlDragOut.class);
-        DeviceControlDragOut received = (DeviceControlDragOut) controlHandler.getLastCommand();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlDragOut.class);
+        DeviceControlDragOut received = (DeviceControlDragOut) testClient.getLastCommand();
         assertThat(received.getDragZoomOut().getLength()).isEqualTo("1920");
     }
 }

@@ -5,9 +5,8 @@ import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.gbproxy.test.handler.TestClientEventHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
-import io.github.lunasaw.gbproxy.test.handler.TestDeviceControlHandler;
 import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -33,8 +32,7 @@ class PtzPositionFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestDeviceControlHandler controlHandler;
-    @Autowired private TestClientEventHandler clientEventHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private TestServerEventHandler eventHandler;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
@@ -60,14 +58,14 @@ class PtzPositionFlowTest {
     @Test
     void ptzPreciseControl_shouldInvokeHandler() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         commandSender.deviceControlPtzPrecise(clientId, 180.5, 30.25, 2.0);
 
         boolean completed = latch.await(3, TimeUnit.SECONDS);
         assertThat(completed).as("PTZ 精准控制应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceControlPTZPrecise.class);
-        DeviceControlPTZPrecise received = (DeviceControlPTZPrecise) controlHandler.getLastCommand();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlPTZPrecise.class);
+        DeviceControlPTZPrecise received = (DeviceControlPTZPrecise) testClient.getLastCommand();
         assertThat(received.getPtzPreciseCtrl()).isNotNull();
         assertThat(received.getPtzPreciseCtrl().getPan()).isEqualTo(180.5);
         assertThat(received.getPtzPreciseCtrl().getTilt()).isEqualTo(30.25);
@@ -76,9 +74,9 @@ class PtzPositionFlowTest {
 
     @Test
     void ptzPositionQuery_shouldRoundTrip() throws InterruptedException {
-        // 客户端在 TestClientEventHandler 中自动回包，本测试同时验证 server 收到 PTZPosition 应答
+        // 客户端在 TestClientImpl 中自动回包，本测试同时验证 server 收到 PTZPosition 应答
         CountDownLatch clientLatch = new CountDownLatch(1);
-        clientEventHandler.reset(clientLatch);
+        testClient.reset(clientLatch);
         CountDownLatch serverLatch = new CountDownLatch(1);
         eventHandler.reset(serverLatch);
 
@@ -86,8 +84,8 @@ class PtzPositionFlowTest {
 
         boolean clientCompleted = clientLatch.await(5, TimeUnit.SECONDS);
         assertThat(clientCompleted).as("客户端应在5秒内收到 PTZPosition 查询并发出应答").isTrue();
-        assertThat(clientEventHandler.getLastPtzPositionQuery()).isNotNull();
-        assertThat(clientEventHandler.getLastPtzPositionQuery().getQuery().getDeviceId()).isEqualTo(clientId);
+        assertThat(testClient.getLastPtzPositionQuery()).isNotNull();
+        assertThat(testClient.getLastPtzPositionQuery().getDeviceId()).isEqualTo(clientId);
 
         boolean serverCompleted = serverLatch.await(5, TimeUnit.SECONDS);
         assertThat(serverCompleted).as("服务端应在5秒内收到 PTZPosition 应答").isTrue();

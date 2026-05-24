@@ -7,15 +7,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 基础消息客户端处理器
- * 提供基础的消息处理功能
+ * 基础消息客户端处理器（兜底/示例用途，cmdType=Catalog）。
+ *
+ * <p>v1.5.0 改造：删除旧 {@code MessageRequestHandler} 构造器入参。本 handler 与
+ * {@code CatalogQueryMessageClientHandler} cmdType 重复，由后注册者胜出（pre-existing 现象）。
  *
  * @author luna
- * @date 2023/10/19
  */
 @Component
 @Slf4j
@@ -26,10 +26,6 @@ public class BaseMessageClientHandler extends MessageClientHandlerAbstract {
     public static final String CMD_TYPE = "Catalog";
 
     private String cmdType = CMD_TYPE;
-
-    public BaseMessageClientHandler(MessageRequestHandler messageRequestHandler) {
-        super(messageRequestHandler);
-    }
 
     @Override
     public void handForEvt(RequestEvent event) {

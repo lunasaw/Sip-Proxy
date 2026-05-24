@@ -2,6 +2,101 @@
 
 本文档记录 sip-proxy 各版本的对外可见变更。版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.5.0] - 2026-05-24
+
+### Added — Listener 化业务接口分层（[doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md)）
+
+业务方接入完全脱离 SIP 协议细节，统一为 listener interface 模式：
+
+**Client 端（设备侧）新增 5 个 listener 接口 + 一站式适配基类**
+- `gb28181-client/api/QueryListener` — 14 个查询方法（Catalog/DeviceInfo/DeviceStatus/RecordInfo/Alarm/ConfigDownload×2/Preset/MobilePosition/PTZPosition/SDCardStatus/HomePosition/CruiseTrack(List)），返回非 null 时 Adapter 自动回包
+- `gb28181-client/api/ControlListener` — 14 个控制 hook（13 个 cmdType=DeviceControl 子类型 + 1 个 Keepalive），fire-and-forget
+- `gb28181-client/api/ConfigListener` — 5 个配置 hook（SnapShotConfig / OsdConfig / AlarmReportConfig / VideoAlarmRecordConfig / DeviceConfigControl），用 `Class<?> → Consumer` 显式映射避免未来父子化重构时的 instanceof 顺序陷阱
+- `gb28181-client/api/SubscribeListener` — 3 个订阅 hook（Catalog/Alarm/MobilePosition），fire-and-forget，200 OK 由协议层同步返回，listener 不能拒绝订阅
+- `gb28181-client/api/NotifyListener` — Broadcast 通知 hook
+- `gb28181-client/api/ClientGb28181Adapter` — 一站式适配基类，业务方继承即获得所有 hook，按需 override
+
+**Client 端新增 6 个 L1 协议事件**
+- `eventbus/event/ClientQueryEvent` — rootType=Query 的统一外层事件，多态承载 19 类 query payload
+- `eventbus/event/ClientControlEvent` — rootType=Control + cmdType=DeviceControl
+- `eventbus/event/ClientKeepaliveEvent` — cmdType=Keepalive 独立事件（语义是状态上报，与控制指令拆开）
+- `eventbus/event/ClientConfigEvent` — cmdType=DeviceConfig
+- `eventbus/event/ClientSubscribeEvent` — method=SUBSCRIBE
+- `eventbus/event/ClientNotifyEvent` — rootType=Notify
+
+**Client 端新增 ClientListenerAdapter 内部分发器**
+- `eventbus/internal/ClientListenerAdapter` — 监听 6 个 L1 事件，按 payload 类型分发到 listener 接口方法
+- Query listener 通过 `ObjectProvider#getIfUnique()` 强制单 bean，多实例 fail fast；缺失时首次告警一次后静默走默认空响应
+- Control / Config / Subscribe / Notify listener 用 `List<>` 注入，全部调用（观察者模式，业务+metrics+audit 可同时监听）
+- supplier 强转 ToDevice 失败时给明确错误信息而非裸 ClassCastException
+
+**Client 端新增协议层订阅注册表**
+- `transmit/request/subscribe/SubscribeRegistry` — SUBSCRIBE 处理器在发出 200 OK 时直接调 `SubscribeRegistry.put()` 维护，业务方无感知
+
+**Server 端新增 4 个 listener 接口 + 一站式适配基类**
+- `gb28181-server/api/DeviceResponseListener` — 14 个应答 hook（设备主动应答 query 类）
+- `gb28181-server/api/DeviceNotifyListener` — 6 个主动通知 hook
+- `gb28181-server/api/DeviceLifecycleListener` — 5 个生命周期 hook（注册/挑战/在线/离线/远端地址变更）
+- `gb28181-server/api/DeviceSessionListener` — 7 个 INVITE/BYE/ACK 状态机 hook
+- `gb28181-server/api/ServerGb28181Adapter` — 一站式适配基类
+
+**Server 端新增 ServerListenerAdapter**
+- `transmit/event/internal/ServerListenerAdapter` — 监听 32 个底层 typed `Device*Event` / `ServerInviteEvent`，转发到 4 个 listener 接口
+
+### Removed — Client 端旧业务接口与 10 个 query/config/subscribe 事件
+
+按 v1.5.0 一刀切策略，client 端业务方旧接入方式全部删除：
+
+**删除的 4 个旧业务接口**
+- `transmit/request/message/MessageRequestHandler` —— 12 个方法
+- `transmit/request/message/CustomMessageRequestHandler` —— 默认空实现
+- `transmit/request/message/handler/control/DeviceControlRequestHandler` —— 13 个方法
+- `transmit/request/subscribe/SubscribeRequestHandler` + 默认实现 `DefaultSubscribeProcessor`
+
+**删除的 10 个旧 client 事件**
+- `eventbus/event/ClientPtzPositionQueryEvent`
+- `eventbus/event/ClientSdCardStatusQueryEvent`
+- `eventbus/event/ClientHomePositionQueryEvent`
+- `eventbus/event/ClientCruiseTrackListQueryEvent`
+- `eventbus/event/ClientCruiseTrackQueryEvent`
+- `eventbus/event/ClientSnapShotConfigEvent`
+- `eventbus/event/ClientOsdConfigEvent`
+- `eventbus/event/ClientAlarmReportConfigEvent`
+- `eventbus/event/ClientVideoAlarmRecordConfigEvent`
+- `eventbus/event/ClientAlarmSubscribeEvent`
+
+**保留的 8 个 SIP method 系 client 事件**（与 SIP method 强绑定，不属于 MESSAGE 体系，继续作为协议层规范 API）
+- `ClientInviteEvent` / `ClientByeEvent` / `ClientAckEvent` / `ClientCancelEvent` / `ClientInfoEvent`
+- `ClientRegisterChallengeEvent` / `ClientRegisterFailureEvent` / `ClientRegisterSuccessEvent`
+
+### Changed — Client handler 全部改为发布外层事件
+
+15 个 `*MessageClientHandler` 不再持有 `MessageRequestHandler` 引用，改为只 `parseXml + publishEvent`。
+
+- `MessageClientHandlerAbstract` —— 删除 `@ConditionalOnBean(MessageRequestHandler.class)` 注解 + `messageRequestHandler` 字段 + 构造器入参
+- `SubscribeHandlerAbstract` —— 删除 `subscribeRequestHandler` 字段 + 构造器入参
+- 15 个具体子类 —— 构造器同步精简
+- `DeviceControlMessageHandler` —— 保留 13 个 XML 子标签 → Class 映射，分发改为 `publishEvent(new ClientControlEvent(...))`
+- `DeviceConfigControlMessageHandler` —— 4 个 config 子分支统一发 `ClientConfigEvent`
+- `BroadcastNotifyMessageHandler` —— 改为发 `ClientNotifyEvent`
+- `KeepaliveMessageClientHandler` —— 改为发 `ClientKeepaliveEvent`
+- 2 个 SUBSCRIBE handler —— 协议层内化 `SubscribeRegistry.put()`，发布 `ClientSubscribeEvent`
+
+### Server 端非破坏性扩展（保留 32 个 typed Device*Event）
+
+由于 server 端的 32 个 typed event 在业务侧已广泛使用，且 typed 设计（每个事件携带 typed payload）比 4 个 generic 事件 + instanceof 更安全，本次 v1.5.0 的 server 端改造采用**加性策略**：
+
+- ✅ 新增 4 个 listener 接口 + Adapter 作为业务方一站式入口
+- ✅ 32 个底层 `Device*Event` 全部保留，作为协议层规范 API
+- ✅ ServerListenerAdapter 内部转发：业务方既可继续用 `@EventListener Device*Event`，也可用新 listener 接口
+- ❌ 与设计文档 §3.4 的「删除 31 个 Device*Event」目标存在偏差，此偏差专为保护现有业务侧（voglander 等）兼容性而做，列为已知 trade-off
+
+### Migration Guide（业务侧 v1.4.0 → v1.5.0）
+
+详见 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md)。
+
+业务侧约 20-30 个类受影响（以 voglander 为基准），集中在原 `MessageRequestHandler` / `DeviceControlRequestHandler` / `SubscribeRequestHandler` 实现类与对应 `@EventListener` 散点。
+
 ## [1.4.0] - 2026-05-24
 
 ### Added — GB/T 28181-2022 协议扩展

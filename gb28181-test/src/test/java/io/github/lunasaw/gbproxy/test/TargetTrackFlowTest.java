@@ -5,7 +5,7 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
-import io.github.lunasaw.gbproxy.test.handler.TestDeviceControlHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
@@ -30,7 +30,7 @@ class TargetTrackFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestDeviceControlHandler controlHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
 
@@ -55,15 +55,15 @@ class TargetTrackFlowTest {
     @Test
     void manualTargetTrack_shouldDeliverTargetArea() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         DeviceControlTargetTrack.TargetArea area = new DeviceControlTargetTrack.TargetArea(
                 1920, 1080, 960, 540, 200, 120);
         commandSender.deviceControlTargetTrack(clientId, "Manual", "34020000001320000099", area);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("目标跟踪应在3秒内被处理").isTrue();
-        assertThat(controlHandler.getLastCommand()).isInstanceOf(DeviceControlTargetTrack.class);
-        DeviceControlTargetTrack received = (DeviceControlTargetTrack) controlHandler.getLastCommand();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlTargetTrack.class);
+        DeviceControlTargetTrack received = (DeviceControlTargetTrack) testClient.getLastCommand();
         assertThat(received.getTargetTrack()).isEqualTo("Manual");
         assertThat(received.getDeviceId2()).isEqualTo("34020000001320000099");
         assertThat(received.getTargetArea()).isNotNull();
@@ -74,12 +74,12 @@ class TargetTrackFlowTest {
     @Test
     void autoTargetTrack_shouldNotIncludeArea() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        controlHandler.reset(latch);
+        testClient.reset(latch);
 
         commandSender.deviceControlTargetTrack(clientId, "Auto", null, null);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("自动跟踪应在3秒内被处理").isTrue();
-        DeviceControlTargetTrack received = (DeviceControlTargetTrack) controlHandler.getLastCommand();
+        DeviceControlTargetTrack received = (DeviceControlTargetTrack) testClient.getLastCommand();
         assertThat(received.getTargetTrack()).isEqualTo("Auto");
         assertThat(received.getTargetArea()).isNull();
     }

@@ -6,7 +6,7 @@ import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfi
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.gbproxy.test.handler.TestClientEventHandler;
+import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
@@ -32,7 +32,7 @@ class DeviceConfigFlowTest {
 
     @Autowired private ServerCommandSender commandSender;
     @Autowired private TestClientRegisterHandler registerHandler;
-    @Autowired private TestClientEventHandler clientEventHandler;
+    @Autowired private TestClientImpl testClient;
     @Autowired private SipBusinessConfig sessionCache;
     @Autowired private ClientDeviceSupplier clientDeviceSupplier;
 
@@ -57,14 +57,14 @@ class DeviceConfigFlowTest {
     @Test
     void osdConfig_shouldReachClientEvent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        clientEventHandler.reset(latch);
+        testClient.reset(latch);
 
         OsdConfig.OsdInfo info = new OsdConfig.OsdInfo(1920, 1080, 100, 50, 1, 0, 1);
         commandSender.deviceConfigOsd(clientId, info);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("OSD 配置应在3秒内被处理").isTrue();
-        assertThat(clientEventHandler.getLastOsdConfig()).isNotNull();
-        OsdConfig osd = clientEventHandler.getLastOsdConfig().getOsdConfig();
+        assertThat(testClient.getLastOsdConfig()).isNotNull();
+        OsdConfig osd = testClient.getLastOsdConfig();
         assertThat(osd.getOsdConfig().getLength()).isEqualTo(1920);
         assertThat(osd.getOsdConfig().getTimeX()).isEqualTo(100);
         assertThat(osd.getOsdConfig().getTimeEnable()).isEqualTo(1);
@@ -73,14 +73,14 @@ class DeviceConfigFlowTest {
     @Test
     void videoAlarmRecordConfig_shouldReachClientEvent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        clientEventHandler.reset(latch);
+        testClient.reset(latch);
 
         VideoAlarmRecordConfig.VideoAlarmRecordInfo info =
             new VideoAlarmRecordConfig.VideoAlarmRecordInfo(1, 30, 5, 0);
         commandSender.deviceConfigVideoAlarmRecord(clientId, info);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("报警录像配置应在3秒内被处理").isTrue();
-        VideoAlarmRecordConfig cfg = clientEventHandler.getLastVideoAlarmRecordConfig().getConfig();
+        VideoAlarmRecordConfig cfg = testClient.getLastVideoAlarmRecordConfig();
         assertThat(cfg.getVideoAlarmRecord().getRecordEnable()).isEqualTo(1);
         assertThat(cfg.getVideoAlarmRecord().getRecordTime()).isEqualTo(30);
         assertThat(cfg.getVideoAlarmRecord().getPreRecordTime()).isEqualTo(5);
@@ -89,13 +89,13 @@ class DeviceConfigFlowTest {
     @Test
     void alarmReportConfig_shouldReachClientEvent() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
-        clientEventHandler.reset(latch);
+        testClient.reset(latch);
 
         AlarmReportConfig.AlarmReportInfo info = new AlarmReportConfig.AlarmReportInfo(1, 0);
         commandSender.deviceConfigAlarmReport(clientId, info);
 
         assertThat(latch.await(3, TimeUnit.SECONDS)).as("报警上报配置应在3秒内被处理").isTrue();
-        AlarmReportConfig cfg = clientEventHandler.getLastAlarmReportConfig().getConfig();
+        AlarmReportConfig cfg = testClient.getLastAlarmReportConfig();
         assertThat(cfg.getAlarmReport().getMotionDetection()).isEqualTo(1);
         assertThat(cfg.getAlarmReport().getFieldDetection()).isEqualTo(0);
     }
