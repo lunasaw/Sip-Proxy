@@ -55,5 +55,33 @@ public interface DeviceControlRequestHandler {
      */
     void handleHomePosition(DeviceControlPosition homePositionCmd);
 
+    /**
+     * 处理设备软件升级命令 (GB28181-2022 A.2.3.1.12)
+     */
+    default void handleDeviceUpgrade(DeviceUpgradeControl deviceUpgradeCmd) {
+        // 默认空实现，便于现有实现类无侵入升级
+    }
+
+    /**
+     * 处理 PTZ 精准控制命令 (GB28181-2022 A.2.3.1.11)
+     */
+    default void handlePtzPreciseCtrl(DeviceControlPTZPrecise ptzPreciseCtrl) {
+        // 默认空实现
+    }
+
+    /**
+     * 处理存储卡格式化命令 (GB28181-2022 A.2.3.1.13)
+     */
+    default void handleFormatSDCard(DeviceControlSDCardFormat formatSdCardCmd) {
+        // 默认空实现
+    }
+
+    /**
+     * 处理目标跟踪命令 (GB28181-2022 A.2.3.1.14)
+     */
+    default void handleTargetTrack(DeviceControlTargetTrack targetTrackCmd) {
+        // 默认空实现
+    }
+
     // 可扩展更多控制命令
 }

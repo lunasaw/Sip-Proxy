@@ -52,4 +52,16 @@ public class TestDeviceControlHandler implements DeviceControlRequestHandler {
 
     @Override
     public void handleHomePosition(DeviceControlPosition homePositionCmd) { signal(homePositionCmd); }
+
+    @Override
+    public void handleDeviceUpgrade(DeviceUpgradeControl deviceUpgradeCmd) { signal(deviceUpgradeCmd); }
+
+    @Override
+    public void handlePtzPreciseCtrl(DeviceControlPTZPrecise ptzPreciseCtrl) { signal(ptzPreciseCtrl); }
+
+    @Override
+    public void handleFormatSDCard(DeviceControlSDCardFormat formatSdCardCmd) { signal(formatSdCardCmd); }
+
+    @Override
+    public void handleTargetTrack(DeviceControlTargetTrack targetTrackCmd) { signal(targetTrackCmd); }
 }

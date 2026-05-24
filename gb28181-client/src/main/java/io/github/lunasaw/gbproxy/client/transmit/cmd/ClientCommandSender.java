@@ -70,6 +70,13 @@ public class ClientCommandSender implements ApplicationContextAware {
         return send("MESSAGE", from, to, notify);
     }
 
+    /**
+     * GB28181-2022 §9.11.2 报警事件 NOTIFY (订阅生效后的主动上报)
+     */
+    public static String sendAlarmNotify(FromDevice from, ToDevice to, DeviceAlarmNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
     public static String sendKeepaliveCommand(FromDevice from, ToDevice to, String status) {
         DeviceKeepLiveNotify n = new DeviceKeepLiveNotify(
             CmdTypeEnum.KEEPALIVE.getType(), RandomStrUtil.getValidationCode(), from.getUserId());
@@ -148,6 +155,80 @@ public class ClientCommandSender implements ApplicationContextAware {
     }
 
     public static String sendPresetQueryResponse(FromDevice from, ToDevice to, PresetQueryResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.9 设备软件升级结果通知
+     */
+    public static String sendUpgradeResultNotify(FromDevice from, ToDevice to, UpgradeResultNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.9 设备软件升级结果通知 (字段构造)
+     */
+    public static String sendUpgradeResultNotify(FromDevice from, ToDevice to,
+                                                  String sessionId, String upgradeResult,
+                                                  String firmware, String upgradeFailedReason) {
+        UpgradeResultNotify notify = new UpgradeResultNotify(RandomStrUtil.getValidationCode(), from.getUserId());
+        notify.setSessionId(sessionId);
+        notify.setUpgradeResult(upgradeResult);
+        notify.setFirmware(firmware);
+        notify.setUpgradeFailedReason(upgradeFailedReason);
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.7 图像抓拍传输完成通知
+     */
+    public static String sendSnapShotFinishedNotify(FromDevice from, ToDevice to, UploadSnapShotFinishedNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.7 图像抓拍传输完成通知 (字段构造)
+     */
+    public static String sendSnapShotFinishedNotify(FromDevice from, ToDevice to,
+                                                     String sessionId, List<String> snapShotFileIds) {
+        UploadSnapShotFinishedNotify notify = new UploadSnapShotFinishedNotify(RandomStrUtil.getValidationCode(), from.getUserId());
+        notify.setSessionId(sessionId);
+        notify.setSnapShotFileIds(snapShotFileIds);
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.15 PTZ 精确状态查询应答
+     */
+    public static String sendPtzPositionResponse(FromDevice from, ToDevice to, PTZPositionResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.16 存储卡状态查询应答
+     */
+    public static String sendSdCardStatusResponse(FromDevice from, ToDevice to, SDCardStatusResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.12 看守位信息查询应答
+     */
+    public static String sendHomePositionResponse(FromDevice from, ToDevice to, HomePositionResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.13 巡航轨迹列表查询应答
+     */
+    public static String sendCruiseTrackListResponse(FromDevice from, ToDevice to, CruiseTrackListResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.14 巡航轨迹查询应答
+     */
+    public static String sendCruiseTrackResponse(FromDevice from, ToDevice to, CruiseTrackResponse response) {
         return send("MESSAGE", from, to, response);
     }
 

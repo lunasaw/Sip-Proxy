@@ -66,7 +66,11 @@ public class DeviceControlMessageHandler extends MessageClientHandlerAbstract {
             new HandlerEntry<>("IFameCmd", DeviceControlIFame.class, (h, c) -> h.handleIFameCmd((DeviceControlIFame) c)),
             new HandlerEntry<>("DragZoomIn", DeviceControlDragIn.class, (h, c) -> h.handleDragZoomIn((DeviceControlDragIn) c)),
             new HandlerEntry<>("DragZoomOut", DeviceControlDragOut.class, (h, c) -> h.handleDragZoomOut((DeviceControlDragOut) c)),
-            new HandlerEntry<>("HomePosition", DeviceControlPosition.class, (h, c) -> h.handleHomePosition((DeviceControlPosition) c))
+            new HandlerEntry<>("HomePosition", DeviceControlPosition.class, (h, c) -> h.handleHomePosition((DeviceControlPosition) c)),
+            new HandlerEntry<>("DeviceUpgrade", DeviceUpgradeControl.class, (h, c) -> h.handleDeviceUpgrade((DeviceUpgradeControl) c)),
+            new HandlerEntry<>("PTZPreciseCtrl", DeviceControlPTZPrecise.class, (h, c) -> h.handlePtzPreciseCtrl((DeviceControlPTZPrecise) c)),
+            new HandlerEntry<>("FormatSDCard", DeviceControlSDCardFormat.class, (h, c) -> h.handleFormatSDCard((DeviceControlSDCardFormat) c)),
+            new HandlerEntry<>("TargetTrack", DeviceControlTargetTrack.class, (h, c) -> h.handleTargetTrack((DeviceControlTargetTrack) c))
     );
 
     @Override
