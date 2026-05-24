@@ -1,6 +1,5 @@
 package io.github.lunasaw.sip.common.utils;
 
-import io.github.lunasaw.sip.common.entity.GbSessionDescription;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import org.junit.jupiter.api.Test;
 
@@ -13,34 +12,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class SipUtilsTest {
-
-    @Test
-    void generateGB28181Code_formatsCorrectly() {
-        String code = SipUtils.generateGB28181Code(34020000, 13, 200, 1);
-        assertThat(code).hasSize(20);
-        assertThat(code).startsWith("34020000");
-        assertThat(code).contains("13");
-        assertThat(code).endsWith("0000001");
-    }
-
-    @Test
-    void genSsrc_withUserId_usesPrefixAndCorrectLength() {
-        String ssrc = SipUtils.genSsrc("34020000001320000001");
-        assertThat(ssrc).hasSize(9);
-        assertThat(ssrc).startsWith("20000");
-    }
-
-    @Test
-    void genSsrc_withNull_returnsNumericString() {
-        String ssrc = SipUtils.genSsrc(null);
-        assertThat(ssrc).matches("\\d+");
-    }
-
-    @Test
-    void genSsrc_withEmpty_returnsNumericString() {
-        String ssrc = SipUtils.genSsrc("");
-        assertThat(ssrc).matches("\\d+");
-    }
 
     @Test
     void toNtpTimestamp_epoch_returnsOffset() {
@@ -70,30 +41,17 @@ class SipUtilsTest {
     }
 
     @Test
-    void parseSdp_withYandFFields_extractsCorrectly() {
-        String sdp = "v=0\r\n" +
-                "o=- 0 0 IN IP4 192.168.1.1\r\n" +
-                "s=Play\r\n" +
-                "c=IN IP4 192.168.1.1\r\n" +
-                "t=0 0\r\n" +
-                "m=video 9000 RTP/AVP 96\r\n" +
-                "y=0100000001\r\n" +
-                "f=v/2/4\r\n";
-        GbSessionDescription result = (GbSessionDescription) SipUtils.parseSdp(sdp);
-        assertThat(result.getSsrc()).isEqualTo("0100000001");
-        assertThat(result.getMediaDescription()).isEqualTo("v/2/4");
-    }
-
-    @Test
-    void parseSdp_withoutYandF_returnsNullSsrc() {
+    void parseSdp_standardSdp_returnsSdpSessionDescription() throws javax.sdp.SdpParseException {
         String sdp = "v=0\r\n" +
                 "o=- 0 0 IN IP4 192.168.1.1\r\n" +
                 "s=Play\r\n" +
                 "c=IN IP4 192.168.1.1\r\n" +
                 "t=0 0\r\n" +
                 "m=video 9000 RTP/AVP 96\r\n";
-        GbSessionDescription result = (GbSessionDescription) SipUtils.parseSdp(sdp);
-        assertThat(result.getSsrc()).isNull();
+        SdpSessionDescription result = SipUtils.parseSdp(sdp);
+        assertThat(result).isNotNull();
+        assertThat(result.getBaseSdb()).isNotNull();
+        assertThat(result.getBaseSdb().getOrigin().getAddress()).isEqualTo("192.168.1.1");
     }
 
     @Test

@@ -9,7 +9,8 @@ import javax.sip.message.Response;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.sip.common.entity.GbSessionDescription;
+import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
+import io.github.lunasaw.gb28181.common.entity.utils.GbSdpUtils;
 import io.github.lunasaw.sip.common.enums.ContentTypeEnum;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
@@ -57,7 +58,7 @@ public class InviteRequestProcessor extends SipRequestProcessorAbstract {
 
             // 解析Sdp
             String sdpContent = new String(request.getRawContent());
-            GbSessionDescription sessionDescription = (GbSessionDescription) SipUtils.parseSdp(sdpContent);
+            GbSessionDescription sessionDescription = GbSdpUtils.parseGbSdp(sdpContent);
 
             // 调用业务处理器
             inviteRequestHandler.inviteSession(callId, sessionDescription);

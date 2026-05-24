@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "sip.gb28181.time-sync", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "sip.common.time-sync", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class NtpTimeSyncScheduler {
 
     @Autowired
@@ -29,7 +29,7 @@ public class NtpTimeSyncScheduler {
      * 定时执行NTP校时
      * 根据配置的同步间隔执行
      */
-    @Scheduled(fixedRateString = "#{${sip.gb28181.time-sync.ntp-sync-interval:3600} * 1000}")
+    @Scheduled(fixedRateString = "#{${sip.common.time-sync.ntp-sync-interval:3600} * 1000}")
     public void performNtpSync() {
         SipCommonProperties.TimeSync timeSyncConfig = sipCommonProperties.getTimeSync();
         

@@ -2,7 +2,7 @@ package io.github.lunasaw.gbproxy.server.entity;
 
 import io.github.lunasaw.gb28181.common.entity.enums.ManufacturerEnum;
 import io.github.lunasaw.gb28181.common.entity.enums.StreamModeEnum;
-import io.github.lunasaw.sip.common.utils.SipUtils;
+import io.github.lunasaw.gb28181.common.entity.utils.GbUtil;
 import lombok.Data;
 
 /**
@@ -59,7 +59,7 @@ public class InviteRequest {
         this.userId = userId;
         this.sdpIp = sdpIp;
         this.mediaPort = mediaPort;
-        this.ssrc = SipUtils.genSsrc(userId);
+        this.ssrc = GbUtil.genSsrc(userId);
     }
 
     public InviteRequest(Boolean seniorSdp, StreamModeEnum streamModeEnum, String userId, String sdpIp, Integer mediaPort, String ssrc) {
@@ -77,7 +77,7 @@ public class InviteRequest {
         this.userId = userId;
         this.sdpIp = sdpIp;
         this.mediaPort = mediaPort;
-        this.ssrc = SipUtils.genSsrc(userId);
+        this.ssrc = GbUtil.genSsrc(userId);
         this.startTime = startTime;
         this.endTime = endTime;
     }

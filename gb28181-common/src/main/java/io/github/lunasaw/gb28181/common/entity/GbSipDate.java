@@ -1,4 +1,4 @@
-package io.github.lunasaw.sip.common.entity;
+package io.github.lunasaw.gb28181.common.entity;
 
 import java.util.*;
 

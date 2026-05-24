@@ -97,7 +97,7 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
             return;
         }
         try {
-            // GB28181协议要求：先发送200 OK响应(Step 2)，然后再处理业务逻辑(Step 3)
+            // SIP 标准要求：先发送 200 OK 响应（Step 2），再处理业务逻辑（Step 3）
             if (messageHandler.needResponseAck()) {
                 // 立即发送200 OK响应，确保事务一致性
                 log.debug("立即发送200 OK响应，CmdType={}, rootType={}", cmdType, rootType);

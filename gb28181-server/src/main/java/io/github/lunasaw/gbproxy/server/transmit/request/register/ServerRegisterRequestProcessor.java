@@ -25,7 +25,7 @@ import com.luna.common.date.DateUtils;
 import gov.nist.javax.sip.header.SIPDateHeader;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gbproxy.server.transmit.request.ServerAbstractSipRequestProcessor;
-import io.github.lunasaw.sip.common.entity.GbSipDate;
+import io.github.lunasaw.gb28181.common.entity.GbSipDate;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;

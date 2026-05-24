@@ -282,7 +282,7 @@ public class SipRequestUtils {
 
     public static UserAgentHeader createUserAgentHeader() {
         try {
-            return createUserAgentHeader("gbproxy");
+            return createUserAgentHeader("sip-proxy");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1,15 +1,18 @@
-package io.github.lunasaw.sip.common.entity;
+package io.github.lunasaw.gb28181.common.entity.sdp;
 
 import javax.sdp.SessionDescription;
 
+import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
- * 28181 的SDP解析器
+ * GB28181 SDP 扩展模型，包含标准 SDP 之外的 ssrc / mediaDescription 字段。
  *
  * @author luna
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class GbSessionDescription extends SdpSessionDescription {
 
     private String ssrc;
