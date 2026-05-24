@@ -1,8 +1,10 @@
 # SIP 分层架构设计方案
 
-> 版本：2.4 | 日期：2026-05-24
+> 版本：2.5 | 日期：2026-05-24
 
 > ✅ **实施状态**：v1.3.0 协议层改造已落地，且 sip-gateway 业务侧参考实现已落到 [gb28181-test/.../gateway/](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/)（含 `GatewayProperties`、`InviteContextStore` + `InMemoryInviteContextStore`、`SipEventForwarder`、`SipCommandController`、`BusinessNotifier` 抽象 + `NoopBusinessNotifier`、`GatewayConfig`）。`SipTransactionRegistry`、`DeviceSessionCache`、`external-ip`、`@EnableSipServer`、INVITE 异步化、`extendContext` 续期、`ServerDeviceSupplier.authenticate`、BYE 200 OK 协议合规、Handler 接口全量删除均已完成（详见第八、九节对照表）。生产部署仍需将 `InMemoryInviteContextStore` 替换为 Redis 实现、`NoopBusinessNotifier` 替换为实际 HTTP/MQ 推送、`nodeAddressMap` 替换为 K8s/Nacos 动态发现。
+>
+> v2.4 → v2.5 变更：补充 `InviteContextStore` 接口的 503 错误语义约定，`SipCommandController.inviteResponse` 增加 store 故障兜底（未受控 `RuntimeException` 一律转 `503 Service Unavailable`，避免冒成 500 让业务侧无法识别"可重试"语义），同步 §3、§6.4。
 >
 > v2.3 → v2.4 变更：补充共享 NAT 聚集效应、Redis 高可用要求、INVITE 重传幂等示例代码、`nodeAddressMap` 刷新窗口的重试约定，并修订 §7.2 关于 1xx 响应与 Timer B 关系的描述。
 
@@ -93,7 +95,7 @@
 
 > ⚠️ **`callId` ≠ `transactionContextKey`**：业务服务器只感知 `callId`，但框架内部用 `callId_fromTag_cseq` 作上下文键。Redis 中以 `callId` 为键便于业务侧查询，值里携带 `contextKey` 让节点能反查 `SipTransactionRegistry`。
 
-> ⚠️ **Redis 是新的 SPOF**：跨节点 INVITE 路由、设备会话、注册鉴权读取全部依赖 Redis。30s INVITE TTL 内 Redis 故障 = 进行中的设备主动 INVITE 全部回包失败。**生产环境必须使用 Redis Sentinel 或 Cluster**，并对关键调用做超时与降级（如 `/sip/invite/response` 在 Redis 不可达时直接返回 503，由业务侧重试）。
+> ⚠️ **Redis 是新的 SPOF**：跨节点 INVITE 路由、设备会话、注册鉴权读取全部依赖 Redis。30s INVITE TTL 内 Redis 故障 = 进行中的设备主动 INVITE 全部回包失败。**生产环境必须使用 Redis Sentinel 或 Cluster**，并对关键调用做超时与降级（如 `/sip/invite/response` 在 Redis 不可达时直接返回 503，由业务侧重试）。`InviteContextStore` 接口约定：实现方需把后端故障显式抛成 `ResponseStatusException(SERVICE_UNAVAILABLE)`，否则 `SipCommandController` 会在公共兜底里把未受控 `RuntimeException` 一律转 503，避免冒成 500 让业务侧无法识别"可重试"语义。
 
 ---
 
@@ -391,7 +393,7 @@ public class SipCommandController {
 }
 ```
 
-> **业务服务器侧重试策略**：调 `/sip/invite/response` 收到 `502 Bad Gateway` 或 `503 Service Unavailable` 时应短间隔（200ms）重试 2~3 次，覆盖 nodeAddressMap 刷新与 Redis 短暂抖动；收到 `410 Gone` 表示事务已超时，**禁止重试**，需重新发起 INVITE。
+> **业务服务器侧重试策略**：调 `/sip/invite/response` 收到 `502 Bad Gateway` 或 `503 Service Unavailable` 时应短间隔（200ms）重试 2~3 次，覆盖 nodeAddressMap 刷新与 Redis 短暂抖动；收到 `410 Gone` 表示事务已超时，**禁止重试**，需重新发起 INVITE。`503` 来源有两类：(a) 跨节点 RestTemplate 转发失败；(b) `InviteContextStore` 后端（Redis 等）不可达——`SipCommandController` 已统一映射成 503，业务侧无需区分。
 
 ### 6.5 nodeAddressMap 装配
 

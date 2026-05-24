@@ -8,6 +8,13 @@ package io.github.lunasaw.gbproxy.test.gateway;
  *
  * <p>生产环境必须落 Redis Sentinel/Cluster（见 §3 SPOF 警告）。本接口的
  * 默认实现 {@link InMemoryInviteContextStore} 仅用于单机演示与单测。
+ *
+ * <p><strong>错误语义约定</strong>（与 §6.4 注脚一致）：实现方负责把后端故障
+ * （如 Redis 不可达、网络超时）抛成
+ * {@link org.springframework.web.server.ResponseStatusException} 且 status 为
+ * {@link org.springframework.http.HttpStatus#SERVICE_UNAVAILABLE}，以便
+ * {@code /sip/invite/response} 直接返回 503 触发业务侧 200ms × 3 短重试；
+ * 不要让底层异常冒成 500，否则业务侧无法识别"可重试"语义。
  */
 public interface InviteContextStore {
 

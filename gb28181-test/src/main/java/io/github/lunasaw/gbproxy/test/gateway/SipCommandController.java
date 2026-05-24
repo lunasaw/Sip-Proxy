@@ -33,7 +33,7 @@ import java.util.Map;
  * <ul>
  *   <li>{@code POST /sip/invite/start}：平台主动 INVITE</li>
  *   <li>{@code POST /sip/invite/bye}：终止已建立的 INVITE 会话</li>
- *   <li>{@code POST /sip/invite/response}：设备主��� INVITE 时业务侧异步回包，自动跨节点路由</li>
+ *   <li>{@code POST /sip/invite/response}：设备主动 INVITE 时业务侧异步回包，自动跨节点路由</li>
  *   <li>{@code POST /sip/control/ptz}：PTZ 控制</li>
  *   <li>{@code POST /sip/query/catalog}：目录查询（响应通过 {@code DeviceCatalogEvent} 异步返回）</li>
  * </ul>
@@ -42,7 +42,7 @@ import java.util.Map;
  * <ul>
  *   <li>{@code 410 Gone}：事务已终止/超时，禁止重试，业务侧需重新发起 INVITE</li>
  *   <li>{@code 502 Bad Gateway}：nodeAddressMap 暂未刷新到目标节点，建议 200ms × 3 短重试</li>
- *   <li>{@code 503 Service Unavailable}：目标节点转发失败（含 Redis/���络抖动），建议短重试</li>
+ *   <li>{@code 503 Service Unavailable}：目标节点转发失败 / store 后端不可达（含 Redis/网络抖动），建议短重试</li>
  * </ul>
  */
 @Slf4j
@@ -71,7 +71,7 @@ public class SipCommandController {
 
     @PostMapping("/invite/response")
     public void inviteResponse(@RequestBody InviteResponseRequest req) {
-        String value = inviteContextStore.find(req.getCallId());
+        String value = findContextOrTranslate(req.getCallId());
         if (value == null) {
             throw new ResponseStatusException(HttpStatus.GONE, "invite ctx expired or unknown callId");
         }
@@ -86,7 +86,7 @@ public class SipCommandController {
 
         if (gatewayProperties.getNodeId().equals(targetNode)) {
             handleLocally(ctxKey, req);
-            inviteContextStore.remove(req.getCallId());
+            safeRemove(req.getCallId());
             return;
         }
 
@@ -135,5 +135,33 @@ public class SipCommandController {
         ResponseCmd.sendResponse(Response.OK, req.getSdp(),
                 ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader(),
                 ctx.getOriginalEvent());
+    }
+
+    /**
+     * 查 store；底层 (Redis 等) 故障一律映射 503，业务侧按 §6.4 做 200ms × 3 短重试。
+     * 实现方按接口约定自行抛 {@link ResponseStatusException} 时透传，
+     * 其它未受控异常一律转 503，避免冒成 500 让业务侧无法识别"可重试"语义。
+     */
+    private String findContextOrTranslate(String callId) {
+        try {
+            return inviteContextStore.find(callId);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            log.warn("InviteContextStore.find 失败: callId={}", callId, e);
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "invite ctx store unavailable: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 清理 callId 映射。store 故障不影响已经成功回包的事务，记日志即可。
+     */
+    private void safeRemove(String callId) {
+        try {
+            inviteContextStore.remove(callId);
+        } catch (RuntimeException e) {
+            log.warn("InviteContextStore.remove 失败（已成功回包，忽略）: callId={}", callId, e);
+        }
     }
 }

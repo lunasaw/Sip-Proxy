@@ -51,9 +51,7 @@ public class TestMessageRequestHandler implements MessageRequestHandler {
         DeviceItem item = new DeviceItem();
         item.setDeviceId(userId);
         item.setName("TestChannel");
-        DeviceResponse response = new DeviceResponse();
-        response.setDeviceId(userId);
-        response.setSn(RandomStrUtil.getValidationCode());
+        DeviceResponse response = new DeviceResponse(CmdTypeEnum.CATALOG.getType(), RandomStrUtil.getValidationCode(), userId);
         response.setDeviceItemList(List.of(item));
         return response;
     }
