@@ -1,8 +1,10 @@
 # SIP 分层架构设计方案
 
-> 版本：2.3 | 日期：2026-05-24
+> 版本：2.4 | 日期：2026-05-24
 
-> ✅ **实施状态**：v1.3.0 协议层改造已落地。`SipTransactionRegistry`、`DeviceSessionCache`、`external-ip`、`@EnableSipServer`、INVITE 异步化、`extendContext` 续期、`ServerDeviceSupplier.authenticate`、BYE 200 OK 协议合规、Handler 接口全量删除均已完成（详见第八、九节对照表）。剩余工作在业务方（sip-gateway）侧落地：实现 `authenticate`、监听 `ServerInviteEvent` 并实现跨节点路由。
+> ✅ **实施状态**：v1.3.0 协议层改造已落地，且 sip-gateway 业务侧参考实现已落到 [gb28181-test/.../gateway/](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/)（含 `GatewayProperties`、`InviteContextStore` + `InMemoryInviteContextStore`、`SipEventForwarder`、`SipCommandController`、`BusinessNotifier` 抽象 + `NoopBusinessNotifier`、`GatewayConfig`）。`SipTransactionRegistry`、`DeviceSessionCache`、`external-ip`、`@EnableSipServer`、INVITE 异步化、`extendContext` 续期、`ServerDeviceSupplier.authenticate`、BYE 200 OK 协议合规、Handler 接口全量删除均已完成（详见第八、九节对照表）。生产部署仍需将 `InMemoryInviteContextStore` 替换为 Redis 实现、`NoopBusinessNotifier` 替换为实际 HTTP/MQ 推送、`nodeAddressMap` 替换为 K8s/Nacos 动态发现。
+>
+> v2.3 → v2.4 变更：补充共享 NAT 聚集效应、Redis 高可用要求、INVITE 重传幂等示例代码、`nodeAddressMap` 刷新窗口的重试约定，并修订 §7.2 关于 1xx 响应与 Timer B 关系的描述。
 
 ---
 
@@ -82,14 +84,16 @@
 | 状态类型 | 存储位置 | 说明 |
 |---------|---------|------|
 | `ServerTransaction` / `SipTransactionRegistry` | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化，且持有 socket 引用；同一设备消息必须打同一节点 |
-| `DeviceSessionCache`（设备注册信息） | **Redis**（共享） | 业务方实现，节点间共享，节点故障后新节点可接管 |
-| `ServerDeviceSupplier`（设备信息） | **Redis**（共享） | 业务方实现，读 Redis |
+| `DeviceSessionCache`（设备注册信息） | **Redis**（共享，需高可用） | 业务方实现，节点间共享，节点故障后新节点可接管 |
+| `ServerDeviceSupplier`（设备信息） | **Redis**（共享，需高可用） | 业务方实现，读 Redis |
 | 设备订阅状态 | 业务方自管 | 框架不再提供 `SubscribeHolder`（v1.3.0 已移除），由业务方根据需要存 Redis 或自行管理 |
-| INVITE 事务上下文 | **进程内** + Redis 存路由映射 | `transactionContextKey`（`callId_fromTag_cseq`）只在收到 INVITE 的节点有效；Redis 用 `callId` 作键存 `{nodeId}:{contextKey}` 供跨节点回包路由，见 §5.3 |
+| INVITE 事务上下文 | **进程内** + Redis 存路由映射（需高可用） | `transactionContextKey`（`callId_fromTag_cseq`）只在收到 INVITE 的节点有效；Redis 用 `callId` 作键存 `{nodeId}:{contextKey}` 供跨节点回包路由，见 §5.3 |
 
 **违反此约束会导致节点故障时业务状态丢失且无法恢复。**
 
 > ⚠️ **`callId` ≠ `transactionContextKey`**：业务服务器只感知 `callId`，但框架内部用 `callId_fromTag_cseq` 作上下文键。Redis 中以 `callId` 为键便于业务侧查询，值里携带 `contextKey` 让节点能反查 `SipTransactionRegistry`。
+
+> ⚠️ **Redis 是新的 SPOF**：跨节点 INVITE 路由、设备会话、注册鉴权读取全部依赖 Redis。30s INVITE TTL 内 Redis 故障 = 进行中的设备主动 INVITE 全部回包失败。**生产环境必须使用 Redis Sentinel 或 Cluster**，并对关键调用做超时与降级（如 `/sip/invite/response` 在 Redis 不可达时直接返回 503，由业务侧重试）。
 
 ---
 
@@ -219,17 +223,21 @@ sip-gateway 收到 ServerInviteEvent 时：
 
 ### 5.4 扩容粒度
 
-水平扩容的粒度是**设备**，不是单个设备的并发请求：
+水平扩容的粒度是**设备 NAT 出口**，不是物理设备数：
 
-- 不同设备分散到不同节点，总容量随节点数线性增长
+- 不同 NAT 出口分散到不同节点，总容量随节点数线性增长
 - 单个设备的所有消息始终在同一节点，事务正常
 - 对 GB28181 场景足够：单设备并发请求极少，瓶颈在设备总数
+
+> ⚠️ **共享 NAT 出口的聚集效应**：`-s sh` 按客户端源 IP 哈希分片，企业园区/家庭网络下多个 GB28181 设备共享同一 NAT 公网 IP 时会全部落到同一节点。规划容量时应按 **NAT 出口数** 而非物理设备数估算节点负载。极端场景（单 NAT 出口下设备数远超单节点容量）需要在 sip-gateway 之上做 deviceId 二次分发，但需保证同 deviceId 始终打同一 sip-gateway 节点（破坏源 IP 哈希后由业务方自行维护粘性）。
 
 ---
 
 ## 六、sip-gateway 实现示例
 
 ### 6.1 DeviceSessionCache（必须实现）
+
+> 框架接口仅定义 `getToDevice(deviceId)` 一个方法。`save` 是业务方根据需要新增的写入方法，由 `SipEventForwarder.onRegister` 调用，不属于 `DeviceSessionCache` 接口。
 
 ```java
 @Component
@@ -241,7 +249,10 @@ public class RedisDeviceSessionCache implements DeviceSessionCache {
         return redis.opsForValue().get("sip:device:" + deviceId);
     }
 
+    /** 业务方自定义写入方法，由 @EventListener 调用 */
     public void save(String deviceId, ToDevice device) {
+        // NAT IP 切换会产生脏数据，先 DEL 再 SET 让新值覆盖旧值
+        redis.delete("sip:device:" + deviceId);
         redis.opsForValue().set("sip:device:" + deviceId, device, 24, TimeUnit.HOURS);
     }
 }
@@ -278,6 +289,10 @@ public class SipEventForwarder {
     @Autowired private RedisTemplate<String, String> redis;
     @Autowired private RedisDeviceSessionCache sessionCache;
 
+    /** 已处理 callId 缓存，UDP INVITE 重传时避免重复推送给业务服务器 */
+    private final Cache<String, Boolean> processedInvites =
+        Caffeine.newBuilder().expireAfterWrite(60, TimeUnit.SECONDS).maximumSize(10_000).build();
+
     @EventListener
     public void onRegister(DeviceRegisterEvent e) {
         sessionCache.save(e.getDeviceId(), buildToDevice(e));
@@ -286,6 +301,13 @@ public class SipEventForwarder {
 
     @EventListener
     public void onServerInvite(ServerInviteEvent e) {
+        // UDP 下设备会按 T1 退避重传 INVITE，框架按相同 contextKey 覆盖写入安全，
+        // 但事件会被多次 publish。按 callId 幂等，避免向业务服务器重复推送。
+        if (processedInvites.asMap().putIfAbsent(e.getCallId(), Boolean.TRUE) != null) {
+            log.debug("INVITE 重传，跳过重复推送: callId={}", e.getCallId());
+            return;
+        }
+
         // 存节点标识 + contextKey，供跨节点回包路由
         redis.opsForValue().set(
             "sip:invite:ctx:" + e.getCallId(),
@@ -317,6 +339,7 @@ public class SipCommandController {
     @Autowired private ServerCommandSender commandSender;
     @Autowired private RedisTemplate<String, String> redis;
     @Autowired private Map<String, String> nodeAddressMap; // nodeId → http://ip:port，见 §6.5
+    @Autowired private RestTemplate restTemplate;          // 业务方自行注入
 
     @PostMapping("/invite/start")
     public String invitePlay(@RequestBody InviteRequest req) {
@@ -346,7 +369,8 @@ public class SipCommandController {
             ResponseCmd.sendResponse(Response.OK, req.getSdp(),
                 ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader(), ctx.getOriginalEvent());
         } else {
-            // 转发到目标节点
+            // 转发到目标节点。nodeAddressMap 在节点上下线/IP 变更时存在数秒刷新窗口，
+            // 此时映射不到目标节点会返回 502，业务侧需配合短间隔重试（建议 200ms x 3）。
             String targetUrl = nodeAddressMap.get(targetNode);
             if (targetUrl == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "unknown node: " + targetNode);
@@ -366,6 +390,8 @@ public class SipCommandController {
     }
 }
 ```
+
+> **业务服务器侧重试策略**：调 `/sip/invite/response` 收到 `502 Bad Gateway` 或 `503 Service Unavailable` 时应短间隔（200ms）重试 2~3 次，覆盖 nodeAddressMap 刷新与 Redis 短暂抖动；收到 `410 Gone` 表示事务已超时，**禁止重试**，需重新发起 INVITE。
 
 ### 6.5 nodeAddressMap 装配
 
@@ -414,7 +440,7 @@ public Map<String, String> nodeAddressMap(GatewayProperties props) {
 
 因此 `SipTransactionRegistry.extendContext` 的实际意义不是"无限延长 INVITE 处理"，而是：
 - **30s 内**业务正常处理 → 框架侧不超时（无需续期）
-- **业务预计 < 60s** → 续期 + 在 30s 边界前主动发 `180 Ringing` 占位响应，让设备侧 Timer B 在每次 1xx 响应后重置（NIST 实际行为虽不严格但通常重置）
+- **业务预计 < 60s** → 续期 + 在 30s 边界前主动发 `180 Ringing`：按 RFC 3261 §17.1.1.2，客户端事务收到 1xx 后从 Calling 切到 Proceeding，Timer B 在 Proceeding 状态由具体实现决定是否继续计时（NIST 协议栈停止计时，但摄像头厂商实现差异较大）
 - **业务必然 > 60s** → 改为先回 `200 OK` 携带占位 SDP，后续走 `re-INVITE` 更新真实 SDP；或返回 `408 Request Timeout` 让业务侧重新发起
 
 ### 7.2 业务超时分级处理
@@ -422,11 +448,14 @@ public Map<String, String> nodeAddressMap(GatewayProperties props) {
 | 场景 | 处理方式 |
 |------|---------|
 | 业务处理 < 30s | 直接回包，无需特殊处理 |
-| 业务处理 30~60s | sip-gateway 收到 `ServerInviteEvent` 后**主动续期** `SipTransactionRegistry.extendContext(callId, 60_000)`，并在 25s 边界发 `180 Ringing` 保活设备侧事务 |
+| 业务处理 30~60s | sip-gateway 收到 `ServerInviteEvent` 后**主动续期** `SipTransactionRegistry.extendContext(callId, 60_000)`，并在 25s 边界发 `180 Ringing`（依赖设备 SIP 栈在 Proceeding 状态停止 Timer B，国产摄像头多数遵守，但**不能假定 100%**） |
 | 业务处理 > 60s（不推荐） | 改为先回 200 OK + 占位 SDP，后续走 re-INVITE 更新真实 SDP；或返回 408 让设备重发 |
 | 事务已超时 | `getContext` 返回 null，`/sip/invite/response` 返回 410 Gone，业务服务器需重新发起 |
 
-> ❌ **不要依赖 180 Ringing 保活客户端事务**：JAIN-SIP NIST 栈对 INVITE 服务端事务的 `Proceeding` 状态没有内置 `Timer C`（180s），也不会因发送 `1xx` 重置任何计时器。**真正阻止超时的是设备侧 Timer B**（而非框架侧 `TransactionContextInfo.createTime`）。框架侧续期只解决"我能否取到 RequestEvent"，不解决"对端是否还在等"。
+> ⚠️ **关于 1xx 与 Timer B 的精确说法**：
+> - 框架侧 `extendContext` 只解决 "`SipTransactionRegistry` 不被 32s 硬超时摘除"，与设备侧事务状态无关。
+> - 设备侧 Timer B 是否被 1xx 停止由 RFC 3261 §17.1.1.2 规定（"transition to the Proceeding state"——状态机进入 Proceeding 后由具体实现决定 Timer B 行为）。NIST 协议栈作为客户端在 Proceeding 状态停止 Timer B，但摄像头厂商实现可能不一致。
+> - **保守做法**：业务可能 > 30s 的场景预先回 `180 Ringing` 占位 + `extendContext` 续期，但仍按 60s 总处理时间设计上限；超过则改用 200 OK + 占位 SDP + re-INVITE 二阶段方案。
 
 ---
 
@@ -473,5 +502,6 @@ public Map<String, String> nodeAddressMap(GatewayProperties props) {
 | `ServerInfoRequestProcessor` 事件化 | [`ServerInfoRequestProcessor.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/info/ServerInfoRequestProcessor.java) | ✅ 删除 handler，直接发 `DeviceInfoRequestEvent` |
 | Handler 接口清理（`*ProcessorHandler` / `InviteRequestHandler` / `InfoRequestHandler` 等） | gb28181-server / gb28181-client | ✅ 全部删除，业务方一律 `@EventListener` |
 | `SubscribeHolder` / `SubscribeTask` | sip-common | ✅ 已删除（v1.3.0），下放业务方 |
-| `nodeAddressMap` 装配示例 | 业务方实现 | 📄 文档新增，框架不提供 |
+| `nodeAddressMap` 装配示例 | [`gb28181-test/.../gateway/GatewayProperties.java`](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/GatewayProperties.java) | ✅ 参考实现就绪（gb28181-test 模块），生产仍需替换为 K8s/Nacos 动态发现 |
+| sip-gateway 参考实现（`SipEventForwarder` / `SipCommandController` / `InviteContextStore`） | [`gb28181-test/.../gateway/`](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/) | ✅ 单机参考实现就绪，多节点须替换 `InviteContextStore` 为 Redis 实现 |
 

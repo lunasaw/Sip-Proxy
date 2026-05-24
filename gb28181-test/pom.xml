@@ -96,6 +96,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Caffeine: 用于 INVITE 重传幂等缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- Awaitility for async testing - commented out due to network issues -->
         <!--
         <dependency>
