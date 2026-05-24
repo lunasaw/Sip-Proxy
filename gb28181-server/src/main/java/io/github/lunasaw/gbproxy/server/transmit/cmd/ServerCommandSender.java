@@ -19,7 +19,6 @@ import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.SipSender;
-import io.github.lunasaw.sip.common.transmit.event.Event;
 import gov.nist.javax.sip.message.SIPResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -141,6 +140,31 @@ public class ServerCommandSender {
         body.setEndTime(endAlarmTime);
         SubscribeInfo subscribeInfo = new SubscribeInfo();
         subscribeInfo.setEventType(eventType);
+        subscribeInfo.setExpires(expires);
+        subscribeInfo.setEventId(eventId);
+        return factory.getStrategy("server", "SUBSCRIBE")
+            .execute(CommandContext.forSubscribe("server", from, to, subscribeInfo, expires)
+                .toBuilder().body(body).build());
+    }
+
+    /**
+     * GB28181-2022 §9.11.1 / §A.2.4.13 PTZ 精准位置变化事件订阅。
+     *
+     * <p>事件源（设备）会按 SubscribeInfo 中的间隔向事件观察者（平台）NOTIFY PTZ 位置变化，
+     * 直到订阅过期。订阅成功后由 {@code SubscribePtzPositionQueryMessageHandler} 在 client 侧
+     * 接收并通过 {@code SubscribeListener.onPtzPositionSubscribe} 回调业务方。
+     *
+     * @param deviceId 目标设备 ID
+     * @param expires  订阅过期时间（秒）；0 表示取消订阅
+     */
+    public String devicePtzPositionSubscribe(String deviceId, Integer expires) {
+        ToDevice to = getToDevice(deviceId);
+        to.setExpires(expires);
+        String eventId = sn();
+        to.setEventId(eventId);
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        PTZPositionQuery body = new PTZPositionQuery(CmdTypeEnum.PTZ_POSITION.getType(), sn(), deviceId);
+        SubscribeInfo subscribeInfo = new SubscribeInfo();
         subscribeInfo.setExpires(expires);
         subscribeInfo.setEventId(eventId);
         return factory.getStrategy("server", "SUBSCRIBE")

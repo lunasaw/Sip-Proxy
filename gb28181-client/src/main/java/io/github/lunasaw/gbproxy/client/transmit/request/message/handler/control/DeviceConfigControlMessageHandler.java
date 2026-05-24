@@ -1,10 +1,18 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.control;
 
+import io.github.lunasaw.gb28181.common.entity.control.DeviceConfigControl;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlBase;
 import io.github.lunasaw.gb28181.common.entity.control.SnapShotConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gbproxy.client.eventbus.event.ClientConfigEvent;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
@@ -90,6 +98,31 @@ public class DeviceConfigControlMessageHandler extends MessageClientHandlerAbstr
         }
         if (xmlStr.contains("<AlarmReport>")) {
             return (AlarmReportConfig) XmlUtils.parseObj(xmlStr, AlarmReportConfig.class);
+        }
+        if (xmlStr.contains("<VideoParamOpt>")) {
+            return (VideoParamOptConfig) XmlUtils.parseObj(xmlStr, VideoParamOptConfig.class);
+        }
+        if (xmlStr.contains("<SVACEncodeConfig>")) {
+            return (SVACEncodeConfig) XmlUtils.parseObj(xmlStr, SVACEncodeConfig.class);
+        }
+        if (xmlStr.contains("<SVACDecodeConfig>")) {
+            return (SVACDecodeConfig) XmlUtils.parseObj(xmlStr, SVACDecodeConfig.class);
+        }
+        if (xmlStr.contains("<VideoParamAttribute>")) {
+            return (VideoParamAttributeConfig) XmlUtils.parseObj(xmlStr, VideoParamAttributeConfig.class);
+        }
+        if (xmlStr.contains("<VideoRecordPlan>")) {
+            return (VideoRecordPlanConfig) XmlUtils.parseObj(xmlStr, VideoRecordPlanConfig.class);
+        }
+        if (xmlStr.contains("<PictureMask>")) {
+            return (PictureMaskConfig) XmlUtils.parseObj(xmlStr, PictureMaskConfig.class);
+        }
+        if (xmlStr.contains("<FrameMirror>")) {
+            return (FrameMirrorConfig) XmlUtils.parseObj(xmlStr, FrameMirrorConfig.class);
+        }
+        // 兜底：BasicParam 等没有独立子标签的配置直接 parse 为 DeviceConfigControl
+        if (xmlStr.contains("<BasicParam>")) {
+            return (DeviceConfigControl) XmlUtils.parseObj(xmlStr, DeviceConfigControl.class);
         }
         return null;
     }

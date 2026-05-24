@@ -96,6 +96,52 @@ public class ClientCommandSender implements ApplicationContextAware {
         return send("MESSAGE", from, to, items);
     }
 
+    /**
+     * GB28181-2022 附录 M 多响应消息传输：把超大目录响应分批发送。
+     *
+     * <p>每批响应携带相同 SN（与原查询请求 SN 一致）和总数 sumNum，但只携带 batchSize 条 deviceItem。
+     * 0 条时返回 sumNum=0 且不携带 deviceItemList。响应条数超过 10000 时建议改用 TCP。
+     *
+     * @param from           本端
+     * @param to             目标平台
+     * @param fullResponse   完整目录响应（携带全部 deviceItemList）
+     * @param batchSize      每批最多 deviceItem 条数；建议 100~1000，最大不超过 10000
+     * @return 第一批的 callId（后续批次内部串行发送，调用方无需关心）
+     */
+    public static String sendCatalogCommandBatched(FromDevice from, ToDevice to,
+                                                    DeviceResponse fullResponse, int batchSize) {
+        if (batchSize < 1 || batchSize > 10_000) {
+            throw new IllegalArgumentException("batchSize 必须在 [1, 10000] 范围内：" + batchSize);
+        }
+        List<DeviceItem> all = fullResponse.getDeviceItemList();
+        int total = all == null ? 0 : all.size();
+        // 0 条：单条响应 sumNum=0，不携带列表
+        if (total == 0) {
+            DeviceResponse empty = cloneCatalogShell(fullResponse);
+            empty.setSumNum(0);
+            empty.setDeviceItemList(null);
+            return send("MESSAGE", from, to, empty);
+        }
+        String firstCallId = null;
+        for (int offset = 0; offset < total; offset += batchSize) {
+            int end = Math.min(offset + batchSize, total);
+            DeviceResponse batch = cloneCatalogShell(fullResponse);
+            batch.setSumNum(total);
+            batch.setDeviceItemList(all.subList(offset, end));
+            String callId = send("MESSAGE", from, to, batch);
+            if (firstCallId == null) {
+                firstCallId = callId;
+            }
+        }
+        return firstCallId;
+    }
+
+    private static DeviceResponse cloneCatalogShell(DeviceResponse src) {
+        DeviceResponse shell = new DeviceResponse(src.getCmdType(), src.getSn(), src.getDeviceId());
+        shell.setName(src.getName());
+        return shell;
+    }
+
     public static String sendCatalogCommand(FromDevice from, ToDevice to, DeviceItem item) {
         return send("MESSAGE", from, to, item);
     }
@@ -131,12 +177,99 @@ public class ClientCommandSender implements ApplicationContextAware {
         return send("MESSAGE", from, to, items);
     }
 
+    /**
+     * GB28181-2022 附录 N 域间目录订阅通知：发送目录变更通知（在线 / 离线 / 增加 / 删除 / 更新）。
+     *
+     * <p>对应 §N.2.1.2.1：被订阅域在检测到被订阅范围内目录变更事件时，应根据接收的订阅者列表，
+     * 向处于订阅有效期的域发送目录状态通知消息。NOTIFY method 由协议层 {@code CatalogNotifyStrategy}
+     * 自动选用。
+     *
+     * @param from   本端
+     * @param to     订阅方域
+     * @param sn     与订阅请求的 SN 相同（保持会话关联）
+     * @param events 变更条目列表，每条 (deviceId, event)，event ∈ {ON, OFF, ADD, DEL, UPDATE}
+     */
+    public static String sendCatalogChangeNotify(FromDevice from, ToDevice to, String sn,
+                                                  List<DeviceOtherUpdateNotify.OtherItem> events) {
+        DeviceOtherUpdateNotify notify = new DeviceOtherUpdateNotify("Catalog", sn, from.getUserId());
+        int total = events == null ? 0 : events.size();
+        notify.setSumNum(total);
+        notify.setDeviceItemList(events);
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 附录 N + 附录 M 联用：超大目录变更分批 NOTIFY。
+     */
+    public static String sendCatalogChangeNotifyBatched(FromDevice from, ToDevice to, String sn,
+                                                        List<DeviceOtherUpdateNotify.OtherItem> events,
+                                                        int batchSize) {
+        if (batchSize < 1 || batchSize > 10_000) {
+            throw new IllegalArgumentException("batchSize 必须在 [1, 10000] 范围内：" + batchSize);
+        }
+        int total = events == null ? 0 : events.size();
+        if (total == 0) {
+            DeviceOtherUpdateNotify empty = new DeviceOtherUpdateNotify("Catalog", sn, from.getUserId());
+            empty.setSumNum(0);
+            return send("MESSAGE", from, to, empty);
+        }
+        String firstCallId = null;
+        for (int offset = 0; offset < total; offset += batchSize) {
+            int end = Math.min(offset + batchSize, total);
+            DeviceOtherUpdateNotify batch = new DeviceOtherUpdateNotify("Catalog", sn, from.getUserId());
+            batch.setSumNum(total);
+            batch.setDeviceItemList(events.subList(offset, end));
+            String callId = send("MESSAGE", from, to, batch);
+            if (firstCallId == null) {
+                firstCallId = callId;
+            }
+        }
+        return firstCallId;
+    }
+
     public static String sendDeviceRecordCommand(FromDevice from, ToDevice to, DeviceRecord record) {
         return send("MESSAGE", from, to, record);
     }
 
     public static String sendDeviceRecordCommand(FromDevice from, ToDevice to, List<DeviceRecord.RecordItem> items) {
         return send("MESSAGE", from, to, items);
+    }
+
+    /**
+     * GB28181-2022 附录 M 多响应消息传输：把超大录像查询响应分批发送。
+     *
+     * <p>每批响应携带相同 SN（与原 RecordInfo 查询请求 SN 一致）和总数 sumNum，但只携带 batchSize 条 recordItem。
+     * 0 条时返回 sumNum=0 且不携带 recordList。响应条数超过 10000 时建议改用 TCP。
+     */
+    public static String sendDeviceRecordCommandBatched(FromDevice from, ToDevice to,
+                                                        DeviceRecord fullRecord, int batchSize) {
+        if (batchSize < 1 || batchSize > 10_000) {
+            throw new IllegalArgumentException("batchSize 必须在 [1, 10000] 范围内：" + batchSize);
+        }
+        List<DeviceRecord.RecordItem> all = fullRecord.getRecordList();
+        int total = all == null ? 0 : all.size();
+        if (total == 0) {
+            DeviceRecord empty = cloneRecordShell(fullRecord);
+            empty.setSumNum(0);
+            empty.setRecordList(null);
+            return send("MESSAGE", from, to, empty);
+        }
+        String firstCallId = null;
+        for (int offset = 0; offset < total; offset += batchSize) {
+            int end = Math.min(offset + batchSize, total);
+            DeviceRecord batch = cloneRecordShell(fullRecord);
+            batch.setSumNum(total);
+            batch.setRecordList(all.subList(offset, end));
+            String callId = send("MESSAGE", from, to, batch);
+            if (firstCallId == null) {
+                firstCallId = callId;
+            }
+        }
+        return firstCallId;
+    }
+
+    private static DeviceRecord cloneRecordShell(DeviceRecord src) {
+        return new DeviceRecord(src.getCmdType(), src.getSn(), src.getDeviceId());
     }
 
     public static String sendDeviceConfigCommand(FromDevice from, ToDevice to, DeviceConfigResponse response) {

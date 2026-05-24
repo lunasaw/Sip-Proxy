@@ -17,8 +17,15 @@ import io.github.lunasaw.gb28181.common.entity.control.DeviceControlTeleBoot;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceUpgradeControl;
 import io.github.lunasaw.gb28181.common.entity.control.SnapShotConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
@@ -330,17 +337,31 @@ public class ClientListenerAdapter {
 
     private record ConfigDispatchCtx(String userId, DeviceControlBase cfg) {}
 
-    private static final Map<Class<?>, BiConsumer<ConfigListener, ConfigDispatchCtx>> CONFIG_DISPATCH = Map.of(
-            SnapShotConfig.class,
-            (l, c) -> l.onSnapShotConfig(c.userId, (SnapShotConfig) c.cfg),
-            OsdConfig.class,
-            (l, c) -> l.onOsdConfig(c.userId, (OsdConfig) c.cfg),
-            AlarmReportConfig.class,
-            (l, c) -> l.onAlarmReportConfig(c.userId, (AlarmReportConfig) c.cfg),
-            VideoAlarmRecordConfig.class,
-            (l, c) -> l.onVideoAlarmRecordConfig(c.userId, (VideoAlarmRecordConfig) c.cfg),
-            DeviceConfigControl.class,
-            (l, c) -> l.onBasicParamConfig(c.userId, (DeviceConfigControl) c.cfg)
+    private static final Map<Class<?>, BiConsumer<ConfigListener, ConfigDispatchCtx>> CONFIG_DISPATCH = Map.ofEntries(
+            Map.entry(DeviceConfigControl.class,
+                    (l, c) -> l.onBasicParamConfig(c.userId, (DeviceConfigControl) c.cfg)),
+            Map.entry(VideoParamOptConfig.class,
+                    (l, c) -> l.onVideoParamOptConfig(c.userId, (VideoParamOptConfig) c.cfg)),
+            Map.entry(SVACEncodeConfig.class,
+                    (l, c) -> l.onSvacEncodeConfig(c.userId, (SVACEncodeConfig) c.cfg)),
+            Map.entry(SVACDecodeConfig.class,
+                    (l, c) -> l.onSvacDecodeConfig(c.userId, (SVACDecodeConfig) c.cfg)),
+            Map.entry(VideoParamAttributeConfig.class,
+                    (l, c) -> l.onVideoParamAttributeConfig(c.userId, (VideoParamAttributeConfig) c.cfg)),
+            Map.entry(VideoRecordPlanConfig.class,
+                    (l, c) -> l.onVideoRecordPlanConfig(c.userId, (VideoRecordPlanConfig) c.cfg)),
+            Map.entry(VideoAlarmRecordConfig.class,
+                    (l, c) -> l.onVideoAlarmRecordConfig(c.userId, (VideoAlarmRecordConfig) c.cfg)),
+            Map.entry(PictureMaskConfig.class,
+                    (l, c) -> l.onPictureMaskConfig(c.userId, (PictureMaskConfig) c.cfg)),
+            Map.entry(FrameMirrorConfig.class,
+                    (l, c) -> l.onFrameMirrorConfig(c.userId, (FrameMirrorConfig) c.cfg)),
+            Map.entry(AlarmReportConfig.class,
+                    (l, c) -> l.onAlarmReportConfig(c.userId, (AlarmReportConfig) c.cfg)),
+            Map.entry(OsdConfig.class,
+                    (l, c) -> l.onOsdConfig(c.userId, (OsdConfig) c.cfg)),
+            Map.entry(SnapShotConfig.class,
+                    (l, c) -> l.onSnapShotConfig(c.userId, (SnapShotConfig) c.cfg))
     );
 
     @EventListener
@@ -384,6 +405,8 @@ public class ClientListenerAdapter {
                 l.onAlarmSubscribe(event.getSipId(), event.getExpires(), aq);
             } else if (body instanceof DeviceMobileQuery mq) {
                 l.onMobilePositionSubscribe(event.getSipId(), event.getExpires(), mq);
+            } else if (body instanceof PTZPositionQuery pq) {
+                l.onPtzPositionSubscribe(event.getSipId(), event.getExpires(), pq);
             } else {
                 log.debug("未识别的订阅 body: {}", body == null ? "null" : body.getClass().getSimpleName());
             }

@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.client.api;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceMobileQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
+import io.github.lunasaw.gb28181.common.entity.query.PTZPositionQuery;
 
 /**
  * 平台订阅监听器（method=SUBSCRIBE，client 角色业务方实现）。
@@ -25,4 +26,8 @@ public interface SubscribeListener {
 
     /** 平台移动位置订阅（cmdType=MobilePosition，body=DeviceMobileQuery）。 */
     default void onMobilePositionSubscribe(String platformId, Integer expires, DeviceMobileQuery query) {}
+
+    /** GB28181-2022 §9.11.1.2 / §A.2.4.13 PTZ 精准位置变化事件订阅（cmdType=PTZPosition，body=PTZPositionQuery）。 */
+    default void onPtzPositionSubscribe(String platformId, Integer expires, PTZPositionQuery query) {}
 }
+
