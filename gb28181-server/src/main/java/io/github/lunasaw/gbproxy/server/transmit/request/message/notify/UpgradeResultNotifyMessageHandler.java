@@ -1,8 +1,9 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerNotifyEvent;
+
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.notify.UpgradeResultNotify;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceUpgradeResultEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
@@ -57,7 +58,7 @@ public class UpgradeResultNotifyMessageHandler extends MessageServerHandlerAbstr
             return;
         }
 
-        publisher.publishEvent(new DeviceUpgradeResultEvent(this, notify.getDeviceId(), notify));
+        publisher.publishEvent(new ServerNotifyEvent(this, notify.getDeviceId(), notify));
     }
 
     @Override

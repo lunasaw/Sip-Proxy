@@ -1,8 +1,9 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.response;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
+
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceConfigEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
@@ -50,7 +51,7 @@ public class DeviceConfigMessageServerHandler extends MessageServerHandlerAbstra
         DeviceConfigResponse deviceConfigResponse = parseXml(DeviceConfigResponse.class);
 
 
-        publisher.publishEvent(new DeviceConfigEvent(this, userId, deviceConfigResponse.getSn(), deviceConfigResponse));
+        publisher.publishEvent(new ServerQueryResponseEvent(this, userId, deviceConfigResponse.getSn(), deviceConfigResponse));
     }
 
 

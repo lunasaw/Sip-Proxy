@@ -2,10 +2,8 @@ package io.github.lunasaw.gbproxy.server.transmit.response.invite;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceInviteFailureEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceInviteOkEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceInviteTryingEvent;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.gbproxy.server.transmit.response.ServerAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
@@ -70,14 +68,14 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
             String deviceId = SipUtils.getUserIdFromToHeader(response);
 
             if (statusCode == Response.TRYING) {
-                publisher.publishEvent(new DeviceInviteTryingEvent(this, deviceId, callId));
+                publisher.publishEvent(ServerSessionEvent.inviteTrying(this, deviceId, callId));
                 log.debug("处理INVITE Trying响应：callId = {}", callId);
             } else if (statusCode == Response.OK) {
                 sendAck((ResponseEventExt) evt, callId);
-                publisher.publishEvent(new DeviceInviteOkEvent(this, deviceId, callId));
+                publisher.publishEvent(ServerSessionEvent.inviteOk(this, deviceId, callId));
                 log.info("处理INVITE OK响应：callId = {}", callId);
             } else {
-                publisher.publishEvent(new DeviceInviteFailureEvent(this, deviceId, callId, statusCode));
+                publisher.publishEvent(ServerSessionEvent.inviteFailure(this, deviceId, callId, statusCode));
                 log.warn("处理INVITE失败响应：callId = {}, statusCode = {}", callId, statusCode);
             }
         } catch (Exception e) {

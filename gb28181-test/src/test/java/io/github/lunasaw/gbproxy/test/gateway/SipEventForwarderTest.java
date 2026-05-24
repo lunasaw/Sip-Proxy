@@ -1,17 +1,18 @@
 package io.github.lunasaw.gbproxy.test.gateway;
 
-import io.github.lunasaw.gbproxy.server.transmit.event.ServerInviteEvent;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * SipEventForwarder 单元测试：UDP 重传场景下同一 callId 的 ServerInviteEvent
+ * SipEventForwarder 单元测试：UDP 重传场景下同一 callId 的 server INVITE 事件
  * 必须只触发一次业务推送，且 InviteContextStore 写入幂等。
  */
 class SipEventForwarderTest {
@@ -39,30 +40,21 @@ class SipEventForwarderTest {
 
     @Test
     void serverInvite_idempotent_perCallId() {
-        ServerInviteEvent event = new ServerInviteEvent(this,
-                "call-1", "deviceA", "deviceB",
-                null, "call-1_tag_1");
+        forwarder.onServerInvite("call-1", "deviceA", "deviceB", null, "call-1_tag_1");
+        forwarder.onServerInvite("call-1", "deviceA", "deviceB", null, "call-1_tag_1");
+        forwarder.onServerInvite("call-1", "deviceA", "deviceB", null, "call-1_tag_1");
 
-        forwarder.onServerInvite(event);
-        forwarder.onServerInvite(event);
-        forwarder.onServerInvite(event);
-
-        verify(notifier, times(1)).inviteIncoming(event);
+        verify(notifier, times(1)).inviteIncoming(eq("call-1"), eq("deviceA"), eq("deviceB"), any(), eq("call-1_tag_1"));
         assertThat(store.find("call-1")).isEqualTo("node-A:call-1_tag_1");
     }
 
     @Test
     void differentCallIds_routedIndependently() {
-        ServerInviteEvent e1 = new ServerInviteEvent(this,
-                "call-A", "d1", "d2", null, "call-A_t_1");
-        ServerInviteEvent e2 = new ServerInviteEvent(this,
-                "call-B", "d1", "d3", null, "call-B_t_1");
+        forwarder.onServerInvite("call-A", "d1", "d2", null, "call-A_t_1");
+        forwarder.onServerInvite("call-B", "d1", "d3", null, "call-B_t_1");
 
-        forwarder.onServerInvite(e1);
-        forwarder.onServerInvite(e2);
-
-        verify(notifier, times(1)).inviteIncoming(e1);
-        verify(notifier, times(1)).inviteIncoming(e2);
+        verify(notifier, times(1)).inviteIncoming(eq("call-A"), eq("d1"), eq("d2"), any(), eq("call-A_t_1"));
+        verify(notifier, times(1)).inviteIncoming(eq("call-B"), eq("d1"), eq("d3"), any(), eq("call-B_t_1"));
         assertThat(store.find("call-A")).startsWith("node-A:");
         assertThat(store.find("call-B")).startsWith("node-A:");
     }

@@ -1,7 +1,8 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.response;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
+
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRecordEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
@@ -45,7 +46,7 @@ public class RecordInfoMessageHandler extends MessageServerHandlerAbstract {
         String userId = deviceSession.getUserId();
 
         DeviceRecord deviceRecord = parseXml(DeviceRecord.class);
-        publisher.publishEvent(new DeviceRecordEvent(this, userId, deviceRecord.getSn(), deviceRecord));
+        publisher.publishEvent(new ServerQueryResponseEvent(this, userId, deviceRecord.getSn(), deviceRecord));
     }
 
     @Override

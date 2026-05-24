@@ -4,7 +4,6 @@ import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceCruiseTrackEvent;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
 import io.github.lunasaw.gbproxy.test.handler.TestClientImpl;
 import io.github.lunasaw.gbproxy.test.handler.TestClientRegisterHandler;
@@ -69,8 +68,8 @@ class CruiseTrackFlowTest {
         assertThat(testClient.getLastCruiseTrackListQuery()).isNotNull();
 
         assertThat(serverLatch.await(5, TimeUnit.SECONDS)).as("服务端应收到巡航轨迹列表应答").isTrue();
-        assertThat(eventHandler.getLastCruiseTrack().getType()).isEqualTo(DeviceCruiseTrackEvent.Type.LIST);
-        CruiseTrackListResponse list = eventHandler.getLastCruiseTrack().getListResponse();
+        CruiseTrackListResponse list = eventHandler.getLastCruiseTrackList();
+        assertThat(list).isNotNull();
         assertThat(list.getSumNum()).isEqualTo(2);
         assertThat(list.getCruiseTrackList().getTracks()).hasSize(2);
         assertThat(list.getCruiseTrackList().getTracks().get(0).getName()).isEqualTo("Track-A");
@@ -89,8 +88,8 @@ class CruiseTrackFlowTest {
         assertThat(testClient.getLastCruiseTrackQuery().getNumber()).isEqualTo(0);
 
         assertThat(serverLatch.await(5, TimeUnit.SECONDS)).as("服务端应收到巡航轨迹应答").isTrue();
-        assertThat(eventHandler.getLastCruiseTrack().getType()).isEqualTo(DeviceCruiseTrackEvent.Type.SINGLE);
-        CruiseTrackResponse single = eventHandler.getLastCruiseTrack().getTrackResponse();
+        CruiseTrackResponse single = eventHandler.getLastCruiseTrack();
+        assertThat(single).isNotNull();
         assertThat(single.getNumber()).isEqualTo(0);
         assertThat(single.getCruisePointList().getPoints()).hasSize(2);
     }

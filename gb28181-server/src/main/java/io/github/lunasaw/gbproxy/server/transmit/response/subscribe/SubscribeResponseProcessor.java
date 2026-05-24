@@ -4,7 +4,8 @@ import javax.sip.ResponseEvent;
 import javax.sip.message.Response;
 
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceSubscribeResponseEvent;
+import io.github.lunasaw.gbproxy.server.api.dto.DeviceSubscribeResponse;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
 import io.github.lunasaw.gbproxy.server.transmit.response.ServerAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -40,7 +41,7 @@ public class SubscribeResponseProcessor extends ServerAbstractSipResponseProcess
             }
 
             String deviceId = SipUtils.getUserIdFromFromHeader(response);
-            publisher.publishEvent(new DeviceSubscribeResponseEvent(this, deviceId, callId, statusCode));
+            publisher.publishEvent(new ServerQueryResponseEvent(this, deviceId, null, new DeviceSubscribeResponse(callId, statusCode)));
 
             if (statusCode == Response.OK) {
                 log.info("处理SUBSCRIBE成功响应：callId = {}", callId);

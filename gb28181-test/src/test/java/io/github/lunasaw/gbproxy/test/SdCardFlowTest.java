@@ -84,7 +84,7 @@ class SdCardFlowTest {
 
         boolean serverCompleted = serverLatch.await(5, TimeUnit.SECONDS);
         assertThat(serverCompleted).as("服务端应在5秒内收到 SDCardStatus 应答").isTrue();
-        SDCardStatusResponse response = eventHandler.getLastSdCardStatus().getResponse();
+        SDCardStatusResponse response = eventHandler.getLastSdCardStatus();
         assertThat(response).isNotNull();
         assertThat(response.getSumNum()).isEqualTo(1);
         assertThat(response.getSdCardStatusInfo().getItems()).hasSize(1);

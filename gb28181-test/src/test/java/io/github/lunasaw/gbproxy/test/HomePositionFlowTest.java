@@ -87,7 +87,7 @@ class HomePositionFlowTest {
 
         boolean serverCompleted = serverLatch.await(5, TimeUnit.SECONDS);
         assertThat(serverCompleted).as("服务端应在5秒内收到看守位应答").isTrue();
-        HomePositionResponse response = eventHandler.getLastHomePosition().getResponse();
+        HomePositionResponse response = eventHandler.getLastHomePosition();
         assertThat(response).isNotNull();
         assertThat(response.getHomePosition().getEnabled()).isEqualTo(1);
         assertThat(response.getHomePosition().getResetTime()).isEqualTo(60);

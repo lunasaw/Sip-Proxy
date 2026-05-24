@@ -1,8 +1,9 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.notify.catalog;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
+
 import javax.sip.RequestEvent;
 
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceNotifyUpdateEvent;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import org.springframework.context.ApplicationEventPublisher;
@@ -45,7 +46,7 @@ public class CatalogNotifyHandler extends NotifyServerHandlerAbstract {
 
         DeviceOtherUpdateNotify deviceOtherUpdateNotify = parseXml(DeviceOtherUpdateNotify.class);
 
-        publisher.publishEvent(new DeviceNotifyUpdateEvent(this, userId, deviceOtherUpdateNotify));
+        publisher.publishEvent(new ServerQueryResponseEvent(this, userId, null, deviceOtherUpdateNotify));
     }
 
     @Override

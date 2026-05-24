@@ -63,9 +63,7 @@ class InvitePlayFlowTest {
         boolean completed = latch.await(5, TimeUnit.SECONDS);
 
         assertThat(completed).as("点播 INVITE 应在5秒内收到 200 OK").isTrue();
-        assertThat(eventHandler.getLastInviteOk()).isNotNull();
-        assertThat(eventHandler.getLastInviteOk().getDeviceId()).isEqualTo(clientId);
-        assertThat(eventHandler.getLastInviteOk().getCallId()).isNotBlank();
+        assertThat(eventHandler.getLastInviteOkCallId()).isNotBlank();
     }
 
     @Test
@@ -76,7 +74,7 @@ class InvitePlayFlowTest {
         boolean invited = inviteLatch.await(5, TimeUnit.SECONDS);
         assertThat(invited).as("点播建立应在5秒内完成").isTrue();
 
-        String callId = eventHandler.getLastInviteOk().getCallId();
+        String callId = eventHandler.getLastInviteOkCallId();
         commandSender.deviceBye(clientId, callId);
         Thread.sleep(500);
         // BYE 发送成功即可，无需等待事件（BYE 是单向的）

@@ -1,7 +1,8 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerNotifyEvent;
+
 import io.github.lunasaw.gb28181.common.entity.notify.MediaStatusNotify;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceMediaStatusEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
@@ -53,7 +54,7 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
 
         MediaStatusNotify mediaStatusNotify = parseXml(MediaStatusNotify.class);
 
-        publisher.publishEvent(new DeviceMediaStatusEvent(this, mediaStatusNotify.getDeviceId(), mediaStatusNotify));
+        publisher.publishEvent(new ServerNotifyEvent(this, mediaStatusNotify.getDeviceId(), mediaStatusNotify));
     }
 
     @Override

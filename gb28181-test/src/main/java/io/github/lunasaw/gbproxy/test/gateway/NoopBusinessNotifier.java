@@ -1,8 +1,8 @@
 package io.github.lunasaw.gbproxy.test.gateway;
 
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceAlarmEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRegisterEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.ServerInviteEvent;
+import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
+import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.RegisterInfo;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -14,18 +14,18 @@ import lombok.extern.slf4j.Slf4j;
 public class NoopBusinessNotifier implements BusinessNotifier {
 
     @Override
-    public void deviceOnline(DeviceRegisterEvent event) {
-        log.info("[business] device online: {}", event.getDeviceId());
+    public void deviceOnline(String deviceId, RegisterInfo registerInfo) {
+        log.info("[business] device online: {}", deviceId);
     }
 
     @Override
-    public void inviteIncoming(ServerInviteEvent event) {
-        log.info("[business] invite incoming: callId={}, from={}, to={}",
-                event.getCallId(), event.getFromUserId(), event.getToUserId());
+    public void inviteIncoming(String callId, String fromUserId, String toUserId,
+                               GbSessionDescription sessionDescription, String transactionContextKey) {
+        log.info("[business] invite incoming: callId={}, from={}, to={}", callId, fromUserId, toUserId);
     }
 
     @Override
-    public void alarm(DeviceAlarmEvent event) {
-        log.warn("[business] alarm: deviceId={}", event.getDeviceId());
+    public void alarm(String deviceId, DeviceAlarmNotify notify) {
+        log.warn("[business] alarm: deviceId={}", deviceId);
     }
 }

@@ -23,10 +23,7 @@ import com.luna.common.date.DateUtils;
 import gov.nist.javax.sip.header.SIPDateHeader;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.GbSipDate;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceOfflineEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceOnlineEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRegisterChallengeEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRegisterEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerLifecycleEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.ServerAbstractSipRequestProcessor;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
@@ -80,7 +77,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
             SipTransaction sipTransaction = SipUtils.getSipTransaction(request);
 
             if (!isRegister) {
-                publisher.publishEvent(new DeviceOfflineEvent(this, userId, registerInfo, sipTransaction));
+                publisher.publishEvent(ServerLifecycleEvent.offline(this, userId, registerInfo, sipTransaction));
                 return;
             }
 
@@ -106,8 +103,8 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
 
         List<Header> okHeaderList = getRegisterOkHeaderList(request);
         ResponseCmd.response(Response.OK).phrase("OK").requestEvent(evt).headers(okHeaderList).send();
-        publisher.publishEvent(new DeviceRegisterEvent(this, userId, registerInfo));
-        publisher.publishEvent(new DeviceOnlineEvent(this, userId, sipTransaction));
+        publisher.publishEvent(ServerLifecycleEvent.register(this, userId, registerInfo));
+        publisher.publishEvent(ServerLifecycleEvent.online(this, userId, sipTransaction));
     }
 
     private void sendAuthChallenge(RequestEvent evt, String userId) {
@@ -118,7 +115,7 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
                             "3402000000", nonce, DigestServerAuthenticationHelper.DEFAULT_ALGORITHM);
 
             ResponseCmd.response(Response.UNAUTHORIZED).phrase("Unauthorized").requestEvent(evt).header(wwwAuthenticateHeader).send();
-            publisher.publishEvent(new DeviceRegisterChallengeEvent(this, userId));
+            publisher.publishEvent(ServerLifecycleEvent.challenge(this, userId));
         } catch (Exception e) {
             log.error("发送认证挑战失败：用户ID = {}", userId, e);
         }

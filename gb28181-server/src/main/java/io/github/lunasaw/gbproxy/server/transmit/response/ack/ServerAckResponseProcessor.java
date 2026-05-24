@@ -1,7 +1,7 @@
 package io.github.lunasaw.gbproxy.server.transmit.response.ack;
 
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceAckEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.gbproxy.server.transmit.response.ServerAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -37,7 +37,7 @@ public class ServerAckResponseProcessor extends ServerAbstractSipResponseProcess
 
             if (callId != null) {
                 String deviceId = SipUtils.getUserIdFromFromHeader(response);
-                publisher.publishEvent(new DeviceAckEvent(this, deviceId, callId, statusCode));
+                publisher.publishEvent(ServerSessionEvent.ack(this, deviceId, callId, statusCode));
                 log.debug("处理ACK响应：callId = {}, statusCode = {}", callId, statusCode);
             } else {
                 log.warn("ACK响应处理失败：callId为空");

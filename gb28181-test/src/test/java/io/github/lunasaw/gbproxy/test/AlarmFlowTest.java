@@ -71,6 +71,6 @@ class AlarmFlowTest {
         assertThat(completed).as("报警通知应在5秒内被服务端接收").isTrue();
         assertThat(eventHandler.getLastAlarm()).isNotNull();
         assertThat(eventHandler.getLastAlarm().getDeviceId()).isEqualTo(clientId);
-        assertThat(eventHandler.getLastAlarm().getNotify().alarmMethod).isEqualTo("1");
+        assertThat(eventHandler.getLastAlarm().alarmMethod).isEqualTo("1");
     }
 }

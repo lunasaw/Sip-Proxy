@@ -73,8 +73,8 @@ class AlarmSubscribeFlowTest {
 
         assertThat(latch.await(5, TimeUnit.SECONDS)).as("报警通知应在5秒内被服务端接收").isTrue();
         assertThat(eventHandler.getLastAlarm()).isNotNull();
-        assertThat(eventHandler.getLastAlarm().getNotify().getAlarmPriority()).isEqualTo("1");
-        assertThat(eventHandler.getLastAlarm().getNotify().getAlarmMethod()).isEqualTo("2");
+        assertThat(eventHandler.getLastAlarm().getAlarmPriority()).isEqualTo("1");
+        assertThat(eventHandler.getLastAlarm().getAlarmMethod()).isEqualTo("2");
     }
 
     @Test

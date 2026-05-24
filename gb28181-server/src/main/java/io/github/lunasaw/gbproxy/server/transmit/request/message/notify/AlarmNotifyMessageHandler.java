@@ -1,7 +1,8 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerNotifyEvent;
+
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceAlarmEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
@@ -53,7 +54,7 @@ public class AlarmNotifyMessageHandler extends MessageServerHandlerAbstract {
 
         DeviceAlarmNotify deviceAlarmNotify = parseXml(DeviceAlarmNotify.class);
 
-        publisher.publishEvent(new DeviceAlarmEvent(this, deviceAlarmNotify.deviceId, deviceAlarmNotify));
+        publisher.publishEvent(new ServerNotifyEvent(this, deviceAlarmNotify.deviceId, deviceAlarmNotify));
     }
 
     @Override

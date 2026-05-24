@@ -58,7 +58,7 @@ class DeviceQueryFlowTest {
         assertThat(completed).as("目录查询应在5秒内收到响应").isTrue();
         assertThat(eventHandler.getLastCatalog()).isNotNull();
         assertThat(eventHandler.getLastCatalog().getDeviceId()).isEqualTo(clientId);
-        assertThat(eventHandler.getLastCatalog().getCatalog().getDeviceItemList()).isNotEmpty();
+        assertThat(eventHandler.getLastCatalog().getDeviceItemList()).isNotEmpty();
     }
 
     @Test
@@ -73,7 +73,7 @@ class DeviceQueryFlowTest {
         assertThat(completed).as("设备信息查询应在5秒内收到响应").isTrue();
         assertThat(eventHandler.getLastInfo()).isNotNull();
         assertThat(eventHandler.getLastInfo().getDeviceId()).isEqualTo(clientId);
-        assertThat(eventHandler.getLastInfo().getInfo().getDeviceName()).isNotBlank();
+        assertThat(eventHandler.getLastInfo().getDeviceName()).isNotBlank();
     }
 
     @Test
@@ -88,6 +88,6 @@ class DeviceQueryFlowTest {
         assertThat(completed).as("设备状态查询应在5秒内收到响应").isTrue();
         assertThat(eventHandler.getLastStatus()).isNotNull();
         assertThat(eventHandler.getLastStatus().getDeviceId()).isEqualTo(clientId);
-        assertThat(eventHandler.getLastStatus().getStatus().getOnline()).isEqualTo("ONLINE");
+        assertThat(eventHandler.getLastStatus().getOnline()).isEqualTo("ONLINE");
     }
 }

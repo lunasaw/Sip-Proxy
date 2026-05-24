@@ -89,7 +89,7 @@ class PtzPositionFlowTest {
 
         boolean serverCompleted = serverLatch.await(5, TimeUnit.SECONDS);
         assertThat(serverCompleted).as("服务端应在5秒内收到 PTZPosition 应答").isTrue();
-        PTZPositionResponse response = eventHandler.getLastPtzPosition().getResponse();
+        PTZPositionResponse response = eventHandler.getLastPtzPosition();
         assertThat(response).isNotNull();
         assertThat(response.getPan()).isEqualTo(180.0);
         assertThat(response.getTilt()).isEqualTo(30.0);

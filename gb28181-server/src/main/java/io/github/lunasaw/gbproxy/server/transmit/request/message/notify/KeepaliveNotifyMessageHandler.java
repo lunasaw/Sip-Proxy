@@ -1,10 +1,10 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
-import gov.nist.javax.sip.message.SIPRequest;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerLifecycleEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerNotifyEvent;
+
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceKeepLiveNotify;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceKeepaliveEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRemoteAddressEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
@@ -57,10 +57,10 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
             return;
         }
         DeviceKeepLiveNotify deviceKeepLiveNotify = parseXml(DeviceKeepLiveNotify.class);
-        publisher.publishEvent(new DeviceKeepaliveEvent(this, deviceKeepLiveNotify.getDeviceId(), deviceKeepLiveNotify));
+        publisher.publishEvent(new ServerNotifyEvent(this, deviceKeepLiveNotify.getDeviceId(), deviceKeepLiveNotify));
 
         RemoteAddressInfo remoteAddressInfo = SipUtils.getRemoteAddressFromRequest((SIPRequest) event.getRequest());
-        publisher.publishEvent(new DeviceRemoteAddressEvent(this, userId, remoteAddressInfo));
+        publisher.publishEvent(ServerLifecycleEvent.remoteAddressChanged(this, userId, remoteAddressInfo));
 
         // 发送200 OK响应
         responseAck(event);

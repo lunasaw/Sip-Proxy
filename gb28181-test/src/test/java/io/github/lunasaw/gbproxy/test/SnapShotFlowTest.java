@@ -90,7 +90,7 @@ class SnapShotFlowTest {
 
         boolean completed = latch.await(5, TimeUnit.SECONDS);
         assertThat(completed).as("抓拍传输完成通知应在5秒内被服务端接收").isTrue();
-        UploadSnapShotFinishedNotify notify = eventHandler.getLastSnapShotFinished().getNotify();
+        UploadSnapShotFinishedNotify notify = eventHandler.getLastSnapShotFinished();
         assertThat(notify).isNotNull();
         assertThat(notify.getSessionId()).isEqualTo(SESSION_ID);
         assertThat(notify.getSnapShotFileIds()).containsExactly("snap-001", "snap-002");

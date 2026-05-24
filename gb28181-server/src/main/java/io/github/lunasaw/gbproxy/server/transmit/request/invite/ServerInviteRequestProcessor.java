@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
 import io.github.lunasaw.gb28181.common.entity.utils.GbSdpUtils;
-import io.github.lunasaw.gbproxy.server.transmit.event.ServerInviteEvent;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry;
@@ -71,7 +71,7 @@ public class ServerInviteRequestProcessor extends SipRequestProcessorAbstract {
             if (rawContent != null) {
                 sessionDescription = GbSdpUtils.parseGbSdp(new String(rawContent));
             }
-            publisher.publishEvent(new ServerInviteEvent(this, callId, fromUserId, toUserId,
+            publisher.publishEvent(ServerSessionEvent.serverInvite(this, callId, fromUserId, toUserId,
                     sessionDescription, ctx.getContextKey()));
         } catch (Exception e) {
             log.error("处理INVITE请求异常: evt = {}", evt, e);

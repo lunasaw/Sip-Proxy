@@ -1,8 +1,9 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.response;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
+
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.response.HomePositionResponse;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceHomePositionEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
@@ -51,7 +52,7 @@ public class HomePositionMessageHandler extends MessageServerHandlerAbstract {
             log.warn("解析看守位信息查询应答失败: deviceId={}", userId);
             return;
         }
-        publisher.publishEvent(new DeviceHomePositionEvent(this, userId, response));
+        publisher.publishEvent(new ServerQueryResponseEvent(this, userId, null, response));
     }
 
     @Override

@@ -88,7 +88,7 @@ class DeviceUpgradeFlowTest {
 
         boolean completed = latch.await(5, TimeUnit.SECONDS);
         assertThat(completed).as("升级结果通知应在5秒内被服务端接收").isTrue();
-        UpgradeResultNotify notify = eventHandler.getLastUpgradeResult().getNotify();
+        UpgradeResultNotify notify = eventHandler.getLastUpgradeResult();
         assertThat(notify).isNotNull();
         assertThat(notify.getSessionId()).isEqualTo(SESSION_ID);
         assertThat(notify.getUpgradeResult()).isEqualTo("OK");

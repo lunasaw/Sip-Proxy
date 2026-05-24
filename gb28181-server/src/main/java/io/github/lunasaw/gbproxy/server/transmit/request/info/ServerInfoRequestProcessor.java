@@ -8,8 +8,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceInfoErrorEvent;
-import io.github.lunasaw.gbproxy.server.transmit.event.DeviceInfoRequestEvent;
+import io.github.lunasaw.gbproxy.server.api.dto.DeviceInfoError;
+import io.github.lunasaw.gbproxy.server.api.dto.DeviceInfoRequest;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.ServerAbstractSipRequestProcessor;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.utils.SipUtils;
@@ -37,10 +38,10 @@ public class ServerInfoRequestProcessor extends ServerAbstractSipRequestProcesso
         try {
             String content = request.getRawContent() != null ? new String(request.getRawContent()) : "";
             ResponseCmd.sendResponse(Response.OK, evt);
-            publisher.publishEvent(new DeviceInfoRequestEvent(this, userId, content));
+            publisher.publishEvent(new ServerQueryResponseEvent(this, userId, null, new DeviceInfoRequest(content)));
         } catch (Exception e) {
             log.error("处理INFO请求异常: userId={}", userId, e);
-            publisher.publishEvent(new DeviceInfoErrorEvent(this, userId, e.getMessage()));
+            publisher.publishEvent(new ServerQueryResponseEvent(this, userId, null, new DeviceInfoError(e.getMessage())));
         }
     }
 }
