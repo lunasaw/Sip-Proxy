@@ -1,18 +1,19 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.invite;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
-import javax.sip.header.ContentTypeHeader;
 import javax.sip.message.Response;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
 import io.github.lunasaw.gb28181.common.entity.utils.GbSdpUtils;
-import io.github.lunasaw.sip.common.enums.ContentTypeEnum;
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientInviteEvent;
+import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
+import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry;
 import io.github.lunasaw.sip.common.transmit.event.request.SipRequestProcessorAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -20,8 +21,10 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * SIP命令类型： 收到Invite请求
- * 客户端发起Invite请求, Invite Request消息实现，请求视频指令
+ * 客户端 INVITE 请求处理器：协议层立即回 100 Trying 并发布 {@link ClientInviteEvent}，
+ * 业务方异步监听事件后通过 {@code transactionContextKey} 取回 RequestEvent 完成回包。
+ *
+ * <p>UDP 重传场景下事件可能被重复 publish，业务方按 callId 自行幂等。
  *
  * @author luna
  */
@@ -31,48 +34,46 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InviteRequestProcessor extends SipRequestProcessorAbstract {
 
-    public static final String    METHOD = "INVITE";
+    public static final String METHOD = "INVITE";
 
-    private String                method = METHOD;
+    private String method = METHOD;
 
     @Autowired
-    @Lazy
-    private InviteRequestHandler inviteRequestHandler;
+    private ApplicationEventPublisher publisher;
 
-    /**
-     * 收到Invite请求 处理
-     *
-     * @param evt
-     */
+    @Autowired
+    private ClientDeviceSupplier clientDeviceSupplier;
+
     @Override
     public void process(RequestEvent evt) {
+        // 同 JVM 同时启用 client/server 时，To-Header 不匹配本端身份则跳过，避免重复处理
+        if (!clientDeviceSupplier.checkDevice(evt)) {
+            return;
+        }
         try {
             SIPRequest request = (SIPRequest) evt.getRequest();
-
-            // 协议层面处理：解析SIP消息
-            String toUserId = SipUtils.getUserIdFromFromHeader(request);
+            String fromUserId = SipUtils.getUserIdFromFromHeader(request);
             String userId = SipUtils.getUserIdFromToHeader(request);
             String callId = SipUtils.getCallId(request);
 
-            log.info("📺 客户端收到INVITE请求: callId={}, fromUserId={}, toUserId={}", callId, toUserId, userId);
+            log.info("📺 客户端收到INVITE请求: callId={}, fromUserId={}, toUserId={}", callId, fromUserId, userId);
 
-            // 解析Sdp
-            String sdpContent = new String(request.getRawContent());
-            GbSessionDescription sessionDescription = GbSdpUtils.parseGbSdp(sdpContent);
+            // 1. 立即回 100 Trying
+            ResponseCmd.sendResponse(Response.TRYING, evt);
 
-            // 调用业务处理器
-            inviteRequestHandler.inviteSession(callId, sessionDescription);
-            String content = inviteRequestHandler.getInviteResponse(userId, sessionDescription);
+            // 2. 存事务上下文供业务方异步取回
+            SipTransactionRegistry.TransactionContextInfo ctx =
+                    SipTransactionRegistry.createContext(evt, evt.getServerTransaction());
 
-            // 构建响应
-            ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_SDP.getContentTypeHeader();
-            ResponseCmd.sendResponse(Response.OK, content, contentTypeHeader, evt);
-
-            log.info("✅ 客户端INVITE请求处理完成: callId={}", callId);
-
+            // 3. 解析 SDP 并发布事件
+            GbSessionDescription sessionDescription = null;
+            byte[] rawContent = request.getRawContent();
+            if (rawContent != null) {
+                sessionDescription = GbSdpUtils.parseGbSdp(new String(rawContent));
+            }
+            publisher.publishEvent(new ClientInviteEvent(this, callId, userId, sessionDescription, ctx.getContextKey()));
         } catch (Exception e) {
-            log.error("处理INVITE请求时发生异常: evt = {}", evt, e);
-            // 发送500错误响应
+            log.error("处理INVITE请求异常: evt = {}", evt, e);
             ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, "Internal Server Error", evt);
         }
     }

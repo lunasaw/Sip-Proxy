@@ -120,4 +120,30 @@ class SipTransactionContextTest {
         String stats = SipTransactionRegistry.getContextStats();
         assertThat(stats).contains("总上下文数").contains("有效上下文数");
     }
+
+    @Test
+    void extendContext_existingKey_extendsValidity() {
+        SipTransactionRegistry.TransactionContextInfo ctx =
+                SipTransactionRegistry.createContext(requestEvent, serverTransaction);
+        String key = ctx.getContextKey();
+
+        boolean ok = SipTransactionRegistry.extendContext(key, 90_000);
+
+        assertThat(ok).isTrue();
+        assertThat(ctx.getValidUntilOverride()).isGreaterThan(System.currentTimeMillis() + 60_000);
+    }
+
+    @Test
+    void extendContext_unknownKey_returnsFalse() {
+        assertThat(SipTransactionRegistry.extendContext("nonexistent", 60_000)).isFalse();
+    }
+
+    @Test
+    void extendContext_invalidatedContext_returnsFalse() {
+        SipTransactionRegistry.TransactionContextInfo ctx =
+                SipTransactionRegistry.createContext(requestEvent, serverTransaction);
+        ctx.invalidate();
+
+        assertThat(SipTransactionRegistry.extendContext(ctx.getContextKey(), 60_000)).isFalse();
+    }
 }

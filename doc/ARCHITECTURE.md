@@ -188,24 +188,24 @@ SIP Message
 设备 → REGISTER
   → ServerRegisterRequestProcessor
   → DigestServerAuthenticationHelper  # 401 摘要认证
-  → DefaultServerRegisterProcessorHandler
-  → ServerDeviceSupplier.checkDevice  # 业务鉴权
+  → ServerDeviceSupplier.authenticate # 业务方校验密码
   → 200 OK
+  → publish DeviceRegisterEvent / DeviceOnlineEvent
 ```
 
 ### 实时点播（INVITE）
 
 ```
-平台 → ServerCommandSender.invite(InviteRequest)
+平台 → ServerCommandSender.deviceInvitePlay
      → SipSender.doInviteRequest(fromDevice, toDevice, sdp)
      → 设备
 
 设备 → 100 Trying / 200 OK (SDP)
      → InviteResponseProcessor
-     → InviteResponseProcessorHandler
-     → 业务回调（流地址）
+     → publish DeviceInviteTryingEvent / DeviceInviteOkEvent
+     → 业务方 @EventListener 拿到 callId 与 SDP
 
-平台 → SipSender.doAckRequest
+平台 → ServerCommandSender.deviceAck（业务方收到 InviteOk 后调用）
      → 设备开始推流
 ```
 

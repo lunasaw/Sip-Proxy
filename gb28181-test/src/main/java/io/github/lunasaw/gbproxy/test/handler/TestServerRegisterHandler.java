@@ -3,33 +3,18 @@ package io.github.lunasaw.gbproxy.test.handler;
 import io.github.lunasaw.gbproxy.server.transmit.event.DeviceOfflineEvent;
 import io.github.lunasaw.gbproxy.server.transmit.event.DeviceOnlineEvent;
 import io.github.lunasaw.gbproxy.server.transmit.event.DeviceRegisterEvent;
-import io.github.lunasaw.gbproxy.server.transmit.request.register.DigestServerAuthenticationHelper;
-import io.github.lunasaw.gbproxy.server.transmit.request.register.ServerRegisterProcessorHandler;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.sip.RequestEvent;
-
 @Slf4j
-@Primary
 @Component
 @RequiredArgsConstructor
-public class TestServerRegisterHandler implements ServerRegisterProcessorHandler {
+public class TestServerRegisterHandler {
 
     private final SipBusinessConfig sessionCache;
-
-    @Value("${sip.server.password}")
-    private String serverPassword;
-
-    @Override
-    public boolean validatePassword(String userId, String password, RequestEvent evt) {
-        return DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword(evt.getRequest(), serverPassword);
-    }
 
     @EventListener
     public void onDeviceRegister(DeviceRegisterEvent event) {

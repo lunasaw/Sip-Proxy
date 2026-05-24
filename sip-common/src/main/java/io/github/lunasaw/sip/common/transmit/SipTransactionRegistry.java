@@ -53,6 +53,7 @@ public class SipTransactionRegistry {
         private final long createTime;
         private volatile TransactionState lastKnownState;
         private volatile boolean isValid = true;
+        private volatile long validUntilOverride = -1L;
 
         public TransactionContextInfo(RequestEvent requestEvent, ServerTransaction serverTransaction) {
             this.originalEvent = requestEvent;
@@ -84,17 +85,30 @@ public class SipTransactionRegistry {
                     log.debug("事务状态无效: contextKey={}, state={}", contextKey, currentState);
                     return false;
                 }
+            }
 
-                // 检查事务超时（SIP标准32秒）
-                long age = System.currentTimeMillis() - createTime;
-                if (age > 32000) {
-                    this.isValid = false;
-                    log.debug("事务超时: contextKey={}, age={}ms", contextKey, age);
-                    return false;
-                }
+            // 检查事务超时（默认 SIP 标准 32 秒，业务方可通过 extendValidity 续期）
+            long now = System.currentTimeMillis();
+            long deadline = (validUntilOverride > 0) ? validUntilOverride : (createTime + 32000);
+            if (now > deadline) {
+                this.isValid = false;
+                log.debug("事务超时: contextKey={}, deadline={}", contextKey, deadline);
+                return false;
             }
 
             return isValid;
+        }
+
+        /**
+         * 续期上下文有效期到当前时间之后 ttlMs 毫秒。
+         *
+         * <p>注意：JAIN-SIP 服务端事务在 Proceeding 状态没有内置 Timer C，
+         * 但 INVITE 客户端事务受 RFC 3261 Timer B 约束（默认 32s），
+         * 续期超过 30s 仅对"取回 RequestEvent 异步回包"有意义，
+         * 设备侧仍可能因 Timer B 超时而拒收 200 OK。
+         */
+        public void extendValidity(long ttlMs) {
+            this.validUntilOverride = System.currentTimeMillis() + ttlMs;
         }
 
         /**
@@ -175,6 +189,28 @@ public class SipTransactionRegistry {
                     log.warn("传递TraceId失败: {}", e.getMessage());
                 }
             }
+        }
+    }
+
+    /**
+     * 续期事务上下文有效期。
+     *
+     * @param contextKey 上下文键
+     * @param ttlMs      从当前时刻起的有效毫秒数
+     * @return true 续期成功；false 上下文不存在或已无效，无法续期
+     */
+    public static boolean extendContext(String contextKey, long ttlMs) {
+        rwLock.readLock().lock();
+        try {
+            TransactionContextInfo ctx = TRANSACTION_CONTEXTS.get(contextKey);
+            if (ctx == null || !ctx.checkAndUpdateValidity()) {
+                return false;
+            }
+            ctx.extendValidity(ttlMs);
+            log.debug("续期事务上下文: key={}, ttlMs={}", contextKey, ttlMs);
+            return true;
+        } finally {
+            rwLock.readLock().unlock();
         }
     }
 
