@@ -143,10 +143,6 @@ public class ClientCommandSender implements ApplicationContextAware {
         return send("MESSAGE", from, to, response);
     }
 
-    public static String sendConfigDownloadResponse(FromDevice from, ToDevice to, ConfigDownloadResponse response) {
-        return send("MESSAGE", from, to, response);
-    }
-
     public static String sendMediaStatusCommand(FromDevice from, ToDevice to, String notifyType) {
         MediaStatusNotify n = new MediaStatusNotify(
             CmdTypeEnum.MEDIA_STATUS.getType(), RandomStrUtil.getValidationCode(), from.getUserId());

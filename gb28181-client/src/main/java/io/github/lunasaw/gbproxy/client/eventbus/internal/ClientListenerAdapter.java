@@ -22,7 +22,6 @@ import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfi
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
-import io.github.lunasaw.gb28181.common.entity.query.ConfigDownloadQuery;
 import io.github.lunasaw.gb28181.common.entity.query.CruiseTrackListQuery;
 import io.github.lunasaw.gb28181.common.entity.query.CruiseTrackQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
@@ -35,7 +34,6 @@ import io.github.lunasaw.gb28181.common.entity.query.MobilePositionQuery;
 import io.github.lunasaw.gb28181.common.entity.query.PTZPositionQuery;
 import io.github.lunasaw.gb28181.common.entity.query.PresetQuery;
 import io.github.lunasaw.gb28181.common.entity.query.SDCardStatusQuery;
-import io.github.lunasaw.gb28181.common.entity.response.ConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
@@ -192,14 +190,6 @@ public class ClientListenerAdapter {
                     resp.setSn(dcd.getSn());
                 }
                 ClientCommandSender.sendDeviceConfigCommand(from, to, resp);
-            }
-        } else if (q instanceof ConfigDownloadQuery cdq) {
-            ConfigDownloadResponse resp = listener.onConfigDownloadQueryV2(event.getSipId(), cdq);
-            if (resp != null) {
-                if (resp.getSn() == null) {
-                    resp.setSn(cdq.getSn());
-                }
-                ClientCommandSender.sendConfigDownloadResponse(from, to, resp);
             }
         } else {
             log.debug("未识别的查询类型: {}", q.getClass().getSimpleName());

@@ -1,7 +1,6 @@
 package io.github.lunasaw.gbproxy.client.api;
 
 import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
-import io.github.lunasaw.gb28181.common.entity.query.ConfigDownloadQuery;
 import io.github.lunasaw.gb28181.common.entity.query.CruiseTrackListQuery;
 import io.github.lunasaw.gb28181.common.entity.query.CruiseTrackQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
@@ -14,7 +13,6 @@ import io.github.lunasaw.gb28181.common.entity.query.PTZPositionQuery;
 import io.github.lunasaw.gb28181.common.entity.query.PresetQuery;
 import io.github.lunasaw.gb28181.common.entity.query.SDCardStatusQuery;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
-import io.github.lunasaw.gb28181.common.entity.response.ConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
@@ -76,21 +74,8 @@ public interface QueryListener {
         return null;
     }
 
-    /**
-     * 平台配置下载查询（cmdType=ConfigDownload，旧形态：DeviceConfigDownload）。
-     * 由 {@code ConfigDownloadMessageHandler} 路径触发，返回 {@code DeviceConfigResponse}。
-     */
+    /** 平台配置下载查询（cmdType=ConfigDownload）。 */
     default DeviceConfigResponse onConfigDownloadQuery(String platformId, DeviceConfigDownload query) {
-        return null;
-    }
-
-    /**
-     * 平台配置下载查询（cmdType=ConfigDownload，新形态：ConfigDownloadQuery）。
-     * 由 {@code ConfigDownloadQueryMessageClientHandler} 路径触发，返回 {@code ConfigDownloadResponse}。
-     * 与 {@link #onConfigDownloadQuery(String, DeviceConfigDownload)} 是同一 cmdType 的两个并存
-     * 实现路径，沿用历史并行结构（pre-existing duplicate registration）。
-     */
-    default ConfigDownloadResponse onConfigDownloadQueryV2(String platformId, ConfigDownloadQuery query) {
         return null;
     }
 

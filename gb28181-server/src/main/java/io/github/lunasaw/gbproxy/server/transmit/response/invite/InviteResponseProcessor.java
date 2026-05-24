@@ -47,6 +47,9 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
     @Autowired
     private ServerDeviceSupplier serverDeviceSupplier;
 
+    @Autowired
+    private ServerCommandSender serverCommandSender;
+
     /**
      * 处理INVITE响应
      *
@@ -103,7 +106,7 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
             SipURI requestUri = SipRequestUtils.createSipUri(sdp.getOrigin().getUsername(),
                     evt.getRemoteIpAddress() + ":" + evt.getRemotePort());
 
-            ServerCommandSender.deviceAck(fromDevice, requestUri, response);
+            serverCommandSender.deviceAckBySipUri(fromDevice, requestUri, response);
             log.info("发送ACK响应：requestUri = {}, callId = {}", requestUri, callId);
         } catch (SdpParseException e) {
             log.error("ACK 处理 SDP 解析异常：callId = {}", callId, e);
