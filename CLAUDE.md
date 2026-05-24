@@ -52,11 +52,15 @@ SIP Message
 
 ### Outbound Commands
 
-- **`ClientSendCmd`** / **`ServerSendCmd`** — strategy-pattern command senders for outbound SIP messages.
+- **`ClientCommandSender`** / **`ServerCommandSender`** — strategy-pattern command senders for outbound SIP messages. `ServerCommandSender` requires `DeviceSessionCache` to look up device sessions.
+
+### Event Bus
+
+Business logic is implemented via Spring `@EventListener`. Client-side events (e.g. `ClientRegisterSuccessEvent`, `CatalogEvent`) extend `ApplicationEvent`; server-side events (e.g. `DeviceOnlineEvent`, `DeviceInfoEvent`) extend `DeviceEvent(source, deviceId)`.
 
 ### Bootstrapping
 
-Annotate your `@SpringBootApplication` class with `@EnableSipProxy` to activate auto-configuration for either client or server.
+Annotate your `@SpringBootApplication` class with `@EnableSipClient` (device side) or `@EnableSipServer` (platform side). Both import `Gb28181CommonAutoConfig` plus their respective auto-config. `@EnableSipClient` requires a `ClientDeviceSupplier` bean; `@EnableSipServer` requires `ServerDeviceSupplier` + `DeviceSessionCache`.
 
 ### Key Extension Points
 

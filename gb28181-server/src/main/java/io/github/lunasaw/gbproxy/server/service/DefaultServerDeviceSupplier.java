@@ -60,8 +60,8 @@ public class DefaultServerDeviceSupplier implements ServerDeviceSupplier {
         if (serverProperties != null) {
             this.serverFromDevice = FromDevice.getInstance(
                     serverProperties.getServerId(),
-                    serverProperties.getIp(),
-                    serverProperties.getPort()
+                    serverProperties.getEffectiveIp(),
+                    serverProperties.getEffectivePort()
             );
             log.info("服务端发送方设备初始化完成: {}", serverFromDevice.getUserId());
         } else {

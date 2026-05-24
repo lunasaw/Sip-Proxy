@@ -189,6 +189,48 @@ public class CustomMessageProcessor extends AbstractSipRequestProcessor {
 }
 ```
 
+## 水平扩容
+
+> 详细方案见 [doc/HORIZONTAL-SCALING.md](doc/HORIZONTAL-SCALING.md)
+
+### 设计约束
+
+**本地节点只保留 SIP 事务状态，业务状态必须外化。**
+
+| 状态类型 | 存储位置 | 说明 |
+|---|---|---|
+| `ServerTransaction` / `SipTransactionRegistry` | 进程内（不可外化） | SIP 协议约束，同一设备消息必须打同一节点 |
+| `DeviceSessionCache` | 业务方实现（建议 Redis） | 设备注册信息，节点间共享 |
+| `SipSubscribe` / `SubscribeHolder` | 进程内（建议改为 Redis） | 订阅状态，节点故障后需恢复 |
+
+**违反此约束会导致节点故障时业务状态丢失且无法恢复。**
+
+### 接入要求
+
+业务方接入时必须：
+
+1. **实现 `DeviceSessionCache` 接口**，使用 Redis 等共享存储，不得使用本地 Map
+2. **实现 `ServerDeviceSupplier` / `ClientDeviceSupplier`**，设备信息从共享存储读取
+3. **配置 `external-ip`**（NAT/虚拟机场景），确保 `Via`/`Contact` 头填对外可达地址
+
+```yaml
+sip:
+  server:
+    ip: 0.0.0.0           # 监听地址
+    port: 5060
+    external-ip: 1.2.3.4  # VIP 或公网地址，填入 Via/Contact（NAT 场景必填）
+    external-port: 5060
+```
+
+### 部署拓扑
+
+```
+设备 ──→ VIP (keepalived + ipvs, 源IP哈希) ──→ Node-1
+                                             └─→ Node-2
+                                                  │
+                                                Redis（共享 DeviceSessionCache）
+```
+
 ## 构建与测试
 
 ```bash

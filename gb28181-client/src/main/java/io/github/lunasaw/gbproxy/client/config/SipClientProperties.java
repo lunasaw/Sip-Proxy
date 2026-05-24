@@ -59,4 +59,24 @@ public class SipClientProperties {
      * 客户端端口
      */
     private int port = 5061;
+
+    /**
+     * 对外可达IP（NAT/端口映射场景），填入 Via/Contact 头。
+     * 不配置时 fallback 到 domain。
+     */
+    private String externalIp;
+
+    /**
+     * 对外可达端口（NAT/端口映射场景），填入 Via/Contact 头。
+     * 不配置时 fallback 到 port。
+     */
+    private int externalPort = 0;
+
+    public String getEffectiveIp() {
+        return externalIp != null && !externalIp.isBlank() ? externalIp : domain;
+    }
+
+    public int getEffectivePort() {
+        return externalPort > 0 ? externalPort : port;
+    }
 }
