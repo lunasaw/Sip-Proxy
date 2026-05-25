@@ -19,6 +19,7 @@ import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
 import io.github.lunasaw.gb28181.common.entity.response.SDCardStatusResponse;
 import io.github.lunasaw.gbproxy.server.api.ServerGb28181Adapter;
+import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 
@@ -56,8 +57,10 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Getter private volatile DeviceConfigDownloadResponse lastConfigDownload;
     @Getter private volatile PresetQueryResponse lastPresetQuery;
     @Getter private volatile DeviceOtherUpdateNotify lastCatalogNotifyUpdate;
+    @Getter private volatile RemoteAddressInfo lastRemoteAddressInfo;
 
     private volatile CountDownLatch latch;
+    private volatile CountDownLatch lifecycleLatch;
 
     public void reset(CountDownLatch latch) {
         this.latch = latch;
@@ -76,9 +79,17 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
         lastConfigDownload = null;
         lastPresetQuery = null;
         lastCatalogNotifyUpdate = null;
+        lastRemoteAddressInfo = null;
+    }
+
+    /** NAT 漂移等 lifecycle 用例独立装载 latch，避免与 notify latch 互相 countDown 干扰。 */
+    public void resetLifecycle(CountDownLatch lifecycleLatch) {
+        this.lifecycleLatch = lifecycleLatch;
+        this.lastRemoteAddressInfo = null;
     }
 
     private void signal() { if (latch != null) latch.countDown(); }
+    private void signalLifecycle() { if (lifecycleLatch != null) lifecycleLatch.countDown(); }
 
     public record InviteFailureRecord(String callId, int statusCode) {}
     public record SubscribeResponseRecord(String callId, int statusCode) {}
@@ -104,4 +115,5 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Override public void onConfigDownloadResponse(String deviceId, DeviceConfigDownloadResponse response) { lastConfigDownload = response; signal(); }
     @Override public void onPresetQueryResponse(String deviceId, PresetQueryResponse response) { lastPresetQuery = response; signal(); }
     @Override public void onNotifyUpdate(String deviceId, DeviceOtherUpdateNotify notify) { lastCatalogNotifyUpdate = notify; signal(); }
+    @Override public void onRemoteAddressChanged(String deviceId, RemoteAddressInfo remoteAddressInfo) { lastRemoteAddressInfo = remoteAddressInfo; signalLifecycle(); }
 }

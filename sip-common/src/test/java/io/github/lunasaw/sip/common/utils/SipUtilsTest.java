@@ -1,6 +1,5 @@
 package io.github.lunasaw.sip.common.utils;
 
-import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import org.junit.jupiter.api.Test;
 
 import javax.sip.header.SubjectHeader;
@@ -38,20 +37,6 @@ class SipUtilsTest {
     @Test
     void toNtpTimestamp_nullString_returnsZero() {
         assertThat(SipUtils.toNtpTimestamp((String) null)).isEqualTo(0);
-    }
-
-    @Test
-    void parseSdp_standardSdp_returnsSdpSessionDescription() throws javax.sdp.SdpParseException {
-        String sdp = "v=0\r\n" +
-                "o=- 0 0 IN IP4 192.168.1.1\r\n" +
-                "s=Play\r\n" +
-                "c=IN IP4 192.168.1.1\r\n" +
-                "t=0 0\r\n" +
-                "m=video 9000 RTP/AVP 96\r\n";
-        SdpSessionDescription result = SipUtils.parseSdp(sdp);
-        assertThat(result).isNotNull();
-        assertThat(result.getBaseSdb()).isNotNull();
-        assertThat(result.getBaseSdb().getOrigin().getAddress()).isEqualTo("192.168.1.1");
     }
 
     @Test

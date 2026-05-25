@@ -9,13 +9,22 @@ public abstract class AbstractCommandStrategy implements CommandStrategy {
 
     @Override
     public final String execute(CommandContext ctx) {
-        Assert.notNull(ctx.getFromDevice(), "fromDevice 不能为空");
-        Assert.notNull(ctx.getToDevice(), "toDevice 不能为空");
+        // 1.7.0：dialog-aware 命令（BYE / SUBSCRIBE_REFRESH）不再需要 from/to device
+        // —— 信息全部从 dialog 取回（DialogRegistry 中的 callId）
+        if (!isDialogAware(ctx)) {
+            Assert.notNull(ctx.getFromDevice(), "fromDevice 不能为空");
+            Assert.notNull(ctx.getToDevice(), "toDevice 不能为空");
+        }
         validateContext(ctx);
         if (ctx.getContent() == null) {
             ctx.setContent(buildContent(ctx));
         }
         return doSend(ctx);
+    }
+
+    private static boolean isDialogAware(CommandContext ctx) {
+        String type = ctx.getCommandType();
+        return "BYE".equals(type) || "SUBSCRIBE_REFRESH".equals(type);
     }
 
     protected void validateContext(CommandContext ctx) {}

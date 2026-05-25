@@ -6,11 +6,11 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-proxy</artifactId>
-        <version>1.2.5</version>
+        <version>1.7.0</version>
     </parent>
 
     <packaging>jar</packaging>
-    <version>1.2.5</version>
+    <version>1.7.0</version>
     <artifactId>sip-common</artifactId>
     <name>sip-common</name>
     <description>轻量级SIP框架封装</description>
@@ -95,8 +95,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
         </plugins>

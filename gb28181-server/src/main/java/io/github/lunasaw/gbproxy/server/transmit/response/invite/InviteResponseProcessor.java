@@ -2,13 +2,8 @@ package io.github.lunasaw.gbproxy.server.transmit.response.invite;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
-import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.gbproxy.server.transmit.response.ServerAbstractSipResponseProcessor;
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
-import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
-import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,10 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
-import javax.sdp.SdpParseException;
-import javax.sdp.SessionDescription;
+import javax.sip.Dialog;
 import javax.sip.ResponseEvent;
-import javax.sip.address.SipURI;
+import javax.sip.header.CSeqHeader;
+import javax.sip.message.Request;
 import javax.sip.message.Response;
 
 /**
@@ -41,12 +36,6 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
 
     @Autowired
     private ApplicationEventPublisher publisher;
-
-    @Autowired
-    private ServerDeviceSupplier serverDeviceSupplier;
-
-    @Autowired
-    private ServerCommandSender serverCommandSender;
 
     /**
      * 处理INVITE响应
@@ -84,30 +73,26 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
     }
 
     /**
-     * 协议层 ACK 回复：解析 SDP，构造 SipURI，发送 ACK。
+     * 协议层 ACK 回复：基于 JAIN-SIP Dialog API 发送（1.7.0 改造）。
+     *
+     * <p>1.7.0 之前：手动解析 200 OK 的 SDP 取 username + remote ip:port 构造 SipURI，再调
+     * {@code SipSender.doAckRequest(from, sipURI, response)}。该路径不依赖 dialog，但 SDP 异常 /
+     * 设备 NAT IP 切换时构造逻辑容易出错。
+     *
+     * <p>1.7.0：直接走 {@code dialog.sendAck(dialog.createAck(cseq))}，与 BYE 路径对称。dialog 由
+     * INVITE stateful 发送时自动创建并注册到 DialogRegistry，{@code evt.getDialog()} 直接可用。
      */
     private void sendAck(ResponseEventExt evt, String callId) {
         try {
-            SIPResponse response = (SIPResponse) evt.getResponse();
-            FromDevice fromDevice = (FromDevice) serverDeviceSupplier.getServerFromDevice();
-
-            byte[] rawContent = response.getRawContent();
-            if (rawContent == null || rawContent.length == 0) {
-                log.debug("INVITE OK响应不包含SDP内容，跳过ACK：callId = {}", callId);
+            Dialog dialog = evt.getDialog();
+            if (dialog == null) {
+                log.warn("INVITE 200 OK 不带 dialog，跳过 ACK：callId = {}", callId);
                 return;
             }
-
-            String contentString = new String(rawContent);
-            SdpSessionDescription gb28181Sdp = SipUtils.parseSdp(contentString);
-            SessionDescription sdp = gb28181Sdp.getBaseSdb();
-
-            SipURI requestUri = SipRequestUtils.createSipUri(sdp.getOrigin().getUsername(),
-                    evt.getRemoteIpAddress() + ":" + evt.getRemotePort());
-
-            serverCommandSender.deviceAckBySipUri(fromDevice, requestUri, response);
-            log.info("发送ACK响应：requestUri = {}, callId = {}", requestUri, callId);
-        } catch (SdpParseException e) {
-            log.error("ACK 处理 SDP 解析异常：callId = {}", callId, e);
+            long cseq = ((CSeqHeader) evt.getResponse().getHeader(CSeqHeader.NAME)).getSeqNumber();
+            Request ack = dialog.createAck(cseq);
+            dialog.sendAck(ack);
+            log.info("发送 ACK 响应（dialog-aware）：callId = {}, dialogState = {}", callId, dialog.getState());
         } catch (Exception e) {
             log.error("ACK 处理异常：callId = {}", callId, e);
         }

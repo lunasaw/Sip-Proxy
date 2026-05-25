@@ -2,6 +2,81 @@
 
 本文档记录 sip-proxy 各版本的对外可见变更。版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.7.0] - 2026-05-25
+
+### 🚨 BREAKING CHANGES — 出站 Dialog 维护（[doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md)）
+
+修复出站 BYE 不携带 to-tag 导致设备返回 `481 Call leg/Transaction does not exist` 的协议合规问题。同源同病的 SUBSCRIBE 续订 / 退订也一并改造为 dialog-aware 路径，避免长期被掩盖的协议错误（详见方案文档 v1.2 §3.2.10–§3.2.14）。
+
+**API 变更：**
+
+- `ServerCommandSender.deviceBye(String deviceId, String callId)` → `deviceBye(String callId)`：deviceId 已包含在 dialog 中，无需再传。
+- `ClientCommandSender.sendByeCommand(FromDevice, ToDevice)` → `sendByeCommand(String callId)`：client 主动 BYE 同样要求 dialog 已建立。
+- `SipSender.doByeRequest(FromDevice, ToDevice)` **直接删除**：改为 `doByeRequest(String callId)`，必须先有已建立的 dialog。无 dialog 时抛 `DialogNotFoundException`。**直接删除而非 deprecated 桥接**，让编译期一次性暴露所有调用点。
+- `CommandContext.forAckBye(role, from, to, callId, "BYE")` → `CommandContext.forBye(role, callId)`：BYE 场景退役 forAckBye，ACK 场景仍可用 forAckBye。
+
+**新增 SUBSCRIBE 续订 / 退订 API：**
+
+- `ServerCommandSender.refreshSubscribe(String callId, int expires)` / `refreshSubscribe(callId, content, expires)` / `unsubscribe(callId)`
+- `ClientCommandSender.refreshSubscribe(...)` / `unsubscribe(...)`
+- `SipSender.doSubscribeRefresh(String callId, String content, int expires)`
+- `CommandContext.forSubscribeRefresh(String role, String callId, String content, int expires)`
+
+### ✨ Features
+
+- 新增 `DialogRegistry`（进程内出站 dialog 注册表，[sip-common/.../DialogRegistry.java](sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/DialogRegistry.java)），承载 INVITE / SUBSCRIBE 两类 entry，含 `expiresAtMs` / `kind` 元数据。
+- 新增 `DialogNotFoundException`，让 BYE / SUBSCRIBE refresh 调用错误在第一时间暴露而不是被 481 掩盖。
+- 新增 `SipMessageTransmitter.transmitStateful(...)` / `transmitStatefulPreRegister(...)` —— 走 ClientTransaction，JAIN-SIP 自动建立 Dialog；先注册 dialog 再 sendRequest，覆盖同机回环 / 极低延迟链路下的响应竞态。
+- INVITE / SUBSCRIBE 改走有状态发送（client 与 server 同步生效，共用同一 strategy），自动建立 JAIN-SIP Dialog。
+- INVITE 200 OK 的 ACK 改用 `dialog.sendAck`，与 BYE 路径对称（`InviteResponseProcessor.sendAck`）。
+- `AbstractSipListener.processDialogTerminated` 钩子接入 `DialogRegistry.remove`，BYE 后自动清理（INVITE 主清理路径）。
+- 新增 `DialogRegistryCleaner`（`@Scheduled` 60s 跑一次），覆盖 SUBSCRIBE 自然过期无 `DialogTerminatedEvent` 的场景（RFC 6665 §4.4.1 case 3）。
+
+### 🐛 Bug Fixes
+
+- 修复出站 BYE 不携带 to-tag 导致设备返回 `481 Call leg/Transaction does not exist` 的协议合规问题。问题对 server 主动 BYE 与 client 主动 BYE 同源同病，本次一并修复。
+- 修复 SUBSCRIBE 续订 / 退订使用 stateless 路径长期产生孤儿订阅的隐性脏数据问题（设备端订阅不断重复创建，浪费带宽）。
+- 修复 `InvitePlayFlowTest.invitePlay_thenBye_shouldEndSession` 因不断言 BYE 状态码 / dialog 清理掩盖上述 bug 的测试盲区，新增 `SubscribeRefreshFlowTest` 覆盖 SUBSCRIBE 续订 / 退订路径。
+
+### 📦 Migration Guide
+
+**Server 侧 BYE：**
+
+```diff
+- commandSender.deviceBye(deviceId, callId);
++ commandSender.deviceBye(callId);
+```
+
+**Client 侧 BYE：**
+
+```diff
+- ClientCommandSender.sendByeCommand(fromDevice, toDevice);
++ ClientCommandSender.sendByeCommand(callId);
+```
+
+**SUBSCRIBE 续订 / 退订（新增 API，业务方按需替换历史"重发新 SUBSCRIBE"逻辑）：**
+
+```java
+String callId = commandSender.deviceCatalogSubscribe(deviceId, 3600, "Catalog");
+// ... 业务运行 ...
+commandSender.refreshSubscribe(callId, 3600);   // 续订
+// ... 不再需要 ...
+commandSender.unsubscribe(callId);               // 退订
+```
+
+业务方对 `deviceBye` / `sendByeCommand` / `refreshSubscribe` / `unsubscribe` 调用应增加 try-catch：
+
+```java
+try {
+    commandSender.deviceBye(callId);
+} catch (DialogNotFoundException e) {
+    // dialog 已不存在（如对端先发 BYE / INVITE 还未 200 OK / callId 错误）
+    log.warn("BYE 失败：dialog 不存在", e);
+}
+```
+
+---
+
 ## [1.5.0] - 2026-05-24
 
 ### Added — Listener 化业务接口分层（[doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md)）

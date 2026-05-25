@@ -9,6 +9,7 @@ import io.github.lunasaw.gbproxy.test.handler.TestServerEventHandler;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
+import io.github.lunasaw.sip.common.transmit.DialogRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,8 +76,17 @@ class InvitePlayFlowTest {
         assertThat(invited).as("点播建立应在5秒内完成").isTrue();
 
         String callId = eventHandler.getLastInviteOkCallId();
-        commandSender.deviceBye(clientId, callId);
-        Thread.sleep(500);
-        // BYE 发送成功即可，无需等待事件（BYE 是单向的）
+
+        // 1.7.0：INVITE 200 OK 后 dialog 已注册到 DialogRegistry
+        assertThat(DialogRegistry.get(callId)).as("INVITE dialog 应已注册").isNotNull();
+
+        commandSender.deviceBye(callId);
+
+        // 1.7.0：BYE → 200 OK → JAIN-SIP Timer K（UDP ~5s）→ DialogTerminatedEvent → DialogRegistry.remove
+        long deadline = System.currentTimeMillis() + 15_000L;
+        while (DialogRegistry.get(callId) != null && System.currentTimeMillis() < deadline) {
+            Thread.sleep(100);
+        }
+        assertThat(DialogRegistry.get(callId)).as("BYE 后 dialog 应被清理").isNull();
     }
 }

@@ -66,7 +66,7 @@ public class SipCommandController {
 
     @PostMapping("/invite/bye")
     public void bye(@RequestBody ByeRequest req) {
-        commandSender.deviceBye(req.getDeviceId(), req.getCallId());
+        commandSender.deviceBye(req.getCallId());
     }
 
     @PostMapping("/invite/response")

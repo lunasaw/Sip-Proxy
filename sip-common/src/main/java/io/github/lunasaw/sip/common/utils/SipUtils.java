@@ -7,7 +7,6 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.OptionalInt;
 
-import javax.sdp.SessionDescription;
 import javax.sip.RequestEvent;
 import javax.sip.ResponseEvent;
 import javax.sip.header.FromHeader;
@@ -29,7 +28,6 @@ import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
 import io.github.lunasaw.sip.common.constant.Constant;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
-import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 
 /**
@@ -141,11 +139,6 @@ public class SipUtils {
         }
 
         return new RemoteAddressInfo(remoteAddress, remotePort);
-    }
-
-    public static SdpSessionDescription parseSdp(String sdpStr) {
-        SessionDescription sdp = SipRequestUtils.createSessionDescription(sdpStr);
-        return SdpSessionDescription.getInstance(sdp);
     }
 
     public static <T> T parseRequest(RequestEvent event, String charset, Class<T> clazz) {
