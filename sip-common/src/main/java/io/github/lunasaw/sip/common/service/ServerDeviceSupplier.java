@@ -56,4 +56,21 @@ public interface ServerDeviceSupplier extends DeviceSupplier {
         }
         return userId.equals(fromDevice.getUserId());
     }
+
+    /**
+     * 设备注册鉴权（HTTP Digest）。
+     *
+     * <p>业务方典型实现：取出 userId 对应明文密码，调
+     * {@code DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword(request, password)} 比对。
+     *
+     * <p>默认放行，便于不需要鉴权的内网/测试环境快速接入。
+     * <strong>生产环境必须显式覆盖此方法</strong>，否则等于关闭鉴权。
+     *
+     * @param userId  设备 ID（来自 From-Header）
+     * @param request 完整 SIP 请求，含 AuthorizationHeader
+     * @return true 通过，false 拒绝注册（处理器返回 403）
+     */
+    default boolean authenticate(String userId, SIPRequest request) {
+        return true;
+    }
 }

@@ -1,24 +1,23 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.info;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import javax.sip.RequestEvent;
+import javax.sip.message.Response;
 
-import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
+import io.github.lunasaw.gbproxy.server.api.dto.DeviceInfoError;
+import io.github.lunasaw.gbproxy.server.api.dto.DeviceInfoRequest;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.ServerAbstractSipRequestProcessor;
+import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Server模块INFO请求处理器
- * 只负责SIP协议层面的处理，业务逻辑通过ServerInfoProcessorHandler接口实现
- *
- * @author luna
- */
 @Component("serverInfoRequestProcessor")
 @Getter
 @Setter
@@ -30,47 +29,19 @@ public class ServerInfoRequestProcessor extends ServerAbstractSipRequestProcesso
     private String method = METHOD;
 
     @Autowired
-    @Lazy
-    private ServerInfoProcessorHandler serverInfoProcessorHandler;
+    private ApplicationEventPublisher publisher;
 
-    /**
-     * 处理INFO请求
-     * 只负责SIP协议层面的处理，业务逻辑通过ServerInfoProcessorHandler接口实现
-     *
-     * @param evt 请求事件
-     */
     @Override
     public void process(RequestEvent evt) {
+        SIPRequest request = (SIPRequest) evt.getRequest();
+        String userId = SipUtils.getUserIdFromFromHeader(request);
         try {
-            SIPRequest request = (SIPRequest) evt.getRequest();
-
-            // 解析协议层面的信息
-            String sipId = SipUtils.getUserIdFromToHeader(request);
-            String userId = SipUtils.getUserIdFromFromHeader(request);
-
-            log.debug("处理INFO请求：用户ID = {}, SIP ID = {}", userId, sipId);
-
-            // 验证设备权限
-            if (!serverInfoProcessorHandler.validateDevicePermission(userId, sipId, evt)) {
-                log.warn("INFO请求权限验证失败：用户ID = {}, SIP ID = {}", userId, sipId);
-                serverInfoProcessorHandler.handleInfoError(userId, "权限验证失败", evt);
-                return;
-            }
-
-            // 获取请求内容
-            String content = "";
-            if (evt.getRequest().getRawContent() != null) {
-                content = new String(evt.getRequest().getRawContent());
-            }
-
-            // 调用业务处理器
-            serverInfoProcessorHandler.handleInfoRequest(userId, content, evt);
-
+            String content = request.getRawContent() != null ? new String(request.getRawContent()) : "";
+            ResponseCmd.sendResponse(Response.OK, evt);
+            publisher.publishEvent(new ServerQueryResponseEvent(this, userId, null, new DeviceInfoRequest(content)));
         } catch (Exception e) {
-            log.error("处理INFO请求异常：evt = {}", evt, e);
-            String userId = SipUtils.getUserIdFromFromHeader((SIPRequest) evt.getRequest());
-            serverInfoProcessorHandler.handleInfoError(userId, e.getMessage(), evt);
+            log.error("处理INFO请求异常: userId={}", userId, e);
+            publisher.publishEvent(new ServerQueryResponseEvent(this, userId, null, new DeviceInfoError(e.getMessage())));
         }
     }
-
 }

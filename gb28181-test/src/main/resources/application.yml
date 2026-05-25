@@ -63,6 +63,18 @@ sip:
     clientName: "GB28181-Client"
     port: 5061
 
+# sip-gateway 节点配置（参考 LAYERED-ARCHITECTURE.md §6.5）
+# 单机部署：保持 nodes 留空即可。
+# 多节点部署：填入所有 sip-gateway 节点的内网地址，
+#            其中本节点 nodeId 必须与 nodes 中的 key 之一一致。
+gateway:
+  node-id: node-default
+  invite-context-ttl-ms: 30000
+  invite-idempotency-window-ms: 60000
+  # nodes:
+  #   node-1: http://10.0.0.1:8080
+  #   node-2: http://10.0.0.2:8080
+
 # 日志配置
 logging:
   level:

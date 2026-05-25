@@ -1,14 +1,15 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.response;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
+
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -27,8 +28,8 @@ public class RecordInfoMessageHandler extends MessageServerHandlerAbstract {
 
     private String cmdType = CMD_TYPE;
 
-    public RecordInfoMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
-        super(serverMessageProcessorHandler, serverDeviceSupplier);
+    public RecordInfoMessageHandler(ApplicationEventPublisher publisher, ServerDeviceSupplier serverDeviceSupplier) {
+        super(publisher, serverDeviceSupplier);
     }
 
     @Override
@@ -45,7 +46,7 @@ public class RecordInfoMessageHandler extends MessageServerHandlerAbstract {
         String userId = deviceSession.getUserId();
 
         DeviceRecord deviceRecord = parseXml(DeviceRecord.class);
-        serverMessageProcessorHandler.updateDeviceRecord(userId, deviceRecord);
+        publisher.publishEvent(new ServerQueryResponseEvent(this, userId, deviceRecord.getSn(), deviceRecord));
     }
 
     @Override

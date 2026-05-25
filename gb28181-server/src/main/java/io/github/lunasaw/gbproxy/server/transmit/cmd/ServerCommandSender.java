@@ -5,601 +5,526 @@ import com.luna.common.date.DateUtils;
 import com.luna.common.text.RandomStrUtil;
 import io.github.lunasaw.gb28181.common.entity.control.*;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
+import io.github.lunasaw.gb28181.common.entity.enums.StreamModeEnum;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
 import io.github.lunasaw.gb28181.common.entity.query.*;
 import io.github.lunasaw.gb28181.common.entity.utils.PtzCmdEnum;
 import io.github.lunasaw.gb28181.common.entity.utils.PtzUtils;
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandStrategyFactory;
 import io.github.lunasaw.gbproxy.server.entity.InviteRequest;
 import io.github.lunasaw.gbproxy.server.enums.PlayActionEnums;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.gb28181.common.entity.enums.StreamModeEnum;
+import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
-import io.github.lunasaw.sip.common.transmit.event.Event;
-import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategy;
-import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategyFactory;
-
-import java.util.Date;
-import java.util.Map;
-
+import io.github.lunasaw.sip.common.transmit.SipSender;
+import gov.nist.javax.sip.message.SIPResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-/**
- * GB28181服务端命令发送器
- * 使用策略模式和建造者模式，提供更灵活和可扩展的命令发送接口
- *
- * @author luna
- * @date 2024/01/01
- */
+import javax.sip.address.SipURI;
+import java.util.Date;
+
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class ServerCommandSender {
 
-    // ==================== 策略模式命令发送 ====================
+    private final CommandStrategyFactory factory;
+    private final ServerDeviceSupplier deviceSupplier;
+    private final DeviceSessionCache sessionCache;
 
-    /**
-     * 使用策略模式发送命令
-     *
-     * @param commandType 命令类型
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param params      命令参数
-     * @return callId
-     */
-    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Map<String, Object> params) {
-        // 如果没有对应的策略，使用MESSAGE策略
-        ServerCommandStrategy strategy;
-        try {
-            strategy = ServerCommandStrategyFactory.getStrategy(commandType);
-        } catch (IllegalArgumentException e) {
-            // 对于非SIP基础协议的命令，使用MESSAGE策略
-            strategy = ServerCommandStrategyFactory.getMessageStrategy();
-        }
-        return strategy.execute(fromDevice, toDevice, params);
+    // ==================== 实例方法（新 API） ====================
+
+    public String deviceInfoQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new DeviceQuery(CmdTypeEnum.DEVICE_INFO.getType(), sn(), deviceId));
     }
 
-    /**
-     * 使用策略模式发送命令（带事件）
-     *
-     * @param commandType 命令类型
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param errorEvent  错误事件
-     * @param okEvent     成功事件
-     * @param params      命令参数
-     * @return callId
-     */
-    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent,
-                                     Map<String, Object> params) {
-        // 如果没有对应的策略，使用MESSAGE策略
-        ServerCommandStrategy strategy;
-        try {
-            strategy = ServerCommandStrategyFactory.getStrategy(commandType);
-        } catch (IllegalArgumentException e) {
-            // 对于非SIP基础协议的命令，使用MESSAGE策略
-            strategy = ServerCommandStrategyFactory.getMessageStrategy();
-        }
-        return strategy.execute(fromDevice, toDevice, errorEvent, okEvent, params);
+    public String deviceStatusQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new DeviceQuery(CmdTypeEnum.DEVICE_STATUS.getType(), sn(), deviceId));
     }
 
-    // ==================== 设备信息查询相关命令 ====================
-
-    /**
-     * 设备信息查询
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String deviceInfoQuery(FromDevice fromDevice, ToDevice toDevice) {
-        DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.DEVICE_INFO.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
+    public String deviceCatalogQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new DeviceQuery(CmdTypeEnum.CATALOG.getType(), sn(), deviceId));
     }
 
-    /**
-     * 设备状态查询
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String deviceStatusQuery(FromDevice fromDevice, ToDevice toDevice) {
-        DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.DEVICE_STATUS.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
+    public String devicePresetQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new DeviceQuery(CmdTypeEnum.PRESET_QUERY.getType(), sn(), deviceId));
     }
 
-    /**
-     * 设备目录查询
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String deviceCatalogQuery(FromDevice fromDevice, ToDevice toDevice) {
-        DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.CATALOG.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
+    public String deviceRecordInfoQuery(String deviceId, String startTime, String endTime) {
+        DeviceRecordQuery q = new DeviceRecordQuery(CmdTypeEnum.RECORD_INFO.getType(), sn(), deviceId);
+        q.setStartTime(startTime);
+        q.setEndTime(endTime);
+        return send("MESSAGE", deviceId, q);
     }
 
-    /**
-     * 设备预设位置查询
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String devicePresetQuery(FromDevice fromDevice, ToDevice toDevice) {
-        DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.PRESET_QUERY.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceQuery));
+    public String deviceRecordInfoQuery(String deviceId, long startTime, long endTime) {
+        return deviceRecordInfoQuery(deviceId,
+            DateUtils.formatDateTime(new Date(startTime)),
+            DateUtils.formatDateTime(new Date(endTime)));
     }
 
-    // ==================== 设备录像查询相关命令 ====================
-
-    /**
-     * 设备录像信息查询
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param startTime  开始时间
-     * @param endTime    结束时间
-     * @return callId
-     */
-    public static String deviceRecordInfoQuery(FromDevice fromDevice, ToDevice toDevice, String startTime, String endTime) {
-        DeviceRecordQuery deviceRecordQuery = new DeviceRecordQuery(CmdTypeEnum.RECORD_INFO.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        deviceRecordQuery.setStartTime(startTime);
-        deviceRecordQuery.setEndTime(endTime);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceRecordQuery));
+    public String deviceMobilePositionQuery(String deviceId, String interval) {
+        DeviceMobileQuery q = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), sn(), deviceId);
+        q.setInterval(interval);
+        return send("MESSAGE", deviceId, q);
     }
 
-    /**
-     * 设备录像信息查询（时间戳）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param startTime  开始时间戳
-     * @param endTime    结束时间戳
-     * @return callId
-     */
-    public static String deviceRecordInfoQuery(FromDevice fromDevice, ToDevice toDevice, long startTime, long endTime) {
-        String startTimeStr = DateUtils.formatDateTime(new Date(startTime));
-        String endTimeStr = DateUtils.formatDateTime(new Date(endTime));
-        return deviceRecordInfoQuery(fromDevice, toDevice, startTimeStr, endTimeStr);
-    }
-
-    /**
-     * 设备录像信息查询（Date对象）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param startTime  开始时间
-     * @param endTime    结束时间
-     * @return callId
-     */
-    public static String deviceRecordInfoQuery(FromDevice fromDevice, ToDevice toDevice, Date startTime, Date endTime) {
-        String startTimeStr = DateUtils.formatDateTime(startTime);
-        String endTimeStr = DateUtils.formatDateTime(endTime);
-        return deviceRecordInfoQuery(fromDevice, toDevice, startTimeStr, endTimeStr);
-    }
-
-    // ==================== 设备移动位置相关命令 ====================
-
-    /**
-     * 查询移动设备位置数据
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param interval   间隔
-     * @return callId
-     */
-    public static String deviceMobilePositionQuery(FromDevice fromDevice, ToDevice toDevice, String interval) {
-        DeviceMobileQuery deviceMobileQuery = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        deviceMobileQuery.setInterval(interval);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceMobileQuery));
-    }
-
-    // ==================== 设备订阅相关命令 ====================
-
-    /**
-     * 设备目录订阅
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param expires    过期时间
-     * @param eventType  事件类型
-     * @return callId
-     */
-    public static String deviceCatalogSubscribe(FromDevice fromDevice, ToDevice toDevice, Integer expires, String eventType) {
-        DeviceQuery deviceQuery = new DeviceQuery(CmdTypeEnum.CATALOG.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-
+    public String deviceCatalogSubscribe(String deviceId, Integer expires, String eventType) {
+        ToDevice to = getToDevice(deviceId);
+        to.setExpires(expires);
+        to.setEventType(eventType);
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        DeviceQuery body = new DeviceQuery(CmdTypeEnum.CATALOG.getType(), sn(), deviceId);
         SubscribeInfo subscribeInfo = new SubscribeInfo();
         subscribeInfo.setEventType(eventType);
         subscribeInfo.setExpires(expires);
-
-        return sendCommand("SUBSCRIBE", fromDevice, toDevice, Map.of("content", deviceQuery, "subscribeInfo", subscribeInfo));
+        return factory.getStrategy("server", "SUBSCRIBE")
+            .execute(CommandContext.forSubscribe("server", from, to, subscribeInfo, expires)
+                .toBuilder().body(body).build());
     }
 
-    /**
-     * 订阅移动设备位置数据
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param interval   间隔
-     * @param expires    过期时间
-     * @param eventType  事件类型
-     * @param eventId    事件ID
-     * @return callId
-     */
-    public static String deviceMobilePositionSubscribe(FromDevice fromDevice, ToDevice toDevice, String interval, Integer expires, String eventType, String eventId) {
-        DeviceMobileQuery deviceMobileQuery = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        deviceMobileQuery.setInterval(interval);
-
+    public String deviceMobilePositionSubscribe(String deviceId, String interval,
+                                                 Integer expires, String eventType, String eventId) {
+        ToDevice to = getToDevice(deviceId);
+        to.setExpires(expires);
+        to.setEventType(eventType);
+        to.setEventId(eventId);
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        DeviceMobileQuery body = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), sn(), deviceId);
+        body.setInterval(interval);
         SubscribeInfo subscribeInfo = new SubscribeInfo();
         subscribeInfo.setEventId(eventId);
         subscribeInfo.setEventType(eventType);
         subscribeInfo.setExpires(expires);
-
-        return sendCommand("SUBSCRIBE", fromDevice, toDevice, Map.of("content", deviceMobileQuery, "subscribeInfo", subscribeInfo));
-    }
-
-    // ==================== 设备告警相关命令 ====================
-
-    /**
-     * 设备告警查询
-     *
-     * @param fromDevice    发送设备
-     * @param toDevice      接收设备
-     * @param startTime     开始时间
-     * @param endTime       结束时间
-     * @param startPriority 开始优先级
-     * @param endPriority   结束优先级
-     * @param alarmMethod   告警方式
-     * @param alarmType     告警类型
-     * @return callId
-     */
-    public static String deviceAlarmQuery(FromDevice fromDevice, ToDevice toDevice, Date startTime, Date endTime,
-                                          String startPriority, String endPriority, String alarmMethod, String alarmType) {
-        DeviceAlarmQuery deviceAlarmQuery = new DeviceAlarmQuery(CmdTypeEnum.ALARM.getType(), RandomStrUtil.getValidationCode(), toDevice.getUserId());
-        deviceAlarmQuery.setStartTime(DateUtils.formatDateTime(startTime));
-        deviceAlarmQuery.setEndTime(DateUtils.formatDateTime(endTime));
-        deviceAlarmQuery.setStartAlarmPriority(startPriority);
-        deviceAlarmQuery.setEndAlarmPriority(endPriority);
-        deviceAlarmQuery.setAlarmMethod(alarmMethod);
-        deviceAlarmQuery.setAlarmType(alarmType);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceAlarmQuery));
-    }
-
-    // ==================== 设备控制相关命令 ====================
-
-    /**
-     * 设备守卫控制
-     *
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param guardCmdStr 守卫命令字符串
-     * @return callId
-     */
-    public static String deviceControlGuardCmd(FromDevice fromDevice, ToDevice toDevice, String guardCmdStr) {
-        DeviceControlGuard deviceControlGuard = new DeviceControlGuard(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        deviceControlGuard.setGuardCmd(guardCmdStr);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlGuard));
+        return factory.getStrategy("server", "SUBSCRIBE")
+            .execute(CommandContext.forSubscribe("server", from, to, subscribeInfo, expires)
+                .toBuilder().body(body).build());
     }
 
     /**
-     * 设备告警控制
+     * GB28181-2022 §9.11.1 / A.2.4.6 报警事件订阅 (SUBSCRIBE Alarm)
      *
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param alarmMethod 告警方式
-     * @param alarmType   告警类型
-     * @return callId
+     * @param expires 订阅有效期（秒），传 0 表示退订
+     * @param eventType 事件类型，固定 "Alarm"
+     * @param startPriority 起始报警等级（可选，传 null 跳过）
+     * @param endPriority 结束报警等级（可选）
+     * @param alarmMethod 报警方式（可选）
+     * @param alarmType 报警类型（可选）
+     * @param startAlarmTime 起始时间 ISO8601 格式（可选）
+     * @param endAlarmTime 结束时间 ISO8601 格式（可选）
      */
-    public static String deviceControlAlarm(FromDevice fromDevice, ToDevice toDevice, String alarmMethod, String alarmType) {
-        DeviceControlAlarm deviceControlAlarm = new DeviceControlAlarm(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        DeviceControlAlarm.AlarmInfo alarmInfo = new DeviceControlAlarm.AlarmInfo();
-        alarmInfo.setAlarmMethod(alarmMethod);
-        alarmInfo.setAlarmType(alarmType);
-        deviceControlAlarm.setAlarmInfo(alarmInfo);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlAlarm));
+    public String deviceAlarmSubscribe(String deviceId, Integer expires, String eventType,
+                                        String startPriority, String endPriority,
+                                        String alarmMethod, String alarmType,
+                                        String startAlarmTime, String endAlarmTime) {
+        ToDevice to = getToDevice(deviceId);
+        to.setExpires(expires);
+        to.setEventType(eventType);
+        String eventId = sn();
+        to.setEventId(eventId);
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        DeviceAlarmQuery body = new DeviceAlarmQuery(CmdTypeEnum.ALARM.getType(), sn(), deviceId);
+        body.setStartAlarmPriority(startPriority);
+        body.setEndAlarmPriority(endPriority);
+        body.setAlarmMethod(alarmMethod);
+        body.setAlarmType(alarmType);
+        body.setStartTime(startAlarmTime);
+        body.setEndTime(endAlarmTime);
+        SubscribeInfo subscribeInfo = new SubscribeInfo();
+        subscribeInfo.setEventType(eventType);
+        subscribeInfo.setExpires(expires);
+        subscribeInfo.setEventId(eventId);
+        return factory.getStrategy("server", "SUBSCRIBE")
+            .execute(CommandContext.forSubscribe("server", from, to, subscribeInfo, expires)
+                .toBuilder().body(body).build());
     }
 
     /**
-     * 设备云台控制
+     * GB28181-2022 §9.11.1 / §A.2.4.13 PTZ 精准位置变化事件订阅。
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param ptzCmdEnum 云台命令
-     * @param speed      速度
-     * @return callId
+     * <p>事件源（设备）会按 SubscribeInfo 中的间隔向事件观察者（平台）NOTIFY PTZ 位置变化，
+     * 直到订阅过期。订阅成功后由 {@code SubscribePtzPositionQueryMessageHandler} 在 client 侧
+     * 接收并通过 {@code SubscribeListener.onPtzPositionSubscribe} 回调业务方。
+     *
+     * @param deviceId 目标设备 ID
+     * @param expires  订阅过期时间（秒）；0 表示取消订阅
      */
-    public static String deviceControlPtzCmd(FromDevice fromDevice, ToDevice toDevice, PtzCmdEnum ptzCmdEnum, Integer speed) {
-        String ptzCmd = PtzUtils.getPtzCmd(ptzCmdEnum, speed);
-        return deviceControlPtzCmd(fromDevice, toDevice, ptzCmd);
+    public String devicePtzPositionSubscribe(String deviceId, Integer expires) {
+        ToDevice to = getToDevice(deviceId);
+        to.setExpires(expires);
+        String eventId = sn();
+        to.setEventId(eventId);
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        PTZPositionQuery body = new PTZPositionQuery(CmdTypeEnum.PTZ_POSITION.getType(), sn(), deviceId);
+        SubscribeInfo subscribeInfo = new SubscribeInfo();
+        subscribeInfo.setExpires(expires);
+        subscribeInfo.setEventId(eventId);
+        return factory.getStrategy("server", "SUBSCRIBE")
+            .execute(CommandContext.forSubscribe("server", from, to, subscribeInfo, expires)
+                .toBuilder().body(body).build());
+    }
+
+    public String deviceAlarmQuery(String deviceId, Date startTime, Date endTime,
+                                    String startPriority, String endPriority,
+                                    String alarmMethod, String alarmType) {
+        DeviceAlarmQuery q = new DeviceAlarmQuery(CmdTypeEnum.ALARM.getType(), sn(), deviceId);
+        q.setStartTime(DateUtils.formatDateTime(startTime));
+        q.setEndTime(DateUtils.formatDateTime(endTime));
+        q.setStartAlarmPriority(startPriority);
+        q.setEndAlarmPriority(endPriority);
+        q.setAlarmMethod(alarmMethod);
+        q.setAlarmType(alarmType);
+        return send("MESSAGE", deviceId, q);
+    }
+
+    public String deviceControlGuardCmd(String deviceId, String guardCmdStr) {
+        DeviceControlGuard g = new DeviceControlGuard(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        g.setGuardCmd(guardCmdStr);
+        return send("MESSAGE", deviceId, g);
+    }
+
+    public String deviceControlAlarm(String deviceId, String alarmMethod, String alarmType) {
+        DeviceControlAlarm a = new DeviceControlAlarm(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        DeviceControlAlarm.AlarmInfo info = new DeviceControlAlarm.AlarmInfo();
+        info.setAlarmMethod(alarmMethod);
+        info.setAlarmType(alarmType);
+        a.setAlarmInfo(info);
+        return send("MESSAGE", deviceId, a);
+    }
+
+    public String deviceControlPtzCmd(String deviceId, PtzCmdEnum ptzCmdEnum, Integer speed) {
+        return deviceControlPtzCmd(deviceId, PtzUtils.getPtzCmd(ptzCmdEnum, speed));
+    }
+
+    public String deviceControlPtzCmd(String deviceId, String ptzCmd) {
+        DeviceControlPtz p = new DeviceControlPtz(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        p.setPtzCmd(ptzCmd);
+        p.setPtzInfo(new DeviceControlPtz.PtzInfo());
+        return send("MESSAGE", deviceId, p);
+    }
+
+    public String deviceControlReboot(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new DeviceControlTeleBoot(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId));
+    }
+
+    public String deviceControlRecord(String deviceId, String recordCmd) {
+        DeviceControlRecordCmd r = new DeviceControlRecordCmd(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        r.setRecordCmd(recordCmd);
+        return send("MESSAGE", deviceId, r);
     }
 
     /**
-     * 设备云台控制
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param ptzCmd     云台命令
-     * @return callId
+     * GB28181-2022 A.2.3.1.12 设备软件升级控制
      */
-    public static String deviceControlPtzCmd(FromDevice fromDevice, ToDevice toDevice, String ptzCmd) {
-        DeviceControlPtz deviceControlPtz = new DeviceControlPtz(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        deviceControlPtz.setPtzCmd(ptzCmd);
-        deviceControlPtz.setPtzInfo(new DeviceControlPtz.PtzInfo());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlPtz));
+    public String deviceUpgrade(String deviceId, String firmware, String fileURL, String manufacturer, String sessionId) {
+        DeviceUpgradeControl control = new DeviceUpgradeControl(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        control.setDeviceUpgrade(new DeviceUpgradeControl.DeviceUpgrade(firmware, fileURL, manufacturer, sessionId));
+        return send("MESSAGE", deviceId, control);
     }
 
     /**
-     * 设备重启控制
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
+     * GB28181-2022 A.2.3.2.12 图像抓拍配置（cmdType=DeviceConfig，子标签 SnapShotConfig）
      */
-    public static String deviceControlReboot(FromDevice fromDevice, ToDevice toDevice) {
-        DeviceControlTeleBoot deviceControlTeleBoot = new DeviceControlTeleBoot(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlTeleBoot));
+    public String deviceSnapShot(String deviceId, Integer snapNum, Integer interval, String uploadURL, String sessionId) {
+        SnapShotConfig config = new SnapShotConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        config.setSnapShotConfig(new SnapShotConfig.SnapShotInfo(snapNum, interval, uploadURL, sessionId));
+        return send("MESSAGE", deviceId, config);
     }
 
     /**
-     * 设备录像控制
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param recordCmd  录像命令 Record/StopRecord
-     * @return callId
+     * GB28181-2022 A.2.3.1.11 PTZ 精准控制
      */
-    public static String deviceControlRecord(FromDevice fromDevice, ToDevice toDevice, String recordCmd) {
-        DeviceControlRecordCmd deviceControlRecordCmd = new DeviceControlRecordCmd(CmdTypeEnum.DEVICE_CONTROL.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        deviceControlRecordCmd.setRecordCmd(recordCmd);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceControlRecordCmd));
-    }
-
-    // ==================== 设备配置相关命令 ====================
-
-    /**
-     * 设备配置
-     *
-     * @param fromDevice        发送设备
-     * @param toDevice          接收设备
-     * @param name              设备名称
-     * @param expiration        过期时间
-     * @param heartBeatInterval 心跳间隔
-     * @param heartBeatCount    心跳次数
-     * @return callId
-     */
-    public static String deviceConfig(FromDevice fromDevice, ToDevice toDevice, String name, String expiration,
-                                      String heartBeatInterval, String heartBeatCount) {
-
-        DeviceConfigControl deviceConfigControl =
-                new DeviceConfigControl(CmdTypeEnum.DEVICE_CONFIG.getType(), RandomStrUtil.getValidationCode(),
-                        fromDevice.getUserId());
-
-        deviceConfigControl.setBasicParam(new DeviceConfigControl.BasicParam(name, expiration, heartBeatInterval, heartBeatCount));
-
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceConfigControl));
+    public String deviceControlPtzPrecise(String deviceId, Double pan, Double tilt, Double zoom) {
+        DeviceControlPTZPrecise precise = new DeviceControlPTZPrecise(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        precise.setPtzPreciseCtrl(new DeviceControlPTZPrecise.PTZPreciseCtrl(pan, tilt, zoom));
+        return send("MESSAGE", deviceId, precise);
     }
 
     /**
-     * 设备配置下载
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param configType 配置类型
-     * @return callId
+     * GB28181-2022 A.2.4.13 PTZ 精确状态查询
      */
-    public static String deviceConfigDownload(FromDevice fromDevice, ToDevice toDevice, String configType) {
-        DeviceConfigDownload deviceConfigDownload = new DeviceConfigDownload(CmdTypeEnum.CONFIG_DOWNLOAD.getType(), RandomStrUtil.getValidationCode(), fromDevice.getUserId());
-        deviceConfigDownload.setConfigType(configType);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceConfigDownload));
+    public String devicePtzPositionQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new PTZPositionQuery(CmdTypeEnum.PTZ_POSITION.getType(), sn(), deviceId));
     }
 
     /**
-     * 设备配置查询
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param configType 配置类型（如BasicParam/VideoParamOpt等）
-     * @return callId
+     * GB28181-2022 A.2.4.14 存储卡状态查询
      */
-    public static String deviceConfigDownloadQuery(FromDevice fromDevice, ToDevice toDevice, String configType) {
-        ConfigDownloadQuery configDownloadQuery = new ConfigDownloadQuery();
-        configDownloadQuery.setSn(RandomStrUtil.getValidationCode());
-        configDownloadQuery.setDeviceId(toDevice.getUserId());
-        configDownloadQuery.setConfigType(configType);
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", configDownloadQuery));
-    }
-
-    // ==================== 设备广播相关命令 ====================
-
-    /**
-     * 设备广播
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String deviceBroadcast(FromDevice fromDevice, ToDevice toDevice) {
-        DeviceBroadcastNotify deviceBroadcastNotify = new DeviceBroadcastNotify(CmdTypeEnum.BROADCAST.getType(), fromDevice.getUserId(), toDevice.getUserId());
-        return sendCommand("MESSAGE", fromDevice, toDevice, Map.of("content", deviceBroadcastNotify));
-    }
-
-    // ==================== 设备点播相关命令 ====================
-
-    /**
-     * 设备实时流点播
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param sdpIp      SDP IP
-     * @param mediaPort  媒体端口
-     * @return callId
-     */
-    public static String deviceInvitePlay(FromDevice fromDevice, ToDevice toDevice, String sdpIp, Integer mediaPort) {
-        InviteRequest inviteRequest = new InviteRequest(toDevice.getUserId(), StreamModeEnum.valueOf(toDevice.getStreamMode()), sdpIp, mediaPort);
-        return deviceInvitePlay(fromDevice, toDevice, inviteRequest);
+    public String deviceSdCardStatusQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new SDCardStatusQuery(CmdTypeEnum.SD_CARD_STATUS.getType(), sn(), deviceId));
     }
 
     /**
-     * 设备实时流点播
+     * GB28181-2022 A.2.3.1.13 存储卡格式化控制
      *
-     * @param fromDevice    发送设备
-     * @param toDevice      接收设备
-     * @param inviteRequest 邀请请求
-     * @return callId
+     * @param sdNumber SD 卡编号，从 1 开始；0 表示格式化所有存储卡
      */
-    public static String deviceInvitePlay(FromDevice fromDevice, ToDevice toDevice, InviteRequest inviteRequest) {
-        String content = inviteRequest.getContent();
-        return sendCommand("INVITE", fromDevice, toDevice, Map.of("content", content));
+    public String deviceControlFormatSDCard(String deviceId, Integer sdNumber) {
+        DeviceControlSDCardFormat format = new DeviceControlSDCardFormat(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        format.setFormatSDCard(sdNumber);
+        return send("MESSAGE", deviceId, format);
     }
 
     /**
-     * 设备回放流点播
+     * GB28181-2022 A.2.3.1.10 看守位控制（设置 / 调用看守位）
      *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param sdpIp      SDP IP
-     * @param mediaPort  媒体端口
-     * @param startTime  开始时间
-     * @param endTime    结束时间
-     * @return callId
+     * @param enabled 看守位开关："0"-关闭，"1"-开启
+     * @param resetTime 自动归位时间间隔（秒），可选
+     * @param presetIndex 预置位编号（0-255），可选
      */
-    public static String deviceInvitePlayBack(FromDevice fromDevice, ToDevice toDevice, String sdpIp, Integer mediaPort,
-                                              String startTime, String endTime) {
-        StreamModeEnum streamModeEnum = StreamModeEnum.valueOf(toDevice.getStreamMode());
-        InviteRequest inviteRequest = new InviteRequest(toDevice.getUserId(), streamModeEnum, sdpIp, mediaPort, startTime, endTime);
-        return deviceInvitePlayBack(fromDevice, toDevice, inviteRequest);
+    public String deviceControlHomePosition(String deviceId, String enabled, String resetTime, String presetIndex) {
+        DeviceControlPosition control = new DeviceControlPosition(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        DeviceControlPosition.HomePosition info = new DeviceControlPosition.HomePosition(enabled, resetTime, presetIndex);
+        control.setHomePosition(info);
+        return send("MESSAGE", deviceId, control);
     }
 
     /**
-     * 设备回放流点播
-     *
-     * @param fromDevice    发送设备
-     * @param toDevice      接收设备
-     * @param inviteRequest 邀请请求
-     * @return callId
+     * GB28181-2022 A.2.4.10 看守位信息查询
      */
-    public static String deviceInvitePlayBack(FromDevice fromDevice, ToDevice toDevice, InviteRequest inviteRequest) {
-        String content = inviteRequest.getBackContent();
-        return sendCommand("INVITE", fromDevice, toDevice, Map.of("content", content));
+    public String deviceHomePositionQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new HomePositionQuery(CmdTypeEnum.HOME_POSITION_QUERY.getType(), sn(), deviceId));
     }
 
     /**
-     * 设备回放流点播控制
-     *
-     * @param fromDevice      发送设备
-     * @param toDevice        接收设备
-     * @param playActionEnums 播放操作
-     * @return callId
+     * GB28181-2022 A.2.4.11 巡航轨迹列表查询
      */
-    public static String deviceInvitePlayBackControl(FromDevice fromDevice, ToDevice toDevice, PlayActionEnums playActionEnums) {
+    public String deviceCruiseTrackListQuery(String deviceId) {
+        return send("MESSAGE", deviceId,
+            new CruiseTrackListQuery(CmdTypeEnum.CRUISE_TRACK_LIST_QUERY.getType(), sn(), deviceId));
+    }
+
+    /**
+     * GB28181-2022 A.2.4.12 巡航轨迹查询（指定轨迹编号）
+     */
+    public String deviceCruiseTrackQuery(String deviceId, Integer number) {
+        CruiseTrackQuery q = new CruiseTrackQuery(CmdTypeEnum.CRUISE_TRACK_QUERY.getType(), sn(), deviceId);
+        q.setNumber(number);
+        return send("MESSAGE", deviceId, q);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.1.7 强制关键帧
+     */
+    public String deviceControlIFrame(String deviceId) {
+        DeviceControlIFame ifame = new DeviceControlIFame(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        ifame.setIFameCmd("Send");
+        return send("MESSAGE", deviceId, ifame);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.1.8 拉框放大
+     */
+    public String deviceControlDragZoomIn(String deviceId, DragZoom dragZoom) {
+        DeviceControlDragIn drag = new DeviceControlDragIn(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        drag.setDragZoomIn(dragZoom);
+        return send("MESSAGE", deviceId, drag);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.1.9 拉框缩小
+     */
+    public String deviceControlDragZoomOut(String deviceId, DragZoom dragZoom) {
+        DeviceControlDragOut drag = new DeviceControlDragOut(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        drag.setDragZoomOut(dragZoom);
+        return send("MESSAGE", deviceId, drag);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.1.14 目标跟踪
+     *
+     * @param mode "Auto" / "Manual" / "Stop"
+     * @param deviceId2 全景相机的全景通道 ID（手动跟踪时必选）
+     * @param targetArea 目标框区域信息（手动跟踪时必选，自动跟踪时可为 null）
+     */
+    public String deviceControlTargetTrack(String deviceId, String mode, String deviceId2,
+                                            DeviceControlTargetTrack.TargetArea targetArea) {
+        DeviceControlTargetTrack control = new DeviceControlTargetTrack(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        control.setTargetTrack(mode);
+        control.setDeviceId2(deviceId2);
+        control.setTargetArea(targetArea);
+        return send("MESSAGE", deviceId, control);
+    }
+
+    public String deviceConfig(String deviceId, String name, String expiration,
+                                String heartBeatInterval, String heartBeatCount) {
+        DeviceConfigControl c = new DeviceConfigControl(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        c.setBasicParam(new DeviceConfigControl.BasicParam(name, expiration, heartBeatInterval, heartBeatCount));
+        return send("MESSAGE", deviceId, c);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.2.11 OSD 配置（cmdType=DeviceConfig，子标签 OSDConfig）
+     */
+    public String deviceConfigOsd(String deviceId, io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig.OsdInfo osdInfo) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setOsdConfig(osdInfo);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.2.7 报警录像配置（cmdType=DeviceConfig，子标签 VideoAlarmRecord）
+     */
+    public String deviceConfigVideoAlarmRecord(String deviceId,
+                                                io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig.VideoAlarmRecordInfo info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setVideoAlarmRecord(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 A.2.3.2.10 报警上报开关配置（cmdType=DeviceConfig，子标签 AlarmReport）
+     */
+    public String deviceConfigAlarmReport(String deviceId,
+                                           io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig.AlarmReportInfo info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setAlarmReport(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    public String deviceConfigDownload(String deviceId, String configType) {
+        DeviceConfigDownload d = new DeviceConfigDownload(CmdTypeEnum.CONFIG_DOWNLOAD.getType(), sn(), deviceId);
+        d.setConfigType(configType);
+        return send("MESSAGE", deviceId, d);
+    }
+
+    public String deviceBroadcast(String deviceId) {
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        return send("MESSAGE", deviceId,
+            new DeviceBroadcastNotify(CmdTypeEnum.BROADCAST.getType(), from.getUserId(), deviceId));
+    }
+
+    public String deviceInvitePlay(String deviceId, String sdpIp, Integer mediaPort, StreamModeEnum streamMode) {
+        ToDevice to = getToDevice(deviceId);
+        to.setStreamMode(streamMode.name());
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        InviteRequest req = new InviteRequest(deviceId, streamMode, sdpIp, mediaPort);
+        return factory.getStrategy("server", "INVITE")
+            .execute(CommandContext.builder()
+                .role("server").commandType("INVITE")
+                .fromDevice(from).toDevice(to).content(req.getContent()).build());
+    }
+
+    public String deviceInvitePlayBack(String deviceId, String sdpIp, Integer mediaPort,
+                                        StreamModeEnum streamMode, String startTime, String endTime) {
+        ToDevice to = getToDevice(deviceId);
+        to.setStreamMode(streamMode.name());
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        InviteRequest req = new InviteRequest(deviceId, streamMode, sdpIp, mediaPort, startTime, endTime);
+        return factory.getStrategy("server", "INVITE")
+            .execute(CommandContext.builder()
+                .role("server").commandType("INVITE")
+                .fromDevice(from).toDevice(to).content(req.getBackContent()).build());
+    }
+
+    /**
+     * GB28181-2022 §9.12.2 语音对讲 INVITE (audio-only, sendonly)
+     */
+    public String deviceInviteTalk(String deviceId, String sdpIp, Integer mediaPort, StreamModeEnum streamMode) {
+        ToDevice to = getToDevice(deviceId);
+        to.setStreamMode(streamMode.name());
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        String ssrc = io.github.lunasaw.gb28181.common.entity.utils.GbUtil.genSsrc(deviceId);
+        String content = io.github.lunasaw.gbproxy.server.entity.InviteEntity
+            .getInviteTalkBody(streamMode, deviceId, sdpIp, mediaPort, ssrc).toString();
+        return factory.getStrategy("server", "INVITE")
+            .execute(CommandContext.builder()
+                .role("server").commandType("INVITE")
+                .fromDevice(from).toDevice(to).content(content).build());
+    }
+
+    /**
+     * GB28181-2022 §9.9 视音频文件下载 INVITE (s=Download + a=downloadspeed)
+     */
+    public String deviceInviteDownload(String deviceId, String sdpIp, Integer mediaPort,
+                                        StreamModeEnum streamMode, String startTime, String endTime,
+                                        Integer downloadSpeed) {
+        ToDevice to = getToDevice(deviceId);
+        to.setStreamMode(streamMode.name());
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        String ssrc = io.github.lunasaw.gb28181.common.entity.utils.GbUtil.genSsrc(deviceId);
+        String content = io.github.lunasaw.gbproxy.server.entity.InviteEntity
+            .getInviteDownloadBody(streamMode, deviceId, sdpIp, mediaPort, ssrc, startTime, endTime, downloadSpeed).toString();
+        return factory.getStrategy("server", "INVITE")
+            .execute(CommandContext.builder()
+                .role("server").commandType("INVITE")
+                .fromDevice(from).toDevice(to).content(content).build());
+    }
+
+    public String deviceInvitePlayBackControl(String deviceId, PlayActionEnums playActionEnums) {
         String controlBody = playActionEnums.getControlBody();
         Assert.notNull(controlBody, "不支持的操作类型");
-        return sendCommand("INFO", fromDevice, toDevice, Map.of("controlBody", controlBody));
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        ToDevice to = getToDevice(deviceId);
+        return factory.getStrategy("server", "INFO")
+            .execute(CommandContext.forInfo("server", from, to, controlBody));
     }
 
-    // ==================== 会话控制相关命令 ====================
-
-    /**
-     * 发送ACK响应命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String deviceAck(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("ACK", fromDevice, toDevice, Map.of());
+    public String deviceAck(String deviceId) {
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        ToDevice to = getToDevice(deviceId);
+        return factory.getStrategy("server", "ACK")
+            .execute(CommandContext.forAckBye("server", from, to, null, "ACK"));
     }
 
-    /**
-     * 发送ACK响应命令（指定callId）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param callId     呼叫ID
-     * @return callId
-     */
-    public static String deviceAck(FromDevice fromDevice, ToDevice toDevice, String callId) {
-        return sendCommand("ACK", fromDevice, toDevice, Map.of("callId", callId));
+    public String deviceAck(String deviceId, String callId) {
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        ToDevice to = getToDevice(deviceId);
+        to.setCallId(callId);
+        return factory.getStrategy("server", "ACK")
+            .execute(CommandContext.forAckBye("server", from, to, callId, "ACK"));
     }
 
-    /**
-     * 发送BYE请求命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String deviceBye(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("BYE", fromDevice, toDevice, Map.of());
+    public String deviceBye(String deviceId, String callId) {
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        ToDevice to = getToDevice(deviceId);
+        to.setCallId(callId);
+        return factory.getStrategy("server", "BYE")
+            .execute(CommandContext.forAckBye("server", from, to, callId, "BYE"));
     }
 
-    // ==================== 建造者模式 ====================
-
-    /**
-     * 命令发送建造者
-     * 提供流式API，支持链式调用
-     */
-    public static class CommandBuilder {
-        private String commandType;
-        private FromDevice fromDevice;
-        private ToDevice toDevice;
-        private Event errorEvent;
-        private Event okEvent;
-        private SubscribeInfo subscribeInfo;
-        private Map<String, Object> params;
-
-        public CommandBuilder commandType(String commandType) {
-            this.commandType = commandType;
-            return this;
-        }
-
-        public CommandBuilder fromDevice(FromDevice fromDevice) {
-            this.fromDevice = fromDevice;
-            return this;
-        }
-
-        public CommandBuilder toDevice(ToDevice toDevice) {
-            this.toDevice = toDevice;
-            return this;
-        }
-
-        public CommandBuilder errorEvent(Event errorEvent) {
-            this.errorEvent = errorEvent;
-            return this;
-        }
-
-        public CommandBuilder okEvent(Event okEvent) {
-            this.okEvent = okEvent;
-            return this;
-        }
-
-        public CommandBuilder subscribeInfo(SubscribeInfo subscribeInfo) {
-            this.subscribeInfo = subscribeInfo;
-            return this;
-        }
-
-        public CommandBuilder params(Map<String, Object> params) {
-            this.params = params;
-            return this;
-        }
-
-        public String execute() {
-            if (subscribeInfo != null) {
-                params.put("subscribeInfo", subscribeInfo);
-                return sendCommand(commandType, fromDevice, toDevice, params);
-            } else {
-                return sendCommand(commandType, fromDevice, toDevice, errorEvent, okEvent, params);
-            }
-        }
+    public String deviceAckBySipUri(FromDevice from, SipURI sipURI, SIPResponse sipResponse) {
+        return SipSender.doAckRequest(from, sipURI, sipResponse);
     }
 
-    /**
-     * 创建命令建造者
-     *
-     * @return 命令建造者
-     */
-    public static CommandBuilder builder() {
-        return new CommandBuilder();
+    // ==================== 通用发送 ====================
+
+    public String send(CommandContext ctx) {
+        return factory.getStrategy(ctx.getRole(), ctx.getCommandType()).execute(ctx);
     }
+
+    private String send(String commandType, String deviceId, Object body) {
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        ToDevice to = getToDevice(deviceId);
+        return factory.getStrategy("server", commandType)
+            .execute(CommandContext.builder()
+                .role("server").commandType(commandType)
+                .fromDevice(from).toDevice(to).body(body).build());
+    }
+
+    private ToDevice getToDevice(String deviceId) {
+        ToDevice to = sessionCache.getToDevice(deviceId);
+        Assert.notNull(to, "设备未注册或会话缓存中不存在: " + deviceId);
+        return to;
+    }
+
+    private static String sn() {
+        return RandomStrUtil.getValidationCode();
+    }
+
 }

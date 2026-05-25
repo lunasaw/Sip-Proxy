@@ -82,4 +82,24 @@ public class SipServerProperties {
      * 域
      */
     private String realm = "34020000";
+
+    /**
+     * 对外可达IP（NAT/端口映射场景），填入 Via/Contact 头。
+     * 不配置时 fallback 到 ip。
+     */
+    private String externalIp;
+
+    /**
+     * 对外可达端口（NAT/端口映射场景），填入 Via/Contact 头。
+     * 不配置时 fallback 到 port。
+     */
+    private int externalPort = 0;
+
+    public String getEffectiveIp() {
+        return externalIp != null && !externalIp.isBlank() ? externalIp : ip;
+    }
+
+    public int getEffectivePort() {
+        return externalPort > 0 ? externalPort : port;
+    }
 }

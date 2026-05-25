@@ -1,15 +1,16 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.notify;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerNotifyEvent;
+
 import io.github.lunasaw.gb28181.common.entity.notify.MediaStatusNotify;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -28,8 +29,8 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
 
     private String cmdType = CMD_TYPE;
 
-    public MediaStatusNotifyMessageHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
-        super(serverMessageProcessorHandler, serverDeviceSupplier);
+    public MediaStatusNotifyMessageHandler(ApplicationEventPublisher publisher, ServerDeviceSupplier serverDeviceSupplier) {
+        super(publisher, serverDeviceSupplier);
     }
 
     @Override
@@ -53,7 +54,7 @@ public class MediaStatusNotifyMessageHandler extends MessageServerHandlerAbstrac
 
         MediaStatusNotify mediaStatusNotify = parseXml(MediaStatusNotify.class);
 
-        serverMessageProcessorHandler.updateMediaStatus(mediaStatusNotify);
+        publisher.publishEvent(new ServerNotifyEvent(this, mediaStatusNotify.getDeviceId(), mediaStatusNotify));
     }
 
     @Override

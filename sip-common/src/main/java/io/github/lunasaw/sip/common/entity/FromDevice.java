@@ -1,6 +1,6 @@
 package io.github.lunasaw.sip.common.entity;
 
-import io.github.lunasaw.sip.common.constant.Constant;
+import io.github.lunasaw.sip.common.config.SipCommonContextHolder;
 
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.Data;
@@ -33,7 +33,7 @@ public class FromDevice extends Device {
         fromDevice.setTransport("UDP");
         fromDevice.setStreamMode("TCP_PASSIVE");
         fromDevice.setFromTag(SipRequestUtils.getNewFromTag());
-        fromDevice.setAgent(Constant.AGENT);
+        fromDevice.setAgent(SipCommonContextHolder.getUserAgent());
         return fromDevice;
     }
 

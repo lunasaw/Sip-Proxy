@@ -8,31 +8,26 @@ import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstract;
 import io.github.lunasaw.sip.common.utils.SipUtils;
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
 
 /**
+ * 客户端 SUBSCRIBE 处理器抽象基类。
+ *
+ * <p>v1.5.0 改造：删除 {@code SubscribeRequestHandler} 字段与构造器入参，handler 直接维护内部
+ * SubscribeRegistry（在调用 send 200 OK 的同时把 SubscribeInfo 写入注册表），并发布
+ * {@link io.github.lunasaw.gbproxy.client.eventbus.event.ClientSubscribeEvent}。
+ * 业务接入由 {@code SubscribeListener} 取代旧 {@code SubscribeRequestHandler} 接口。
+ *
  * @author luna
  */
-@Data
 @Component
 public abstract class SubscribeHandlerAbstract extends MessageHandlerAbstract {
 
     @Autowired
-    @Lazy
-    protected SubscribeRequestHandler subscribeRequestHandler;
-
-    @Autowired
     protected ClientDeviceSupplier clientDeviceSupplier;
-
-    public SubscribeHandlerAbstract(@Lazy SubscribeRequestHandler subscribeRequestHandler, ClientDeviceSupplier deviceSupplier) {
-        this.subscribeRequestHandler = subscribeRequestHandler;
-        this.clientDeviceSupplier = deviceSupplier;
-    }
 
     @Override
     public String getRootType() {

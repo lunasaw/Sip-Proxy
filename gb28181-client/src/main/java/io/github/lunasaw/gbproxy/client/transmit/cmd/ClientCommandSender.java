@@ -4,620 +4,422 @@ import com.luna.common.check.Assert;
 import com.luna.common.text.RandomStrUtil;
 import io.github.lunasaw.gb28181.common.entity.DeviceAlarm;
 import io.github.lunasaw.gb28181.common.entity.notify.*;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceItem;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
-import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
-import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
-import io.github.lunasaw.gb28181.common.entity.response.ConfigDownloadResponse;
+import io.github.lunasaw.gb28181.common.entity.response.*;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandStrategyFactory;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.event.Event;
-import io.github.lunasaw.sip.common.context.SipTransactionContext;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.ClientCommandStrategy;
-import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.ClientCommandStrategyFactory;
-
-import javax.sip.RequestEvent;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
 
-/**
- * GB28181客户端命令发送器
- * 使用策略模式和建造者模式，提供更灵活和可扩展的命令发送接口
- *
- * @author luna
- * @date 2024/01/01
- */
+import java.util.List;
+
 @Slf4j
-public class ClientCommandSender {
+@Component
+public class ClientCommandSender implements ApplicationContextAware {
 
-    // ==================== 策略模式命令发送 ====================
+    private static ClientCommandSender INSTANCE;
+    private final CommandStrategyFactory factory;
+
+    public ClientCommandSender(CommandStrategyFactory factory) {
+        this.factory = factory;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext ctx) {
+        INSTANCE = this;
+    }
+
+    public String send(CommandContext ctx) {
+        return factory.getStrategy(ctx.getRole(), ctx.getCommandType()).execute(ctx);
+    }
+
+    private static String send(String commandType, FromDevice from, ToDevice to, Object body) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.builder()
+            .role("client").commandType(commandType)
+            .fromDevice(from).toDevice(to).body(body).build());
+    }
+
+    private static String send(String commandType, FromDevice from, ToDevice to, String content) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.builder()
+            .role("client").commandType(commandType)
+            .fromDevice(from).toDevice(to).content(content).build());
+    }
+
+    private static String send(String commandType, FromDevice from, ToDevice to, Object body,
+                                Event errorEvent, Event okEvent) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.builder()
+            .role("client").commandType(commandType)
+            .fromDevice(from).toDevice(to).body(body)
+            .errorEvent(errorEvent).okEvent(okEvent).build());
+    }
+
+    public static String sendAlarmCommand(FromDevice from, ToDevice to, DeviceAlarm alarm) {
+        return send("MESSAGE", from, to, alarm);
+    }
+
+    public static String sendAlarmCommand(FromDevice from, ToDevice to, DeviceAlarmNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
 
     /**
-     * 使用策略模式发送命令
-     *
-     * @param commandType 命令类型
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param params      命令参数
-     * @return callId
+     * GB28181-2022 §9.11.2 报警事件 NOTIFY (订阅生效后的主动上报)
      */
-    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Object... params) {
-        // 如果没有对应的策略，使用MESSAGE策略
-        ClientCommandStrategy strategy;
-        try {
-            strategy = ClientCommandStrategyFactory.getStrategy(commandType);
-        } catch (IllegalArgumentException e) {
-            // 对于非SIP基础协议的命令，使用MESSAGE策略
-            strategy = ClientCommandStrategyFactory.getMessageStrategy();
+    public static String sendAlarmNotify(FromDevice from, ToDevice to, DeviceAlarmNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    public static String sendKeepaliveCommand(FromDevice from, ToDevice to, String status) {
+        DeviceKeepLiveNotify n = new DeviceKeepLiveNotify(
+            CmdTypeEnum.KEEPALIVE.getType(), RandomStrUtil.getValidationCode(), from.getUserId());
+        n.setStatus(status);
+        return send("MESSAGE", from, to, n);
+    }
+
+    public static String sendKeepaliveCommand(FromDevice from, ToDevice to, DeviceKeepLiveNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    public static String sendCatalogCommand(FromDevice from, ToDevice to, DeviceResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    public static String sendCatalogCommand(FromDevice from, ToDevice to, List<DeviceItem> items) {
+        return send("MESSAGE", from, to, items);
+    }
+
+    /**
+     * GB28181-2022 附录 M 多响应消息传输：把超大目录响应分批发送。
+     *
+     * <p>每批响应携带相同 SN（与原查询请求 SN 一致）和总数 sumNum，但只携带 batchSize 条 deviceItem。
+     * 0 条时返回 sumNum=0 且不携带 deviceItemList。响应条数超过 10000 时建议改用 TCP。
+     *
+     * @param from           本端
+     * @param to             目标平台
+     * @param fullResponse   完整目录响应（携带全部 deviceItemList）
+     * @param batchSize      每批最多 deviceItem 条数；建议 100~1000，最大不超过 10000
+     * @return 第一批的 callId（后续批次内部串行发送，调用方无需关心）
+     */
+    public static String sendCatalogCommandBatched(FromDevice from, ToDevice to,
+                                                    DeviceResponse fullResponse, int batchSize) {
+        if (batchSize < 1 || batchSize > 10_000) {
+            throw new IllegalArgumentException("batchSize 必须在 [1, 10000] 范围内：" + batchSize);
         }
-        return strategy.execute(fromDevice, toDevice, params);
-    }
-
-    /**
-     * 使用策略模式发送命令（支持事务上下文）
-     * 通过RequestEvent复用原请求的Call-ID，确保事务一致性
-     *
-     * @param commandType  命令类型
-     * @param fromDevice   发送设备
-     * @param toDevice     接收设备
-     * @param requestEvent 原始请求事件，用于复用Call-ID
-     * @param params       命令参数
-     * @return callId
-     */
-    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice,
-                                     RequestEvent requestEvent, Object... params) {
-        try {
-            // 设置事务上下文（显式模式）
-            SipTransactionContext.setRequestEvent(requestEvent);
-
-            // 执行命令发送
-            return sendCommand(commandType, fromDevice, toDevice, params);
-        } finally {
-            // 清理事务上下文，避免内存泄漏
-            SipTransactionContext.clear();
+        List<DeviceItem> all = fullResponse.getDeviceItemList();
+        int total = all == null ? 0 : all.size();
+        // 0 条：单条响应 sumNum=0，不携带列表
+        if (total == 0) {
+            DeviceResponse empty = cloneCatalogShell(fullResponse);
+            empty.setSumNum(0);
+            empty.setDeviceItemList(null);
+            return send("MESSAGE", from, to, empty);
         }
-    }
-
-    /**
-     * 使用策略模式发送命令（带事件）
-     *
-     * @param commandType 命令类型
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param errorEvent  错误事件
-     * @param okEvent     成功事件
-     * @param params      命令参数
-     * @return callId
-     */
-    public static String sendCommand(String commandType, FromDevice fromDevice, ToDevice toDevice, Event errorEvent, Event okEvent,
-                                     Object... params) {
-        // 如果没有对应的策略，使用MESSAGE策略
-        ClientCommandStrategy strategy;
-        try {
-            strategy = ClientCommandStrategyFactory.getStrategy(commandType);
-        } catch (IllegalArgumentException e) {
-            // 对于非SIP基础协议的命令，使用MESSAGE策略
-            strategy = ClientCommandStrategyFactory.getMessageStrategy();
-        }
-        return strategy.execute(fromDevice, toDevice, errorEvent, okEvent, params);
-    }
-
-    // ==================== 告警相关命令 ====================
-
-    /**
-     * 发送告警命令
-     *
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param deviceAlarm 告警信息
-     * @return callId
-     */
-    public static String sendAlarmCommand(FromDevice fromDevice, ToDevice toDevice, DeviceAlarm deviceAlarm) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceAlarm);
-    }
-
-    /**
-     * 发送告警命令
-     *
-     * @param fromDevice        发送设备
-     * @param toDevice          接收设备
-     * @param deviceAlarmNotify 告警通知对象
-     * @return callId
-     */
-    public static String sendAlarmCommand(FromDevice fromDevice, ToDevice toDevice, DeviceAlarmNotify deviceAlarmNotify) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceAlarmNotify);
-    }
-
-    // ==================== 心跳相关命令 ====================
-
-    /**
-     * 发送心跳命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param status     状态信息
-     * @return callId
-     */
-    public static String sendKeepaliveCommand(FromDevice fromDevice, ToDevice toDevice, String status) {
-        DeviceKeepLiveNotify keepLiveNotify = new DeviceKeepLiveNotify(
-                CmdTypeEnum.KEEPALIVE.getType(),
-                RandomStrUtil.getValidationCode(),
-                fromDevice.getUserId()
-        );
-        keepLiveNotify.setStatus(status);
-        return sendKeepaliveCommand(fromDevice, toDevice, keepLiveNotify);
-    }
-
-    public static String sendKeepaliveCommand(FromDevice fromDevice, ToDevice toDevice, DeviceKeepLiveNotify deviceKeepLiveNotify) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceKeepLiveNotify);
-    }
-
-    // ==================== 设备目录相关命令 ====================
-
-    /**
-     * 发送目录命令
-     *
-     * @param fromDevice     发送设备
-     * @param toDevice       接收设备
-     * @param deviceResponse 设备响应对象
-     * @return callId
-     */
-    public static String sendCatalogCommand(FromDevice fromDevice, ToDevice toDevice, DeviceResponse deviceResponse) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceResponse);
-    }
-
-    /**
-     * 发送目录命令
-     *
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param deviceItems 设备列表
-     * @return callId
-     */
-    public static String sendCatalogCommand(FromDevice fromDevice, ToDevice toDevice, List<DeviceItem> deviceItems) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceItems);
-    }
-
-    /**
-     * 发送目录命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param deviceItem 单个设备项
-     * @return callId
-     */
-    public static String sendCatalogCommand(FromDevice fromDevice, ToDevice toDevice, DeviceItem deviceItem) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceItem);
-    }
-
-    // ==================== 设备信息相关命令 ====================
-
-    /**
-     * 发送设备信息响应命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param deviceInfo 设备信息
-     * @return callId
-     */
-    public static String sendDeviceInfoCommand(FromDevice fromDevice, ToDevice toDevice, DeviceInfo deviceInfo) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceInfo);
-    }
-
-    /**
-     * 发送设备信息响应命令（支持事务上下文）
-     * 通过RequestEvent复用原请求的Call-ID，确保事务一致性
-     *
-     * @param fromDevice   发送设备
-     * @param toDevice     接收设备
-     * @param deviceInfo   设备信息
-     * @param requestEvent 原始请求事件，用于复用Call-ID
-     * @return callId
-     */
-    public static String sendDeviceInfoCommand(FromDevice fromDevice, ToDevice toDevice,
-                                               DeviceInfo deviceInfo, RequestEvent requestEvent) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, requestEvent, deviceInfo);
-    }
-
-    /**
-     * 发送设备状态响应命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param online     在线状态 "ONLINE":"OFFLINE"
-     * @return callId
-     */
-    public static String sendDeviceStatusCommand(FromDevice fromDevice, ToDevice toDevice, String online) {
-        DeviceStatus deviceStatus = new DeviceStatus(
-                CmdTypeEnum.DEVICE_STATUS.getType(),
-                RandomStrUtil.getValidationCode(),
-                fromDevice.getUserId()
-        );
-        deviceStatus.setOnline(online);
-        return sendDeviceStatusCommand(fromDevice, toDevice, deviceStatus);
-    }
-
-    /**
-     * 发送设备状态响应命令
-     *
-     * @param fromDevice   发送设备
-     * @param toDevice     接收设备
-     * @param deviceStatus 在线状态 "ONLINE":"OFFLINE"
-     * @return callId
-     */
-    public static String sendDeviceStatusCommand(FromDevice fromDevice, ToDevice toDevice, DeviceStatus deviceStatus) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceStatus);
-    }
-
-    // ==================== 位置信息相关命令 ====================
-
-    /**
-     * 发送位置通知命令
-     *
-     * @param fromDevice           发送设备
-     * @param toDevice             接收设备
-     * @param mobilePositionNotify 位置通知对象
-     * @param subscribeInfo        订阅信息
-     * @return callId
-     */
-    public static String sendMobilePositionCommand(FromDevice fromDevice, ToDevice toDevice,
-                                                   MobilePositionNotify mobilePositionNotify, SubscribeInfo subscribeInfo) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, mobilePositionNotify);
-    }
-
-    // ==================== 设备更新相关命令 ====================
-
-    /**
-     * 发送设备通道更新通知命令
-     *
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param deviceItems 通道列表
-     * @return callId
-     */
-    public static String sendDeviceChannelUpdateCommand(FromDevice fromDevice, ToDevice toDevice,
-                                                        List<DeviceUpdateItem> deviceItems) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceItems);
-    }
-
-    /**
-     * 发送设备其他更新通知命令
-     *
-     * @param fromDevice  发送设备
-     * @param toDevice    接收设备
-     * @param deviceItems 推送事件列表
-     * @return callId
-     */
-    public static String sendDeviceOtherUpdateCommand(FromDevice fromDevice, ToDevice toDevice,
-                                                      List<DeviceOtherUpdateNotify.OtherItem> deviceItems) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceItems);
-    }
-
-    // ==================== 录像相关命令 ====================
-
-    /**
-     * 发送录像响应命令
-     *
-     * @param fromDevice   发送设备
-     * @param toDevice     接收设备
-     * @param deviceRecord 录像响应对象
-     * @return callId
-     */
-    public static String sendDeviceRecordCommand(FromDevice fromDevice, ToDevice toDevice, DeviceRecord deviceRecord) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceRecord);
-    }
-
-    /**
-     * 发送录像响应命令
-     *
-     * @param fromDevice        发送设备
-     * @param toDevice          接收设备
-     * @param deviceRecordItems 录像文件列表
-     * @return callId
-     */
-    public static String sendDeviceRecordCommand(FromDevice fromDevice, ToDevice toDevice,
-                                                 List<DeviceRecord.RecordItem> deviceRecordItems) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceRecordItems);
-    }
-
-    // ==================== 配置相关命令 ====================
-
-    /**
-     * 发送设备配置响应命令
-     *
-     * @param fromDevice           发送设备
-     * @param toDevice             接收设备
-     * @param deviceConfigResponse 配置响应对象
-     * @return callId
-     */
-    public static String sendDeviceConfigCommand(FromDevice fromDevice, ToDevice toDevice, DeviceConfigResponse deviceConfigResponse) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, deviceConfigResponse);
-    }
-
-    /**
-     * 发送设备配置查询应答
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param response   配置查询应答对象
-     * @return callId
-     */
-    public static String sendConfigDownloadResponse(FromDevice fromDevice, ToDevice toDevice, ConfigDownloadResponse response) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, response);
-    }
-
-    // ==================== 媒体状态相关命令 ====================
-
-    /**
-     * 发送媒体状态通知命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param notifyType 通知类型 121
-     * @return callId
-     */
-    public static String sendMediaStatusCommand(FromDevice fromDevice, ToDevice toDevice, String notifyType) {
-        MediaStatusNotify mediaStatusNotify = new MediaStatusNotify(
-                CmdTypeEnum.MEDIA_STATUS.getType(),
-                RandomStrUtil.getValidationCode(),
-                fromDevice.getUserId()
-        );
-        mediaStatusNotify.setNotifyType(notifyType);
-        return sendCommand("MESSAGE", fromDevice, toDevice, mediaStatusNotify);
-    }
-
-    /**
-     * 发送设备预置位查询应答
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param response   预置位查询应答对象
-     * @return callId
-     */
-    public static String sendPresetQueryResponse(FromDevice fromDevice, ToDevice toDevice, PresetQueryResponse response) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, response);
-    }
-
-
-    /**
-     * 发送设备预置位查询应答
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param response   预置位查询应答对象
-     * @return callId
-     */
-    public static String sendMobilePositionNotify(FromDevice fromDevice, ToDevice toDevice, MobilePositionNotify response) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, response);
-    }
-
-
-    // ==================== 会话控制相关命令 ====================
-
-    /**
-     * 发送BYE请求命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String sendByeCommand(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("BYE", fromDevice, toDevice);
-    }
-
-    /**
-     * 发送ACK响应命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String sendAckCommand(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("ACK", fromDevice, toDevice);
-    }
-
-    /**
-     * 发送ACK响应命令（指定callId）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param callId     呼叫ID
-     * @return callId
-     */
-    public static String sendAckCommand(FromDevice fromDevice, ToDevice toDevice, String callId) {
-        return sendCommand("ACK", fromDevice, toDevice, callId);
-    }
-
-    /**
-     * 发送ACK响应命令（带内容和callId）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param content    内容
-     * @param callId     呼叫ID
-     * @return callId
-     */
-    public static String sendAckCommand(FromDevice fromDevice, ToDevice toDevice, String content, String callId) {
-        return sendCommand("ACK", fromDevice, toDevice, content, callId);
-    }
-
-    // ==================== 点播相关命令 ====================
-
-    /**
-     * 发送实时点播命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param sdpContent SDP内容
-     * @return callId
-     */
-    public static String sendInvitePlayCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent) {
-        return sendCommand("INVITE", fromDevice, toDevice, sdpContent);
-    }
-
-    /**
-     * 发送实时点播命令（带事件）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param sdpContent SDP内容
-     * @param errorEvent 错误事件
-     * @param okEvent    成功事件
-     * @return callId
-     */
-    public static String sendInvitePlayCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent, Event errorEvent, Event okEvent) {
-        return sendCommand("INVITE", fromDevice, toDevice, errorEvent, okEvent, sdpContent);
-    }
-
-    /**
-     * 发送回放点播命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param sdpContent SDP内容
-     * @return callId
-     */
-    public static String sendInvitePlayBackCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent) {
-        return sendCommand("INVITE", fromDevice, toDevice, sdpContent);
-    }
-
-    /**
-     * 发送回放点播命令（带事件）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param sdpContent SDP内容
-     * @param errorEvent 错误事件
-     * @param okEvent    成功事件
-     * @return callId
-     */
-    public static String sendInvitePlayBackCommand(FromDevice fromDevice, ToDevice toDevice, String sdpContent, Event errorEvent, Event okEvent) {
-        return sendCommand("INVITE", fromDevice, toDevice, errorEvent, okEvent, sdpContent);
-    }
-
-    /**
-     * 发送点播控制命令（暂停、继续、快进等）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param controlContent 控制内容
-     * @return callId
-     */
-    public static String sendInvitePlayControlCommand(FromDevice fromDevice, ToDevice toDevice, String controlContent) {
-        return sendCommand("MESSAGE", fromDevice, toDevice, controlContent);
-    }
-
-    // ==================== 注册相关命令 ====================
-
-    /**
-     * 发送注册命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param expires    过期时间
-     * @return callId
-     */
-    public static String sendRegisterCommand(FromDevice fromDevice, ToDevice toDevice, Integer expires) {
-        Assert.isTrue(expires >= 0, "过期时间应该 >= 0");
-        return sendCommand("REGISTER", fromDevice, toDevice, expires);
-    }
-
-    /**
-     * 发送注册命令（带事件）
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @param expires    过期时间
-     * @param event      事件
-     * @return callId
-     */
-    public static String sendRegisterCommand(FromDevice fromDevice, ToDevice toDevice, Integer expires, Event event) {
-        Assert.isTrue(expires >= 0, "过期时间应该 >= 0");
-        return sendCommand("REGISTER", fromDevice, toDevice, event, null, expires);
-    }
-
-    /**
-     * 发送注销命令
-     *
-     * @param fromDevice 发送设备
-     * @param toDevice   接收设备
-     * @return callId
-     */
-    public static String sendUnregisterCommand(FromDevice fromDevice, ToDevice toDevice) {
-        return sendCommand("REGISTER", fromDevice, toDevice, 0);
-    }
-
-    // ==================== 建造者模式 ====================
-
-    /**
-     * 命令发送建造者
-     * 提供流式API，支持链式调用
-     */
-    public static class CommandBuilder {
-        private String commandType;
-        private FromDevice fromDevice;
-        private ToDevice toDevice;
-        private Event errorEvent;
-        private Event okEvent;
-        private SubscribeInfo subscribeInfo;
-        private Object[] params;
-
-        public CommandBuilder commandType(String commandType) {
-            this.commandType = commandType;
-            return this;
-        }
-
-        public CommandBuilder fromDevice(FromDevice fromDevice) {
-            this.fromDevice = fromDevice;
-            return this;
-        }
-
-        public CommandBuilder toDevice(ToDevice toDevice) {
-            this.toDevice = toDevice;
-            return this;
-        }
-
-        public CommandBuilder errorEvent(Event errorEvent) {
-            this.errorEvent = errorEvent;
-            return this;
-        }
-
-        public CommandBuilder okEvent(Event okEvent) {
-            this.okEvent = okEvent;
-            return this;
-        }
-
-        public CommandBuilder subscribeInfo(SubscribeInfo subscribeInfo) {
-            this.subscribeInfo = subscribeInfo;
-            return this;
-        }
-
-        public CommandBuilder params(Object... params) {
-            this.params = params;
-            return this;
-        }
-
-        public String execute() {
-            if (subscribeInfo != null) {
-                return sendCommand(commandType, fromDevice, toDevice, subscribeInfo, params);
-            } else {
-                return sendCommand(commandType, fromDevice, toDevice, errorEvent, okEvent, params);
+        String firstCallId = null;
+        for (int offset = 0; offset < total; offset += batchSize) {
+            int end = Math.min(offset + batchSize, total);
+            DeviceResponse batch = cloneCatalogShell(fullResponse);
+            batch.setSumNum(total);
+            batch.setDeviceItemList(all.subList(offset, end));
+            String callId = send("MESSAGE", from, to, batch);
+            if (firstCallId == null) {
+                firstCallId = callId;
             }
         }
+        return firstCallId;
+    }
+
+    private static DeviceResponse cloneCatalogShell(DeviceResponse src) {
+        DeviceResponse shell = new DeviceResponse(src.getCmdType(), src.getSn(), src.getDeviceId());
+        shell.setName(src.getName());
+        return shell;
+    }
+
+    public static String sendCatalogCommand(FromDevice from, ToDevice to, DeviceItem item) {
+        return send("MESSAGE", from, to, item);
+    }
+
+    public static String sendDeviceInfoCommand(FromDevice from, ToDevice to, DeviceInfo info) {
+        return send("MESSAGE", from, to, info);
+    }
+
+    public static String sendDeviceStatusCommand(FromDevice from, ToDevice to, String online) {
+        DeviceStatus s = new DeviceStatus(
+            CmdTypeEnum.DEVICE_STATUS.getType(), RandomStrUtil.getValidationCode(), from.getUserId());
+        s.setOnline(online);
+        return send("MESSAGE", from, to, s);
+    }
+
+    public static String sendDeviceStatusCommand(FromDevice from, ToDevice to, DeviceStatus status) {
+        return send("MESSAGE", from, to, status);
+    }
+
+    public static String sendMobilePositionCommand(FromDevice from, ToDevice to, MobilePositionNotify notify, SubscribeInfo subscribeInfo) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    public static String sendMobilePositionNotify(FromDevice from, ToDevice to, MobilePositionNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    public static String sendDeviceChannelUpdateCommand(FromDevice from, ToDevice to, List<DeviceUpdateItem> items) {
+        return send("MESSAGE", from, to, items);
+    }
+
+    public static String sendDeviceOtherUpdateCommand(FromDevice from, ToDevice to, List<DeviceOtherUpdateNotify.OtherItem> items) {
+        return send("MESSAGE", from, to, items);
     }
 
     /**
-     * 创建命令建造者
+     * GB28181-2022 附录 N 域间目录订阅通知：发送目录变更通知（在线 / 离线 / 增加 / 删除 / 更新）。
      *
-     * @return 命令建造者
+     * <p>对应 §N.2.1.2.1：被订阅域在检测到被订阅范围内目录变更事件时，应根据接收的订阅者列表，
+     * 向处于订阅有效期的域发送目录状态通知消息。NOTIFY method 由协议层 {@code CatalogNotifyStrategy}
+     * 自动选用。
+     *
+     * @param from   本端
+     * @param to     订阅方域
+     * @param sn     与订阅请求的 SN 相同（保持会话关联）
+     * @param events 变更条目列表，每条 (deviceId, event)，event ∈ {ON, OFF, ADD, DEL, UPDATE}
      */
-    public static CommandBuilder builder() {
-        return new CommandBuilder();
+    public static String sendCatalogChangeNotify(FromDevice from, ToDevice to, String sn,
+                                                  List<DeviceOtherUpdateNotify.OtherItem> events) {
+        DeviceOtherUpdateNotify notify = new DeviceOtherUpdateNotify("Catalog", sn, from.getUserId());
+        int total = events == null ? 0 : events.size();
+        notify.setSumNum(total);
+        notify.setDeviceItemList(events);
+        return send("MESSAGE", from, to, notify);
     }
 
+    /**
+     * GB28181-2022 附录 N + 附录 M 联用：超大目录变更分批 NOTIFY。
+     */
+    public static String sendCatalogChangeNotifyBatched(FromDevice from, ToDevice to, String sn,
+                                                        List<DeviceOtherUpdateNotify.OtherItem> events,
+                                                        int batchSize) {
+        if (batchSize < 1 || batchSize > 10_000) {
+            throw new IllegalArgumentException("batchSize 必须在 [1, 10000] 范围内：" + batchSize);
+        }
+        int total = events == null ? 0 : events.size();
+        if (total == 0) {
+            DeviceOtherUpdateNotify empty = new DeviceOtherUpdateNotify("Catalog", sn, from.getUserId());
+            empty.setSumNum(0);
+            return send("MESSAGE", from, to, empty);
+        }
+        String firstCallId = null;
+        for (int offset = 0; offset < total; offset += batchSize) {
+            int end = Math.min(offset + batchSize, total);
+            DeviceOtherUpdateNotify batch = new DeviceOtherUpdateNotify("Catalog", sn, from.getUserId());
+            batch.setSumNum(total);
+            batch.setDeviceItemList(events.subList(offset, end));
+            String callId = send("MESSAGE", from, to, batch);
+            if (firstCallId == null) {
+                firstCallId = callId;
+            }
+        }
+        return firstCallId;
+    }
+
+    public static String sendDeviceRecordCommand(FromDevice from, ToDevice to, DeviceRecord record) {
+        return send("MESSAGE", from, to, record);
+    }
+
+    public static String sendDeviceRecordCommand(FromDevice from, ToDevice to, List<DeviceRecord.RecordItem> items) {
+        return send("MESSAGE", from, to, items);
+    }
+
+    /**
+     * GB28181-2022 附录 M 多响应消息传输：把超大录像查询响应分批发送。
+     *
+     * <p>每批响应携带相同 SN（与原 RecordInfo 查询请求 SN 一致）和总数 sumNum，但只携带 batchSize 条 recordItem。
+     * 0 条时返回 sumNum=0 且不携带 recordList。响应条数超过 10000 时建议改用 TCP。
+     */
+    public static String sendDeviceRecordCommandBatched(FromDevice from, ToDevice to,
+                                                        DeviceRecord fullRecord, int batchSize) {
+        if (batchSize < 1 || batchSize > 10_000) {
+            throw new IllegalArgumentException("batchSize 必须在 [1, 10000] 范围内：" + batchSize);
+        }
+        List<DeviceRecord.RecordItem> all = fullRecord.getRecordList();
+        int total = all == null ? 0 : all.size();
+        if (total == 0) {
+            DeviceRecord empty = cloneRecordShell(fullRecord);
+            empty.setSumNum(0);
+            empty.setRecordList(null);
+            return send("MESSAGE", from, to, empty);
+        }
+        String firstCallId = null;
+        for (int offset = 0; offset < total; offset += batchSize) {
+            int end = Math.min(offset + batchSize, total);
+            DeviceRecord batch = cloneRecordShell(fullRecord);
+            batch.setSumNum(total);
+            batch.setRecordList(all.subList(offset, end));
+            String callId = send("MESSAGE", from, to, batch);
+            if (firstCallId == null) {
+                firstCallId = callId;
+            }
+        }
+        return firstCallId;
+    }
+
+    private static DeviceRecord cloneRecordShell(DeviceRecord src) {
+        return new DeviceRecord(src.getCmdType(), src.getSn(), src.getDeviceId());
+    }
+
+    public static String sendDeviceConfigCommand(FromDevice from, ToDevice to, DeviceConfigResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    public static String sendMediaStatusCommand(FromDevice from, ToDevice to, String notifyType) {
+        MediaStatusNotify n = new MediaStatusNotify(
+            CmdTypeEnum.MEDIA_STATUS.getType(), RandomStrUtil.getValidationCode(), from.getUserId());
+        n.setNotifyType(notifyType);
+        return send("MESSAGE", from, to, n);
+    }
+
+    public static String sendPresetQueryResponse(FromDevice from, ToDevice to, PresetQueryResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.9 设备软件升级结果通知
+     */
+    public static String sendUpgradeResultNotify(FromDevice from, ToDevice to, UpgradeResultNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.9 设备软件升级结果通知 (字段构造)
+     */
+    public static String sendUpgradeResultNotify(FromDevice from, ToDevice to,
+                                                  String sessionId, String upgradeResult,
+                                                  String firmware, String upgradeFailedReason) {
+        UpgradeResultNotify notify = new UpgradeResultNotify(RandomStrUtil.getValidationCode(), from.getUserId());
+        notify.setSessionId(sessionId);
+        notify.setUpgradeResult(upgradeResult);
+        notify.setFirmware(firmware);
+        notify.setUpgradeFailedReason(upgradeFailedReason);
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.7 图像抓拍传输完成通知
+     */
+    public static String sendSnapShotFinishedNotify(FromDevice from, ToDevice to, UploadSnapShotFinishedNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.5.7 图像抓拍传输完成通知 (字段构造)
+     */
+    public static String sendSnapShotFinishedNotify(FromDevice from, ToDevice to,
+                                                     String sessionId, List<String> snapShotFileIds) {
+        UploadSnapShotFinishedNotify notify = new UploadSnapShotFinishedNotify(RandomStrUtil.getValidationCode(), from.getUserId());
+        notify.setSessionId(sessionId);
+        notify.setSnapShotFileIds(snapShotFileIds);
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.15 PTZ 精确状态查询应答
+     */
+    public static String sendPtzPositionResponse(FromDevice from, ToDevice to, PTZPositionResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.16 存储卡状态查询应答
+     */
+    public static String sendSdCardStatusResponse(FromDevice from, ToDevice to, SDCardStatusResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.12 看守位信息查询应答
+     */
+    public static String sendHomePositionResponse(FromDevice from, ToDevice to, HomePositionResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.13 巡航轨迹列表查询应答
+     */
+    public static String sendCruiseTrackListResponse(FromDevice from, ToDevice to, CruiseTrackListResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 A.2.6.14 巡航轨迹查询应答
+     */
+    public static String sendCruiseTrackResponse(FromDevice from, ToDevice to, CruiseTrackResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    public static String sendByeCommand(FromDevice from, ToDevice to) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.forAckBye("client", from, to, null, "BYE"));
+    }
+
+    public static String sendAckCommand(FromDevice from, ToDevice to) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.forAckBye("client", from, to, null, "ACK"));
+    }
+
+    public static String sendAckCommand(FromDevice from, ToDevice to, String callId) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.forAckBye("client", from, to, callId, "ACK"));
+    }
+
+    public static String sendAckCommand(FromDevice from, ToDevice to, String content, String callId) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.forAckBye("client", from, to, callId, "ACK")
+            .toBuilder().content(content).build());
+    }
+
+    public static String sendInvitePlayCommand(FromDevice from, ToDevice to, String sdpContent) {
+        return send("INVITE", from, to, sdpContent);
+    }
+
+    public static String sendInvitePlayCommand(FromDevice from, ToDevice to, String sdpContent, Event errorEvent, Event okEvent) {
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.builder()
+            .role("client").commandType("INVITE")
+            .fromDevice(from).toDevice(to).content(sdpContent)
+            .errorEvent(errorEvent).okEvent(okEvent).build());
+    }
+
+    public static String sendInvitePlayBackCommand(FromDevice from, ToDevice to, String sdpContent) {
+        return send("INVITE", from, to, sdpContent);
+    }
+
+    public static String sendInvitePlayBackCommand(FromDevice from, ToDevice to, String sdpContent, Event errorEvent, Event okEvent) {
+        return sendInvitePlayCommand(from, to, sdpContent, errorEvent, okEvent);
+    }
+
+    public static String sendInvitePlayControlCommand(FromDevice from, ToDevice to, String controlContent) {
+        return send("MESSAGE", from, to, controlContent);
+    }
+
+    public static String sendRegisterCommand(FromDevice from, ToDevice to, Integer expires) {
+        Assert.isTrue(expires >= 0, "过期时间应该 >= 0");
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.forRegister("client", from, to, expires));
+    }
+
+    public static String sendRegisterCommand(FromDevice from, ToDevice to, Integer expires, Event event) {
+        Assert.isTrue(expires >= 0, "过期时间应该 >= 0");
+        Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
+        return INSTANCE.send(CommandContext.forRegister("client", from, to, expires)
+            .toBuilder().okEvent(event).build());
+    }
+
+    public static String sendUnregisterCommand(FromDevice from, ToDevice to) {
+        return sendRegisterCommand(from, to, 0);
+    }
 }

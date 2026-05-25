@@ -1,22 +1,17 @@
 package io.github.lunasaw.gbproxy.client.transmit.response.ack;
 
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientAckEvent;
 import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
 
-/**
- * ACK响应处理器
- * 只负责SIP协议层面的处理，业务逻辑通过AckProcessorHandler接口实现
- *
- * @author luna
- */
 @Slf4j
 @Getter
 @Setter
@@ -28,14 +23,8 @@ public class ClientAckResponseProcessor extends ClientAbstractSipResponseProcess
     private String method = METHOD;
 
     @Autowired
-    @Lazy
-    private ClientAckProcessorHandler ackProcessorHandler;
+    private ApplicationEventPublisher publisher;
 
-    /**
-     * 处理ACK响应
-     *
-     * @param evt 响应事件
-     */
     @Override
     public void process(ResponseEvent evt) {
         try {
@@ -43,7 +32,7 @@ public class ClientAckResponseProcessor extends ClientAbstractSipResponseProcess
             String callId = callIdHeader != null ? callIdHeader.getCallId() : null;
 
             if (callId != null) {
-                ackProcessorHandler.handleAckResponse(callId, evt);
+                publisher.publishEvent(new ClientAckEvent(this, callId));
                 log.debug("处理ACK响应：callId = {}", callId);
             } else {
                 log.warn("ACK响应处理失败：callId为空");

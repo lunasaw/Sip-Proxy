@@ -1,6 +1,6 @@
 package io.github.lunasaw.sip.common.transmit;
 
-import io.github.lunasaw.sip.common.transmit.SipTransactionContext.TransactionContextInfo;
+import io.github.lunasaw.sip.common.transmit.SipTransactionRegistry.TransactionContextInfo;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.sip.RequestEvent;
@@ -75,10 +75,10 @@ public class TransactionAwareResponseCmd {
         private boolean sendWithTransactionContext() {
             try {
                 // 获取当前线程的事务上下文
-                TransactionContextInfo context = SipTransactionContext.getCurrentContext();
+                TransactionContextInfo context = SipTransactionRegistry.getCurrentContext();
                 if (context == null && contextKey != null) {
                     // 如果当前线程没有上下文，尝试根据键获取
-                    context = SipTransactionContext.getContext(contextKey);
+                    context = SipTransactionRegistry.getContext(contextKey);
                 }
 
                 if (context == null) {
@@ -219,7 +219,7 @@ public class TransactionAwareResponseCmd {
     public static void sendResponseSafe(int statusCode, RequestEvent requestEvent, ServerTransaction serverTransaction) {
         try {
             // 优先尝试使用事务感知方式
-            if (SipTransactionContext.getCurrentContext() != null) {
+            if (SipTransactionRegistry.getCurrentContext() != null) {
                 sendResponse(statusCode);
                 return;
             }
@@ -243,7 +243,7 @@ public class TransactionAwareResponseCmd {
     public static void sendResponseSafe(int statusCode, String phrase, RequestEvent requestEvent, ServerTransaction serverTransaction) {
         try {
             // 优先尝试使用事务感知方式
-            if (SipTransactionContext.getCurrentContext() != null) {
+            if (SipTransactionRegistry.getCurrentContext() != null) {
                 sendResponse(statusCode, phrase);
                 return;
             }
@@ -267,7 +267,7 @@ public class TransactionAwareResponseCmd {
      * 检查当前线程是否有有效的事务上下文
      */
     public static boolean hasValidTransactionContext() {
-        TransactionContextInfo context = SipTransactionContext.getCurrentContext();
+        TransactionContextInfo context = SipTransactionRegistry.getCurrentContext();
         return context != null && context.checkAndUpdateValidity();
     }
 
@@ -275,7 +275,7 @@ public class TransactionAwareResponseCmd {
      * 获取当前事务上下文信息
      */
     public static String getCurrentTransactionInfo() {
-        TransactionContextInfo context = SipTransactionContext.getCurrentContext();
+        TransactionContextInfo context = SipTransactionRegistry.getCurrentContext();
         if (context == null) {
             return "无事务上下文";
         }
@@ -291,7 +291,7 @@ public class TransactionAwareResponseCmd {
      * 强制刷新当前事务上下文状态
      */
     public static boolean refreshCurrentTransactionContext() {
-        TransactionContextInfo context = SipTransactionContext.getCurrentContext();
+        TransactionContextInfo context = SipTransactionRegistry.getCurrentContext();
         if (context != null) {
             return context.checkAndUpdateValidity();
         }

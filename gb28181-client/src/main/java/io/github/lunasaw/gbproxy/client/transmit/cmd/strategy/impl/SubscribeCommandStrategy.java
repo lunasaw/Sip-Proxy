@@ -1,35 +1,25 @@
 package io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.impl;
 
-import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.ToDevice;
-import io.github.lunasaw.sip.common.transmit.SipSender;
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientCommandStrategy;
-import io.github.lunasaw.sip.common.transmit.event.Event;
-import lombok.extern.slf4j.Slf4j;
+import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
+import io.github.lunasaw.sip.common.transmit.SipSender;
+import org.springframework.stereotype.Component;
 
-/**
- * SUBSCRIBE消息类型策略实现
- * 处理SUBSCRIBE请求相关命令
- *
- * @author luna
- * @date 2024/01/01
- */
-@Slf4j
+@Component("clientSubscribeCommandStrategy")
 public class SubscribeCommandStrategy extends AbstractClientCommandStrategy {
 
     @Override
-    public String getCommandType() {
-        return "SUBSCRIBE";
-    }
+    public String getCommandType() { return "SUBSCRIBE"; }
 
     @Override
-    public String getCommandDescription() {
-        return "SUBSCRIBE请求";
-    }
-
-    @Override
-    protected String sendCommand(FromDevice fromDevice, ToDevice toDevice, String content, Event errorEvent, Event okEvent) {
-        // 发送SUBSCRIBE请求
-        return SipSender.doSubscribeRequest(fromDevice, toDevice, content, errorEvent, okEvent);
+    protected String doSend(CommandContext ctx) {
+        SubscribeInfo subscribeInfo = ctx.getExtra("subscribeInfo", SubscribeInfo.class);
+        if (subscribeInfo != null) {
+            return SipSender.doSubscribeRequest(ctx.getFromDevice(), ctx.getToDevice(),
+                ctx.getContent(), subscribeInfo);
+        }
+        return SipSender.doSubscribeRequest(ctx.getFromDevice(), ctx.getToDevice(),
+            ctx.getContent(), ctx.getErrorEvent(), ctx.getOkEvent());
     }
 }

@@ -21,11 +21,6 @@ public class ToDevice extends Device {
      */
     private String subject;
 
-    /**
-     * 本地ip
-     */
-    private String localIp;
-
     private Integer expires;
 
     private String eventType;

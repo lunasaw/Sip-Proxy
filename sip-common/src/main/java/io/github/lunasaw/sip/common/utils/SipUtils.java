@@ -28,7 +28,6 @@ import gov.nist.javax.sip.address.SipUri;
 import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
 import io.github.lunasaw.sip.common.constant.Constant;
-import io.github.lunasaw.sip.common.entity.GbSessionDescription;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
@@ -144,48 +143,9 @@ public class SipUtils {
         return new RemoteAddressInfo(remoteAddress, remotePort);
     }
 
-    public static String generateGB28181Code(int centerCode, int industryCode, int typeCode, int serialNumber) {
-        String centerCodeStr = String.format("%08d", centerCode);
-        String industryCodeStr = String.format("%02d", industryCode);
-        String typeCodeStr = String.format("%03d", typeCode);
-        String serialNumberStr = String.format("%07d", serialNumber);
-        return centerCodeStr + industryCodeStr + typeCodeStr + serialNumberStr;
-    }
-
-    public static String genSsrc(String userId) {
-        if (StringUtils.isEmpty(userId)) {
-            // 随机生成ssrc
-            return String.valueOf(RandomUtils.nextLong(100000, 500000));
-        }
-        String ssrcPrefix = userId.substring(3, 8);
-        return String.format("%s%04d", ssrcPrefix, RandomUtils.nextLong(1000, 9999));
-    }
-
     public static SdpSessionDescription parseSdp(String sdpStr) {
-        // jainSip 不支持y= f=字段， 移除以解析。
-        int ssrcIndex = sdpStr.indexOf("y=");
-        int mediaDescriptionIndex = sdpStr.indexOf("f=");
-        // 检查是否有y字段
-        SessionDescription sdp;
-        String ssrc = null;
-        String mediaDescription = null;
-        if (mediaDescriptionIndex == 0 && ssrcIndex == 0) {
-            sdp = SipRequestUtils.createSessionDescription(sdpStr);
-        } else {
-            String lines[] = sdpStr.split("\\r?\\n");
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String line : lines) {
-                if (line.trim().startsWith("y=")) {
-                    ssrc = line.substring(2);
-                } else if (line.trim().startsWith("f=")) {
-                    mediaDescription = line.substring(2);
-                } else {
-                    stringBuilder.append(line.trim()).append("\r\n");
-                }
-            }
-            sdp = SipRequestUtils.createSessionDescription(stringBuilder.toString());
-        }
-        return GbSessionDescription.getInstance(sdp, ssrc, mediaDescription);
+        SessionDescription sdp = SipRequestUtils.createSessionDescription(sdpStr);
+        return SdpSessionDescription.getInstance(sdp);
     }
 
     public static <T> T parseRequest(RequestEvent event, String charset, Class<T> clazz) {

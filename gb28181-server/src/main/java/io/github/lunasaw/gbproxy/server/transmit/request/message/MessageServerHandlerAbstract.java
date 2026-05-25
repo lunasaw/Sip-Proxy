@@ -8,7 +8,7 @@ import io.github.lunasaw.sip.common.transmit.event.message.MessageHandlerAbstrac
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Data;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -20,13 +20,13 @@ import javax.sip.RequestEvent;
 @Component
 public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstract implements InitializingBean {
 
-    public ServerMessageProcessorHandler serverMessageProcessorHandler;
+    public ApplicationEventPublisher publisher;
 
     public ServerDeviceSupplier serverDeviceSupplier;
 
 
-    public MessageServerHandlerAbstract(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
-        this.serverMessageProcessorHandler = serverMessageProcessorHandler;
+    public MessageServerHandlerAbstract(ApplicationEventPublisher publisher, ServerDeviceSupplier serverDeviceSupplier) {
+        this.publisher = publisher;
         this.serverDeviceSupplier = serverDeviceSupplier;
     }
 

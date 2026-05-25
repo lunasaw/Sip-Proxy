@@ -1,15 +1,16 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.message.response;
 
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerQueryResponseEvent;
+
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gbproxy.server.transmit.request.message.MessageServerHandlerAbstract;
-import io.github.lunasaw.gbproxy.server.transmit.request.message.ServerMessageProcessorHandler;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
@@ -30,8 +31,8 @@ public class DeviceInfoMessageServerHandler extends MessageServerHandlerAbstract
 
     private String cmdType = CMD_TYPE;
 
-    public DeviceInfoMessageServerHandler(@Lazy ServerMessageProcessorHandler serverMessageProcessorHandler, ServerDeviceSupplier serverDeviceSupplier) {
-        super(serverMessageProcessorHandler, serverDeviceSupplier);
+    public DeviceInfoMessageServerHandler(ApplicationEventPublisher publisher, ServerDeviceSupplier serverDeviceSupplier) {
+        super(publisher, serverDeviceSupplier);
     }
 
     @Override
@@ -50,7 +51,7 @@ public class DeviceInfoMessageServerHandler extends MessageServerHandlerAbstract
         DeviceInfo deviceInfo = parseXml(DeviceInfo.class);
 
 
-        serverMessageProcessorHandler.updateDeviceInfo(userId, deviceInfo);
+        publisher.publishEvent(new ServerQueryResponseEvent(this, userId, deviceInfo.getSn(), deviceInfo));
     }
 
 

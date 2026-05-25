@@ -4,1022 +4,365 @@
 [![GitHub license](https://img.shields.io/badge/MIT_License-blue.svg)](https://raw.githubusercontent.com/lunasaw/gb28181-proxy/master/LICENSE)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://mvnrepository.com/artifact/io.github.lunasaw/sip-proxy)
 
-[项目文档](https://lunasaw.github.io/gb28181-proxy/) | [在线演示](http://www.isluna.ml) | [问题反馈](https://github.com/lunasaw/gb28181-proxy/issues)
+[项目文档](https://lunasaw.github.io/gb28181-proxy/) | [问题反馈](https://github.com/lunasaw/gb28181-proxy/issues) | [CHANGELOG](CHANGELOG.md)
 
-## 📖 项目介绍
+基于 Java 17 + Spring Boot 3.3.1 实现的 **SIP 协议代理框架**，以 Maven 库的形式集成到业务进程中使用。
 
-基于Java 17 + Spring Boot 3.3.1 +
-SIP协议栈实现的GB28181通信框架，采用多模块架构设计，提供完整的SIP协议通信能力。项目支持客户端和服务端双向通信，专为构建视频监控、安防系统等GB28181协议应用而设计。
+**核心定位**：纯协议层框架，屏蔽 SIP 协议细节。业务方通过 Spring `@EventListener` 接收消息、通过 `CommandSender` 发送命令，**不直接接触 JAIN-SIP**。框架内置 GB28181-2016 协议实现，单 JVM 可同时启用平台服务端（`gb28181-server`）和设备客户端（`gb28181-client`），支持级联代理场景。
 
-### 🎯 设计目标
+> **1.3.0 重大变更**：全量删除 `*Handler` 接口，统一为 Spring Event 总线；INVITE 改为异步处理（100 Trying + 事件 + 异步回包）；`sip-common` 与 GB28181 协议解耦。详见 [CHANGELOG.md](CHANGELOG.md) 和 [doc/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md](doc/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md)。
 
-- **高性能**：异步消息处理、连接池管理、缓存优化
-- **易扩展**：模块化架构、插件化设计、统一接口
-- **标准化**：严格遵循GB28181-2016协议规范
-- **生产级**：完整的监控、日志、异常处理机制
-
-## 🏗️ 项目架构
-
-### 模块架构图
+## 模块结构
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      SIP Proxy 项目架构                      │
-├─────────────────────┬───────────────────────────────────────┤
-│   gb28181-test      │            测试和示例模块              │
-│   ├─ 集成测试       │            性能测试                   │
-│   └─ 示例代码       │            配置示例                   │
-├─────────────────────┼───────────────────────────────────────┤
-│  gb28181-client     │         gb28181-server              │
-│  ├─ 设备注册        │         ├─ 设备管理                  │
-│  ├─ 心跳检测        │         ├─ 设备控制                  │
-│  ├─ 告警上报        │         ├─ 云台控制                  │
-│  ├─ 实时点播响应    │         ├─ 实时点播                  │
-│  └─ 回放控制响应    │         └─ 视频回放                  │
-├─────────────────────┼───────────────────────────────────────┤
-│           gb28181-common (GB28181协议模型)                 │
-│           ├─ 设备模型    ├─ 控制命令    ├─ 告警模型         │
-│           └─ 查询模型    └─ 响应模型    └─ 通知模型         │
-├─────────────────────────────────────────────────────────────┤
-│                    sip-common (SIP基础包)                  │
-│    ├─ SIP协议栈封装        ├─ 异步消息处理                 │
-│    ├─ 连接池管理           ├─ 缓存服务                     │
-│    ├─ 配置管理             ├─ 性能监控                     │
-│    └─ 设备管理             └─ 事件总线                     │
-└─────────────────────────────────────────────────────────────┘
+sip-proxy
+├── sip-common          # 通用 SIP 协议栈��JAIN-SIP 封装、事务注册表、缓存、指标）；不含任何 GB28181 代码
+├── gb28181-common      # GB28181 数据模型 + GB SDP 工具（JAXB XML 实体，无业务逻辑）
+├── gb28181-client      # 设备客户端：ClientCommandSender、入站请求/响应处理器、Client*Event
+├── gb28181-server      # 平台服务端：ServerCommandSender、入站请求/响应处理器、Device*Event / ServerInviteEvent
+└── gb28181-test        # 集成测试 + sip-gateway 业务侧单机参考实现
 ```
 
-### 技术栈
+依赖顺序：`sip-common` ← `gb28181-common` ← `gb28181-client` / `gb28181-server` ← `gb28181-test`
 
-| 技术          | 版本         | 说明     |
-|-------------|------------|--------|
-| Java        | 17         | 编程语言   |
-| Spring Boot | 3.3.1      | 应用框架   |
-| JAIN-SIP    | 1.3.0-91   | SIP协议栈 |
-| Caffeine    | 3.1.8      | 高性能缓存  |
-| Micrometer  | 1.12.0     | 性能监控   |
-| Guava       | 32.1.3-jre | 工具库    |
-| Dom4j       | 2.1.4      | XML处理  |
-| Maven       | 3.8+       | 构建工具   |
+> ⚠️ **`sip-common` 协议纯净性**：不允许出现任何 GB28181 关键词（`gb28181 / GB28181 / gbproxy / Catalog / MobilePosition / GbSession / GbSip / GbUtil`）。CI 通过 [`scripts/check-sip-common-purity.sh`](scripts/check-sip-common-purity.sh) 强制校验。GB28181 相关逻辑请下沉至 `gb28181-common`（如 `GbSdpUtils`、`GbUtil`）。详见 [doc/PROTOCOL-DECOUPLING-PLAN.md](doc/PROTOCOL-DECOUPLING-PLAN.md)。
 
-## ✨ 功能特性
+## 整体分层
 
-### 🔧 SIP通用能力
+sip-proxy 不是独立服务，而是嵌入到业务方实现的 **sip-gateway** 网关进程中。三层架构如下：
 
-- [x] **SIP协议栈封装**：基于JAIN-SIP的高性能封装
-- [x] **异步消息处理**：高并发异步处理机制
-- [x] **连接池管理**：SIP连接池管理和监控
-- [x] **缓存服务**：基于Caffeine的多级缓存
-- [x] **配置管理**：外部化配置和动态配置
-- [x] **性能监控**：基于Micrometer的指标收集
-- [x] **Spring Boot Starter**：开箱即用的自动配置
+```
+┌─────────────────────────────────────────────────────────┐
+│                     业务服务器                            │
+│  设备管理、录像、告警、流媒体调度等业务逻辑                  │
+│  调 sip-gateway HTTP/MQ 接口触发 SIP 命令                 │
+└──────────────────────────┬──────────────────────────────┘
+                           │ HTTP / MQ
+┌──────────────────────────▼──────────────────────────────┐
+│                     sip-gateway（业务方实现）              │
+│  Spring Boot 应用，多节点部署，与 sip-proxy 同 JVM         │
+│  ├── 实现 DeviceSessionCache  → Redis（共享）             │
+│  ├── 实现 ServerDeviceSupplier → Redis（共享）            │
+│  ├── @EventListener → 推送业务服务器（HTTP / MQ）          │
+│  └── 暴露 HTTP API → 接收业务指令调 ServerCommandSender    │
+└──────────────────────────┬──────────────────────────────┘
+                           │ Maven 依赖
+┌──────────────────────────▼──────────────────────────────┐
+│                     sip-proxy（本框架）                   │
+│  解析 SIP 消息 → 发布 Spring Event                        │
+│  提供 ClientCommandSender / ServerCommandSender           │
+└─────────────────────────────────────────────────────────┘
+```
 
-### 📱 GB28181客户端
+**为什么 sip-proxy 必须与 sip-gateway 同 JVM**：`SipTransactionRegistry` 持有的 `ServerTransaction` 是 JAIN-SIP 实现类（`SIPServerTransactionImpl`），不可序列化；`RequestEvent` 内部持有 socket 引用（`SipProvider`、`Dialog`），跨进程后无法回包。完整方案见 [doc/LAYERED-ARCHITECTURE.md](doc/LAYERED-ARCHITECTURE.md)。
 
-- [x] **设备注册**：完整的设备注册认证流程
-- [x] **心跳检测**：设备保活和状态监控
-- [x] **告警上报**：设备告警信息推送
-- [x] **事件推送**：设备状态变更通知
-- [x] **实时点播响应**：实时视频流媒体响应
-- [x] **回放控制响应**：历史视频回放控制
-- [x] **设备控制响应**：云台控制、录像控制等
-- [x] **设备信息查询响应**：设备状态、目录信息查询
-- [x] **语音广播处理**：语音广播消息处理
+> **参考实现**：[`gb28181-test/.../gateway/`](gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/) 提供了 sip-gateway 单机版完整实现（`GatewayProperties` / `InviteContextStore` / `SipEventForwarder` / `SipCommandController` / `BusinessNotifier`），生产部署需将 `InMemoryInviteContextStore` 替换为 Redis 实现、`NoopBusinessNotifier` 替换为实际 HTTP/MQ 推送、`nodeAddressMap` 替换为 K8s/Nacos 动态发现。
 
-### 🖥️ GB28181服务端
+## 典型使用场景
 
-- [x] **设备管理**：设备注册、认证、会话管理
-- [x] **设备控制**：云台控制、录像控制、复位等
-- [x] **实时点播**：实时视频流请求和控制
-- [x] **视频回放**：历史视频回放和控制
-- [x] **告警处理**：告警接收、处理、转发
-- [x] **设备查询**：设备信息、状态、目录查询
-- [x] **订阅管理**：设备状态、告警、目录订阅
-- [x] **级联支持**：上下级平台级联通信
+| 场景 | 引入模块 | 说明 |
+|------|---------|------|
+| 平台服务端（接收设备注册） | `gb28181-server` | 业务系统作为 GB28181 平台，管理下级设备 |
+| 设备客户端（向平台注册） | `gb28181-client` | 业务系统模拟设备，向上级平台注册 |
+| 级联代理（双角色共存） | `gb28181-client` + `gb28181-server` | 同一进程同时作为下级平台的服务端和上级平台的客户端 |
+| 自定义 SIP 扩展协议 | `sip-common` + 自定义模块 | 基于 SIP 协议栈实现非 GB28181 的私有协议 |
 
-### 🧪 测试和示例
-
-- [x] **集成测试**：完整的客户端服务端测试
-- [x] **性能测试**：压力测试和性能基准
-- [x] **示例代码**：详细的使用示例和配置
-- [x] **测试工具**：SIP消息构建和验证工具
-
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
 - Java 17+
 - Maven 3.8+
-- Spring Boot 3.3.1+
+- Redis（多节点部署必需，单机演示可用 `InMemoryInviteContextStore`）
 
-### 安装依赖
-
-#### 全量包引入
+### 引入依赖
 
 ```xml
-<dependency>
-    <groupId>io.github.lunasaw</groupId>
-    <artifactId>gb28181-proxy</artifactId>
-    <version>${last.version}</version>
-</dependency>
-```
-
-#### 按需引入
-
-```xml
-<!-- SIP基础包 -->
-<dependency>
-    <groupId>io.github.lunasaw</groupId>
-    <artifactId>sip-common</artifactId>
-    <version>${last.version}</version>
-</dependency>
-
-<!-- GB28181协议模型 -->
-<dependency>
-    <groupId>io.github.lunasaw</groupId>
-    <artifactId>gb28181-common</artifactId>
-    <version>${last.version}</version>
-</dependency>
-
-<!-- GB28181客户端 -->
-<dependency>
-    <groupId>io.github.lunasaw</groupId>
-    <artifactId>gb28181-client</artifactId>
-    <version>${last.version}</version>
-</dependency>
-
-<!-- GB28181服务端 -->
+<!-- 平台服务端 -->
 <dependency>
     <groupId>io.github.lunasaw</groupId>
     <artifactId>gb28181-server</artifactId>
-    <version>${last.version}</version>
+    <version>1.3.0</version>
+</dependency>
+
+<!-- 设备客户端 -->
+<dependency>
+    <groupId>io.github.lunasaw</groupId>
+    <artifactId>gb28181-client</artifactId>
+    <version>1.3.0</version>
 </dependency>
 ```
 
+### 启用注解
+
+```java
+@SpringBootApplication
+@EnableSipServer       // 平台服务端
+// @EnableSipClient    // 设备客户端（级联场景两个一起加）
+public class SipGatewayApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(SipGatewayApplication.class, args);
+    }
+}
+```
+
+`@EnableSipServer` 自动激活 `SipProxyServerAutoConfig` + `Gb28181CommonAutoConfig` + `SipProxyAutoConfig`。
+
 ### 基础配置
 
-创建 `application.yml` 配置文件：
-
 ```yaml
-# SIP基础配置
 sip:
-  # 本地配置
-  local:
-    ip: 127.0.0.1
+  server:
+    ip: 0.0.0.0              # 监听地址（推荐 0.0.0.0）
     port: 5060
-    transport: UDP
-    charset: UTF-8
-
-  # 性能配置
-  performance:
-    enable-async: true
-    thread-pool-size: 200
-    cache-enable: true
-    cache-size: 10000
-
-  # 监控配置
-  monitor:
-    enable: true
-    metrics-enable: true
-
-# GB28181协议配置
-gb28181:
-  # 设备配置
-  device:
-    domain: 4405010000
-    device-id: 44050100001327000001
-    device-name: "测试设备"
-    manufacturer: "测试厂商"
-    model: "测试型号"
-    firmware: "V1.0.0"
-
-  # 认证配置
-  auth:
-    enable: true
-    realm: "4405010000"
-    username: "admin"
-    password: "12345678"
-
-  # 超时配置
-  timeout:
-    register: 60
-    heartbeat: 30
-    invite: 30
+    external-ip: 1.2.3.4     # NAT/多节点场景填 VIP 或公网地址
+    external-port: 5060      # 不填则 fallback 到 port
+    serverId: 34020000002000000001
+    realm: "34020000"
+  common:
+    user-agent: sip-proxy    # 1.3.0 默认值（旧值 LunaSaw-GB28181-Proxy 需显式配置保留）
+    time-sync:
+      enabled: false         # 1.3.0 配置 key 由 sip.gb28181.time-sync.* 改名
 ```
 
-### 快速示例
+`external-ip` / `external-port` 会写入出站 SIP 包的 `Via` / `Contact` 头。多节点部署时填 VIP，确保设备后续消息能回到集群。
 
-#### 启动GB28181服务端
+### 必须实现的接口
+
+业务方（sip-gateway）至少要实现以下三个接口，框架不提供生产可用的默认实现：
+
+| 接口 | 用途 | 实现要求 |
+|------|------|---------|
+| `DeviceSessionCache` | 设备会话寻址（ip / port / transport） | **多节点部署必须用 Redis 等共享存储**，框架默认实现仅适用单机演示 |
+| `ServerDeviceSupplier` | 服务端设备身份 + 注册鉴权 | 启用 `@EnableSipServer` 必须实现；`authenticate(userId, SIPRequest)` 默认调 `DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword` 完成摘要校验 |
+| `ClientDeviceSupplier` | 客户端设备身份 | 启用 `@EnableSipClient` 必须实现 |
+
+框架提供 `DefaultServerDeviceSupplier` / `DefaultClientDeviceSupplier`（基于配置文件），仅适用于单节点 demo 或测试场景。
+
+## 架构说明
+
+### SIP 消息处理流水线
+
+```
+SIP Message
+  → AbstractSipListener            # 统一事件分发，TraceId 传播
+  → XXXRequestProcessor            # 消息类型路由（REGISTER / INVITE / MESSAGE / NOTIFY / BYE …）
+  → XXXSubProcessor                # MESSAGE 子类型路由（按 GB28181 cmdType）
+  → Spring ApplicationEvent 发布   # 业务方通过 @EventListener 接收
+```
+
+业务方**只通过 Spring Event 接收消息**，无需关心协议解析。1.3.0 起所有 `*Handler` 接口已删除，统一事件总线模式。
+
+### 命令发送
+
+服务端用 `ServerCommandSender`，客户端用 `ClientCommandSender`。`ServerCommandSender` 按 `deviceId` 寻址，依赖 `DeviceSessionCache`：
 
 ```java
-@SpringBootApplication
-@EnableSipProxy
-public class Gb28181ServerApplication {
+@Autowired ServerCommandSender serverCommandSender;
 
-    public static void main(String[] args) {
-        SpringApplication.run(Gb28181ServerApplication.class, args);
-    }
+// 查询类
+String callId = serverCommandSender.deviceInfoQuery(deviceId);
+String callId = serverCommandSender.deviceCatalogQuery(deviceId);
+String callId = serverCommandSender.deviceRecordInfoQuery(deviceId, startMs, endMs);
 
-    @Autowired
-    private ServerSendCmd serverSendCmd;
+// 控制类
+String callId = serverCommandSender.deviceControlPtzCmd(deviceId, PtzCmdEnum.UP, 50);
+String callId = serverCommandSender.deviceControlReboot(deviceId);
 
-    @PostConstruct
-    public void init() {
-        // 服务端启动后自动监听设备注册
-        log.info("GB28181服务端启动成功");
-    }
-}
+// 点播 / 回放
+String callId = serverCommandSender.deviceInvitePlay(deviceId, mediaIp, mediaPort, StreamModeEnum.UDP);
+String callId = serverCommandSender.deviceInvitePlayBack(deviceId, mediaIp, mediaPort, startMs, endMs, StreamModeEnum.UDP);
+
+// 终止会话
+String callId = serverCommandSender.deviceBye(deviceId, originalCallId);
 ```
 
-#### 启动GB28181客户端
+### 事件监听
 
-```java
-@SpringBootApplication
-@EnableSipProxy
-public class Gb28181ClientApplication {
+业务逻辑通过 Spring `@EventListener` 实现。
 
-    public static void main(String[] args) {
-        SpringApplication.run(Gb28181ClientApplication.class, args);
-    }
+**服务端事件**（`io.github.lunasaw.gbproxy.server.transmit.event`）：
 
-    @Autowired
-    private ClientSendCmd clientSendCmd;
+| 事件 | 触发时机 |
+|------|---------|
+| `DeviceRegisterEvent` / `DeviceRegisterChallengeEvent` | 设备注册（含鉴权挑战） |
+| `DeviceOnlineEvent` / `DeviceOfflineEvent` | 设备上线 / 下线 |
+| `DeviceKeepaliveEvent` | 设备心跳 |
+| `DeviceInfoEvent` / `DeviceStatusEvent` / `DeviceCatalogEvent` / `DeviceConfigEvent` / `DeviceRecordEvent` | 设备查询结果 |
+| `DeviceAlarmEvent` / `DeviceMobilePositionEvent` / `DeviceNotifyUpdateEvent` | 设备主动上报 |
+| `DeviceInviteTryingEvent` / `DeviceInviteOkEvent` / `DeviceInviteFailureEvent` | 平台发起 INVITE 的响应 |
+| **`ServerInviteEvent`** | **设备主动 INVITE（含 `transactionContextKey`，用于异步回包）** |
+| `DeviceMediaStatusEvent` / `DeviceByeEvent` / `DeviceAckEvent` | 媒体会话状态变更 |
+| `DeviceInfoRequestEvent` / `DeviceSubscribeResponseEvent` | 设备 INFO / 订阅响应 |
 
-    @PostConstruct
-    public void registerDevice() {
-        // 客户端启动后自动注册设备
-        clientSendCmd.register();
-        log.info("设备注册请求已发送");
-    }
-}
-```
+**客户端事件**（`io.github.lunasaw.gbproxy.client.eventbus.event`）：
 
-## 📚 模块说明
-
-### sip-common（SIP基础包）
-
-SIP协议的基础封装和通用功能模块，提供SIP通信的核心能力。
-
-**核心组件：**
-
-- `SipLayer`：SIP协议层封装
-- `AsyncSipMessageProcessor`：异步消息处理器
-- `CacheService`：缓存服务
-- `SipConnectionPool`：连接池管理
-- `SipSender`：SIP消息发送器
-- `SipConfigurationManager`：配置管理器
-
-**主要功能：**
-
-- SIP协议栈封装和配置管理
-- 异步消息处理和线程池管理
-- 高性能缓存系统
-- 连接池管理和监控
-- 性能指标收集
-
-### gb28181-common（GB28181协议模型）
-
-GB28181协议的数据模型和实体定义模块。
-
-**主要包含：**
-
-- 设备控制命令：云台控制、录像控制等
-- 设备信息模型：设备目录、状态信息等
-- 告警模型：设备告警、告警通知等
-- 查询模型：各种查询和响应类
-
-### gb28181-client（GB28181客户端）
-
-GB28181协议的客户端实现，模拟设备端行为。
-
-**核心服务：**
-
-- `ClientSendCmd`：主动服务接口，提供各种SIP命令发送
-- 被动消息处理器：各种RequestProcessor和ResponseProcessor
-- 设备配置和用户管理
-
-**使用场景：**
-
-- 模拟GB28181设备进行测试
-- 构建设备端应用
-- 协议兼容性验证
-
-### gb28181-server（GB28181服务端）
-
-GB28181协议的服务端实现，提供平台级服务。
-
-**核心服务：**
-
-- `ServerSendCmd`：主动服务接口，提供各种SIP命令发送
-- 被动消息处理器：各种RequestProcessor和ResponseProcessor
-- 设备会话管理
-
-**使用场景：**
-
-- 构建GB28181平台服务
-- 设备管理和控制
-- 视频监控系统集成
-
-### gb28181-test（测试和示例）
-
-集成测试和示例代码模块。
-
-**主要内容：**
-
-- 客户端和服务端集成测试
-- 协议功能验证
-- 性能测试和压力测试
-- 示例代码和配置
-
-## ⚙️ 配置指南
-
-### 基础配置
-
-#### SIP协议配置
-
-```yaml
-sip:
-  local:
-    ip: 127.0.0.1              # 本地IP地址
-    port: 5060                 # 本地端口
-    transport: UDP             # 传输协议 UDP/TCP
-    charset: UTF-8             # 字符编码
-
-  performance:
-    enable-async: true         # 启用异步处理
-    thread-pool-size: 200      # 线程池大小
-    cache-enable: true         # 启用缓存
-    cache-size: 10000          # 缓存大小
-
-  monitor:
-    enable: true               # 启用监控
-    metrics-enable: true       # 启用指标收集
-```
-
-#### GB28181协议配置
-
-```yaml
-gb28181:
-  device:
-    domain: 4405010000                    # SIP域
-    device-id: 44050100001327000001       # 设备ID
-    device-name: "测试设备"                # 设备名称
-    manufacturer: "测试厂商"               # 厂商
-    model: "测试型号"                     # 型号
-    firmware: "V1.0.0"                   # 固件版本
-
-  auth:
-    enable: true                         # 启用认证
-    realm: "4405010000"                  # 认证域
-    username: "admin"                    # 用户名
-    password: "12345678"                 # 密码
-
-  timeout:
-    register: 60                         # 注册超时(秒)
-    heartbeat: 30                        # 心跳超时(秒)
-    invite: 30                           # 邀请超时(秒)
-```
-
-### 高级配置
-
-#### 性能优化配置
-
-```yaml
-sip:
-  performance:
-    # 异步处理配置
-    async:
-      core-pool-size: 50               # 核心线程数
-      max-pool-size: 200               # 最大线程数
-      queue-capacity: 1000             # 队列容量
-      keep-alive: 60                   # 线程保活时间
-
-    # 缓存配置
-    cache:
-      initial-capacity: 100            # 初始容量
-      maximum-size: 10000              # 最大容量
-      expire-after-write: 3600         # 写入后过期时间(秒)
-      expire-after-access: 1800        # 访问后过期时间(秒)
-
-    # 连接池配置
-    pool:
-      max-connections: 100             # 最大连接数
-      min-connections: 10              # 最小连接数
-      connection-timeout: 30           # 连接超时(秒)
-      idle-timeout: 300                # 空闲超时(秒)
-```
-
-#### 监控配置
-
-```yaml
-sip:
-  monitor:
-    metrics:
-      enable: true                     # 启用指标收集
-      step: 60                         # 收集间隔(秒)
-
-    logging:
-      level: INFO                      # 日志级别
-      pattern: "[%d{HH:mm:ss}] [%thread] %-5level %logger{36} - %msg%n"
-
-    health:
-      enable: true                     # 启用健康检查
-      interval: 30                     # 检查间隔(秒)
-```
-
-## 💻 使用示例
-
-### 设备注册示例
+| 事件 | 触发时机 |
+|------|---------|
+| `ClientRegisterSuccessEvent` / `ClientRegisterFailureEvent` / `ClientRegisterChallengeEvent` | 客户端注册响应 |
+| `ClientInviteEvent` | 收到上级 INVITE（含 `transactionContextKey`，用于异步回包） |
+| `ClientAckEvent` / `ClientByeEvent` / `ClientCancelEvent` / `ClientInfoEvent` | 上级 ACK / BYE / CANCEL / INFO |
 
 ```java
 @Component
-public class DeviceRegistrationExample {
+@Slf4j
+public class SipEventForwarder {
 
-    @Autowired
-    private ClientSendCmd clientSendCmd;
-
-    /**
-     * 设备注册
-     */
-    public void registerDevice() {
-        try {
-            // 发送注册请求
-            ResultDTO result = clientSendCmd.register();
-
-            if (result.isSuccess()) {
-                log.info("设备注册成功");
-            } else {
-                log.error("设备注册失败: {}", result.getMsg());
-            }
-        } catch (Exception e) {
-            log.error("设备注册异常", e);
-        }
+    @EventListener
+    public void onRegister(DeviceRegisterEvent e) {
+        log.info("设备注册: {}", e.getDeviceId());
     }
 
-    /**
-     * 设备心跳
-     */
-    @Scheduled(fixedDelay = 30000)
-    public void sendHeartbeat() {
-        try {
-            clientSendCmd.keepalive();
-            log.debug("发送心跳成功");
-        } catch (Exception e) {
-            log.error("发送心跳失败", e);
-        }
+    @EventListener
+    public void onAlarm(DeviceAlarmEvent e) {
+        log.info("设备告警: {} type={}", e.getDeviceId(), e.getAlarmType());
+    }
+
+    @EventListener
+    public void onServerInvite(ServerInviteEvent e) {
+        // 设备主动 INVITE（语音对讲等场景）：异步回包，详见下文
+        log.info("设备 INVITE: callId={} ctxKey={}", e.getCallId(), e.getTransactionContextKey());
     }
 }
 ```
 
-### 设备控制示例
+### INVITE 异步回包模型（1.3.0 关键变更）
 
-```java
-@Component
-public class DeviceControlExample {
-
-    @Autowired
-    private ServerSendCmd serverSendCmd;
-
-    /**
-     * 云台控制
-     */
-    public void ptzControl(String deviceId, int command) {
-        try {
-            DeviceControlPtz ptzCmd = new DeviceControlPtz();
-            ptzCmd.setDeviceId(deviceId);
-            ptzCmd.setPtzCmd(command);
-
-            ResultDTO result = serverSendCmd.deviceControl(ptzCmd);
-
-            if (result.isSuccess()) {
-                log.info("云台控制成功");
-            } else {
-                log.error("云台控制失败: {}", result.getMsg());
-            }
-        } catch (Exception e) {
-            log.error("云台控制异常", e);
-        }
-    }
-
-    /**
-     * 设备查询
-     */
-    public void queryDevice(String deviceId) {
-        try {
-            DeviceInfoQuery query = new DeviceInfoQuery();
-            query.setDeviceId(deviceId);
-
-            ResultDTO result = serverSendCmd.deviceInfoQuery(query);
-
-            if (result.isSuccess()) {
-                log.info("设备查询成功");
-            } else {
-                log.error("设备查询失败: {}", result.getMsg());
-            }
-        } catch (Exception e) {
-            log.error("设备查询异常", e);
-        }
-    }
-}
-```
-
-### 实时点播示例
-
-```java
-@Component
-public class VideoPlayExample {
-
-    @Autowired
-    private ServerSendCmd serverSendCmd;
-
-    /**
-     * 实时点播
-     */
-    public void invitePlay(String deviceId, String channelId) {
-        try {
-            InviteRequest inviteRequest = new InviteRequest();
-            inviteRequest.setDeviceId(deviceId);
-            inviteRequest.setChannelId(channelId);
-            inviteRequest.setMediaServerId("zlm001");
-
-            ResultDTO<InviteEntity> result = serverSendCmd.invitePlay(inviteRequest);
-
-            if (result.isSuccess()) {
-                InviteEntity invite = result.getData();
-                log.info("点播成功, 流地址: {}", invite.getStreamUrl());
-            } else {
-                log.error("点播失败: {}", result.getMsg());
-            }
-        } catch (Exception e) {
-            log.error("点播异常", e);
-        }
-    }
-
-    /**
-     * 停止点播
-     */
-    public void stopPlay(String deviceId, String channelId) {
-        try {
-            ResultDTO result = serverSendCmd.byePlay(deviceId, channelId);
-
-            if (result.isSuccess()) {
-                log.info("停止点播成功");
-            } else {
-                log.error("停止点播失败: {}", result.getMsg());
-            }
-        } catch (Exception e) {
-            log.error("停止点播异常", e);
-        }
-    }
-}
-```
-
-### 告警处理示例
-
-```java
-@Component
-public class AlarmHandlingExample {
-
-    @Autowired
-    private ClientSendCmd clientSendCmd;
-
-    /**
-     * 发送告警
-     */
-    public void sendAlarm(String deviceId, String alarmType) {
-        try {
-            DeviceAlarm alarm = new DeviceAlarm();
-            alarm.setDeviceId(deviceId);
-            alarm.setAlarmType(alarmType);
-            alarm.setAlarmTime(System.currentTimeMillis());
-            alarm.setAlarmDescription("设备告警");
-
-            ResultDTO result = clientSendCmd.alarm(alarm);
-
-            if (result.isSuccess()) {
-                log.info("告警发送成功");
-            } else {
-                log.error("告警发送失败: {}", result.getMsg());
-            }
-        } catch (Exception e) {
-            log.error("告警发送异常", e);
-        }
-    }
-}
-```
-
-## 🔧 开发指南
-
-### 代码规范
-
-#### Java代码规范
-
-1. **命名约定**
-    - 类名使用 PascalCase
-    - 方法名和变量名使用 camelCase
-    - 常量使用 UPPER_SNAKE_CASE
-    - 包名使用小写，以 `io.github.lunasaw` 为根包
-
-2. **Lombok使用**
-    - 统一使用 `@Slf4j` 处理日志
-    - 统一使用 `@Getter` 和 `@Setter` 处理访问器
-    - 统一使用 `@AllArgsConstructor` 和 `@NoArgsConstructor` 处理构造方法
-    - 统一使用 `@ToString` 处理字符串转换
-
-3. **依赖注入**
-    - 强制使用 `jakarta` 包而不是 `javax` 包
-    - 使用 `@Autowired` 进行依赖注入
-    - 使用 `@Component`、`@Service`、`@Repository` 等注解
-
-4. **异常处理**
-    - 使用 `ServiceException` 进行业务异常处理
-    - 使用 `GlobalExceptionHandler` 进行全局异常处理
-    - 自定义异常枚举 `ServiceExceptionEnum`
-
-#### 时间处理规范
-
-1. **DO/DTO层**：统一使用 `LocalDateTime` 类型
-2. **VO层**：统一返回unix时间戳（毫秒级）
-3. **转换方法**：提供 `fieldNameToEpochMilli()` 方法
-
-#### JSON序列化规范
-
-- 项目内统一使用 `fastjson2` 进行JSON序列化
-- 禁止使用 `Jackson`、`Gson` 等其他JSON库
-
-#### 外部接口规范
-
-- 所有外部接口调用必须通过 `Wrapper` 类封装
-- 统一返回 `ResultDTO` 格式
-- 包含完整的异常处理和日志记录
-
-### 扩展开发
-
-#### 自定义消息处理器
-
-```java
-@Component
-public class CustomMessageProcessor extends AbstractSipRequestProcessor {
-
-    @Override
-    public String getMethod() {
-        return Request.MESSAGE;
-    }
-
-    @Override
-    protected void processInternal(RequestEvent requestEvent) {
-        // 自定义消息处理逻辑
-        SIPRequest request = (SIPRequest) requestEvent.getRequest();
-
-        // 解析消息体
-        String body = new String(request.getRawContent());
-
-        // 业务处理
-        handleCustomMessage(body);
-
-        // 发送响应
-        sendResponse(requestEvent, Response.OK);
-    }
-
-    private void handleCustomMessage(String body) {
-        // 实现自定义业务逻辑
-        log.info("处理自定义消息: {}", body);
-    }
-}
-```
-
-#### 自定义设备提供器
-
-```java
-@Component
-public class CustomDeviceSupplier implements DeviceSupplier {
-
-    @Override
-    public Device queryDevice(String deviceId) {
-        // 从数据库或外部接口查询设备信息
-        return deviceRepository.findByDeviceId(deviceId);
-    }
-
-    @Override
-    public List<Device> queryDeviceList(String parentId) {
-        // 查询设备列表
-        return deviceRepository.findByParentId(parentId);
-    }
-
-    @Override
-    public void updateDevice(Device device) {
-        // 更新设备信息
-        deviceRepository.save(device);
-    }
-}
-```
-
-#### 自定义缓存策略
-
-```java
-@Configuration
-public class CustomCacheConfig {
-
-    @Bean
-    public CacheManager customCacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-        cacheManager.setCaffeine(Caffeine.newBuilder()
-            .maximumSize(10000)
-            .expireAfterWrite(1, TimeUnit.HOURS)
-            .recordStats());
-        return cacheManager;
-    }
-}
-```
-
-### 测试开发
-
-#### 单元测试规范
-
-```java
-@SpringBootTest
-@TestPropertySource(locations = "classpath:application-test.yml")
-class DeviceControllerTest {
-
-    @MockitoBean
-    private DeviceService deviceService;
-
-    @Autowired
-    private DeviceController deviceController;
-
-    @Test
-    void testRegisterDevice() {
-        // 准备测试数据
-        Device device = new Device();
-        device.setDeviceId("44050100001327000001");
-
-        // Mock服务行为
-        when(deviceService.register(any(Device.class)))
-            .thenReturn(ResultDTOUtils.success());
-
-        // 执行测试
-        ResultDTO result = deviceController.register(device);
-
-        // 验证结果
-        assertTrue(result.isSuccess());
-        verify(deviceService).register(device);
-    }
-}
-```
-
-#### 集成测试示例
-
-```java
-@SpringBootTest
-@Testcontainers
-class Gb28181IntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13")
-        .withDatabaseName("testdb")
-        .withUsername("test")
-        .withPassword("test");
-
-    @Autowired
-    private Gb28181Client client;
-
-    @Autowired
-    private Gb28181Server server;
-
-    @Test
-    void testDeviceRegistration() {
-        // 启动服务端
-        server.start();
-
-        // 客户端注册
-        ResultDTO result = client.register();
-
-        // 验证注册成功
-        assertTrue(result.isSuccess());
-
-        // 验证设备状态
-        assertTrue(client.isOnline());
-    }
-}
-```
-
-## 📊 性能优化
-
-### 异步处理优化
-
-```yaml
-sip:
-  performance:
-    async:
-      core-pool-size: 50
-      max-pool-size: 200
-      queue-capacity: 1000
-      keep-alive: 60
-```
-
-### 缓存优化
-
-```yaml
-sip:
-  performance:
-    cache:
-      initial-capacity: 100
-      maximum-size: 10000
-      expire-after-write: 3600
-      expire-after-access: 1800
-```
-
-### 连接池优化
-
-```yaml
-sip:
-  performance:
-    pool:
-      max-connections: 100
-      min-connections: 10
-      connection-timeout: 30
-      idle-timeout: 300
-```
-
-## 🔍 监控和诊断
-
-### 性能指标
-
-项目集成了Micrometer，提供以下监控指标：
-
-- **SIP消息处理指标**：请求数量、处理时间、成功率
-- **设备状态指标**：在线设备数、注册成功率、心跳成功率
-- **系统资源指标**：CPU使用率、内存使用率、线程池状态
-- **缓存指标**：命中率、缓存大小、过期统计
-
-### 健康检查
-
-```java
-@Component
-public class SipHealthIndicator implements HealthIndicator {
-
-    @Autowired
-    private SipLayer sipLayer;
-
-    @Override
-    public Health health() {
-        if (sipLayer.isRunning()) {
-            return Health.up()
-                .withDetail("sip-stack", "running")
-                .withDetail("listening-points", sipLayer.getListeningPoints().size())
-                .build();
-        } else {
-            return Health.down()
-                .withDetail("sip-stack", "stopped")
-                .build();
-        }
-    }
-}
-```
-
-### 日志配置
-
-```xml
-<!-- logback-spring.xml -->
-<configuration>
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>[%d{HH:mm:ss}] [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/sip-proxy.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/sip-proxy.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <logger name="io.github.lunasaw" level="INFO"/>
-    <logger name="gov.nist.javax.sip" level="WARN"/>
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-    </root>
-</configuration>
-```
-
-## 🤝 贡献指南
-
-### 贡献流程
-
-1. **Fork项目**：Fork本项目到您的GitHub账号
-2. **创建分支**：创建功能分支 `feature/your-feature`
-3. **提交更改**：提交您的更改到分支
-4. **创建PR**：创建Pull Request到主分支
-5. **代码审查**：等待代码审查和合并
-
-### 代码提交规范
-
-提交信息格式：`<type>(<scope>): <description>`
-
-**类型说明：**
-
-- `feat`: 新功能
-- `fix`: 修复bug
-- `docs`: 文档更新
-- `style`: 代码格式调整
-- `refactor`: 代码重构
-- `test`: 测试相关
-- `chore`: 构建/工具相关
-
-**示例：**
+设备主动发起的 INVITE（如语音对讲）需要业务方准备 SDP，框架已重构为**两步异步**：
 
 ```
-feat(client): 添加设备注册功能
-fix(server): 修复心跳检测bug
-docs(readme): 更新使用说明
+设备 → INVITE
+  → sip-proxy: ServerInviteRequestProcessor
+      1. 立即发 100 Trying（防对端重传）
+      2. 存 SipTransactionRegistry（contextKey = callId_fromTag_cseq → RequestEvent，进程内）
+      3. 发布 ServerInviteEvent（含 callId、contextKey、SDP）
+  → sip-gateway: @EventListener
+      1. 存 Redis: "sip:invite:ctx:{callId}" → "{nodeId}:{contextKey}"（30s TTL）
+      2. 推送业务服务器（含 callId、SDP）
+
+业务服务器 → POST /sip/invite/response {callId, sdp}
+  → sip-gateway:
+      1. 从 Redis 取 "{nodeId}:{contextKey}"
+      2. nodeId == 本节点：用 contextKey 取 SipTransactionRegistry 回包
+         nodeId != 本节点：通过 nodeAddressMap 转发 HTTP 到对应节点
+      3. ResponseCmd.sendResponse(200, sdp, ctx.getOriginalEvent())
 ```
 
-### 代码质量要求
+> ⚠️ **设备 Timer B 限制**：即使框架侧 `extendContext` 续期到 90 秒，设备侧（INVITE 客户端）按 RFC 3261 §17.1.1.2 在 `Timer B = 64*T1 = 32s` 后会放弃事务。业务处理时间应控制在 **30s 内直接回包**；30~60s 需主动发 `180 Ringing` + `extendContext`；> 60s 改为先回 200 OK + 占位 SDP，后续走 re-INVITE。详见 [doc/LAYERED-ARCHITECTURE.md §7](doc/LAYERED-ARCHITECTURE.md)。
 
-- 遵循项目代码规范
-- 添加必要的单元测试
-- 通过所有测试用例
-- 添加适当的文档说明
-- 使用统一的代码格式化工具
+### 扩展点（进阶）
 
-## 📋 更新日志
+业务方一般只需实现 `DeviceSessionCache` / `*DeviceSupplier` 接口。少数高级场景才需要扩展协议层：
 
-### v1.2.0 (2024-01-15)
+| 扩展点 | 用途 |
+|--------|------|
+| `MessageHandler` 接口 | 新增 GB28181 cmdType 处理器，通过 `SipRequestProcessorAbstract.addHandler()` 注册 |
+| `SipRequestProcessorAbstract` 子类 | 新增 SIP method 处理器（如自定义非标准方法）；server 端可继承 `ServerAbstractSipRequestProcessor` |
+| `ClientCommandStrategy` / `ServerCommandStrategy` | 新增出站命令策略，通过对应的 `CommandStrategyFactory` 注册 |
 
-**新增功能：**
+## 水平扩容
 
-- 支持Spring Boot 3.3.1
-- 添加异步消息处理机制
-- 集成Micrometer监控
-- 添加缓存服务支持
+完整方案见 [doc/LAYERED-ARCHITECTURE.md](doc/LAYERED-ARCHITECTURE.md) 与 [doc/HORIZONTAL-SCALING.md](doc/HORIZONTAL-SCALING.md)。
 
-**功能改进：**
+### 状态分层（核心约束）
 
-- 优化SIP连接池管理
-- 提升消息处理性能
-- 完善错误处理机制
-- 增强配置管理能力
+**本地节点只保留 SIP 事务状态，业务状态必须外化。**
 
-**Bug修复：**
+| 状态类型 | 存储位置 | 说明 |
+|---------|---------|------|
+| `ServerTransaction` / `SipTransactionRegistry` | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化、持有 socket 引用；同设备消息必须打同节点 |
+| `DeviceSessionCache`（设备注册信息） | **Redis**（共享，需高可用） | 业务方实现，节点间共享，节点故障后新节点可接管 |
+| `ServerDeviceSupplier`（设备信息） | **Redis**（共享，需高可用） | 业务方实现，读 Redis |
+| 设备订阅状态 | 业务方自管 | 框架 1.3.0 已删除 `SubscribeHolder`，由业务方按需自管 |
+| INVITE 事务上下文 | **进程内** + Redis 存路由映射（需高可用） | `transactionContextKey` 仅在收到 INVITE 的节点有效；Redis 用 `callId` 作键存 `{nodeId}:{contextKey}` 供跨节点回包路由 |
 
-- 修复设备注册超时问题
-- 解决心跳检测异常
-- 修复内存泄漏问题
+> ⚠️ **Redis 是新的 SPOF**：跨节点 INVITE 路由、设备会话、注册鉴权全部依赖 Redis。生产环境必须使用 Redis Sentinel 或 Cluster；`InviteContextStore` 实现需把后端故障显式抛 `ResponseStatusException(SERVICE_UNAVAILABLE)`，让 `/sip/invite/response` 返回 503 触发业务侧重试。
 
-### v1.1.0 (2023-12-01)
+### 部署拓扑
 
-**新增功能：**
+```
+设备 ──→ VIP 1.2.3.4:5060 ──→ Node-1 (sip-gateway + sip-proxy)
+         (keepalived + ipvs) └→ Node-2 (sip-gateway + sip-proxy)
+         源 IP 哈希                    │
+                                    Redis（共享 DeviceSessionCache + InviteContextStore）
+                                    业务服务器
+```
 
-- 支持GB28181-2016协议
-- 添加设备控制功能
-- 实现云台控制
-- 支持视频回放
+- VIP 四层透明转发，按**源 IP 哈希**保证同一设备打到同一节点
+- 节点故障时 keepalived 自动摘除，设备重新注册分到存活节点
+- 扩容粒度是 **NAT 出口**而非物理设备数。共享 NAT 的设备会全部落到同一节点，规划容量时按 NAT 出口数估算
 
-**功能改进：**
+### 接入要求
 
-- 优化消息处理性能
-- 完善异常处理机制
-- 增强日志记录能力
+业务方多节点部署时必须：
 
-## 📞 技术支持
+1. 实现 `DeviceSessionCache`，使用 Redis 等共享存储（不得用本地 Map）
+2. 实现 `ServerDeviceSupplier`，设备信息从共享存储读取
+3. 配置 `external-ip` 为 VIP，确保 SIP 包内 `Via` / `Contact` 头是集群可达地址
+4. 实现 `InviteContextStore`（参考 [`InMemoryInviteContextStore`](gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/InMemoryInviteContextStore.java) 改 Redis 版），处理 INVITE 异步回包跨节点路由
+5. 装配 `nodeAddressMap` Bean（K8s Endpoints / Nacos / Consul），将 `nodeId` 映射到内网地址
 
-### 问题反馈
+## 构建与测试
 
-- **GitHub Issues**: [提交问题](https://github.com/lunasaw/gb28181-proxy/issues)
-- **讨论区**: [GitHub Discussions](https://github.com/lunasaw/gb28181-proxy/discussions)
-- **邮件支持**: lunasaw@qq.com
+```bash
+# 编译
+mvn clean compile
 
-### 技术交流
+# 构建（含单元测试）
+mvn clean install
 
-- **技术博客**: [www.isluna.ml](http://www.isluna.ml)
-- **项目文档**: [在线文档](https://lunasaw.github.io/gb28181-proxy/)
-- **API文档**: [API Reference](https://lunasaw.github.io/gb28181-proxy/api/)
+# 集成测试
+mvn verify
 
-## 🏆 致谢
+# 指定模块测试
+mvn test -pl gb28181-client -Dtest=CancelRequestProcessorTest
 
-感谢所有为本项目做出贡献的开发者！
+# 指定测试方法
+mvn test -pl gb28181-client -Dtest=CancelRequestProcessorTest#methodName
 
-### 核心贡献者
+# 协议纯净性校验（CI 在 mvn verify 阶段自动调用）
+bash scripts/check-sip-common-purity.sh
+```
 
-- [@lunasaw](https://github.com/lunasaw) - 项目创建者和维护者
+> JaCoCo 强制要求行覆盖率 ≥ 80%。
 
-### 特别感谢
+## 开发规范
 
-- [JAIN-SIP](https://github.com/usnistgov/jsip) - 优秀的SIP协议栈实现
-- [Spring Boot](https://spring.io/projects/spring-boot) - 强大的应用框架
-- [Caffeine](https://github.com/ben-manes/caffeine) - 高性能缓存库
+- 使用 `jakarta.*` 包，禁止 `javax.*`（Spring Boot 3.x 要求）
+- 测试中使用 `@MockitoBean`，`@MockBean` 已废弃
+- 访问 JAIN-SIP 实现特定方法时，将 `Request` 强转为 `SIPRequest`
+- 异步线程中需显式传播 TraceId（SkyWalking）
+- JSON 序列化统一使用 `fastjson2`
+- `sip-common` 中禁止出现 GB28181 关键词（CI 校验，详见模块结构小节）
 
-## 📄 许可证
+## 配置命名空间
 
-本项目采用 [MIT License](LICENSE) 许可证。
+- `sip.server.*` — SIP 协议监听设置（`ip` / `port` / `external-ip` / `external-port` / `serverId` / `realm`）
+- `sip.common.*` — 通用框架配置（`user-agent`、`time-sync.*`）
+- `gb28181:` — GB28181 协议设置
+- 环境覆盖：`application-{env}.yml`
+
+> **1.3.0 配置迁移**：`sip.gb28181.time-sync.*` → `sip.common.time-sync.*`；默认 `User-Agent` 由 `LunaSaw-GB28181-Proxy` 改为 `sip-proxy`。
+
+## 参考文档
+
+`doc/` 目录下的关键文档：
+
+| 文档 | 内容 |
+|------|------|
+| [LAYERED-ARCHITECTURE.md](doc/LAYERED-ARCHITECTURE.md) | sip-proxy ↔ sip-gateway ↔ 业务服务器分层架构（v2.5） |
+| [HORIZONTAL-SCALING.md](doc/HORIZONTAL-SCALING.md) | 多节点部署、状态分层、VIP 拓扑、NAT 处理 |
+| [PROTOCOL-DECOUPLING-PLAN.md](doc/PROTOCOL-DECOUPLING-PLAN.md) | sip-common / gb28181-common 边界规则（1.3.0） |
+| [BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md](doc/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md) | 1.3.0 全量删除 `*Handler` 接口、统一 Spring Event |
+| [INVITE-REFACTOR-PLAN.md](doc/INVITE-REFACTOR-PLAN.md) | INVITE 异步化重构（1.3.0） |
+| [GB28181-2016.md](doc/GB28181-2016.md) / [GBT-28181-2022.md](doc/GBT-28181-2022.md) | 协议参考 |
+| [CHANGELOG.md](CHANGELOG.md) | 各版本对外可见变更 |
+
+## 许可证
+
+[MIT License](LICENSE)
 
 ---
 

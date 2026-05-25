@@ -4,7 +4,7 @@ import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.SipMessage;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
-import org.assertj.core.util.Lists;
+import java.util.ArrayList;
 
 import javax.sip.header.*;
 import javax.sip.message.Response;
@@ -21,7 +21,7 @@ public class SipResponseProvider {
         // via
         ViaHeader viaHeader =
                 SipRequestUtils.createViaHeader(fromDevice.getIp(), fromDevice.getPort(), toDevice.getTransport(), sipMessage.getViaTag());
-        List<ViaHeader> viaHeaders = Lists.newArrayList(viaHeader);
+        List<ViaHeader> viaHeaders = new ArrayList<>(java.util.Arrays.asList(viaHeader));
         // from
         FromHeader fromHeader = SipRequestUtils.createFromHeader(fromDevice.getUserId(), fromDevice.getHostAddress(), fromDevice.getFromTag());
         // to

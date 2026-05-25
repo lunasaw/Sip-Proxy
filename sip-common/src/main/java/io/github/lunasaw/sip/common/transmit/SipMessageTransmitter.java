@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.transmit;
 
 import gov.nist.javax.sip.SipProviderImpl;
+import io.github.lunasaw.sip.common.config.SipCommonContextHolder;
 import io.github.lunasaw.sip.common.constant.Constant;
 import io.github.lunasaw.sip.common.layer.SipLayer;
 import io.github.lunasaw.sip.common.transmit.event.Event;
@@ -84,7 +85,7 @@ public class SipMessageTransmitter {
     private static void preprocessMessage(Message message) {
         // 添加User-Agent头
         if (message.getHeader(UserAgentHeader.NAME) == null) {
-            message.addHeader(SipRequestUtils.createUserAgentHeader(Constant.AGENT));
+            message.addHeader(SipRequestUtils.createUserAgentHeader(SipCommonContextHolder.getUserAgent()));
         }
     }
 

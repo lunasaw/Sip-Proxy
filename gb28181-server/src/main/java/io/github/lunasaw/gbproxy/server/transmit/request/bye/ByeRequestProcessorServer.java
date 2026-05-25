@@ -1,24 +1,21 @@
 package io.github.lunasaw.gbproxy.server.transmit.request.bye;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import javax.sip.RequestEvent;
+import javax.sip.message.Response;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
+import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.ServerAbstractSipRequestProcessor;
+import io.github.lunasaw.sip.common.transmit.ResponseCmd;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Server模块BYE请求处理器
- * 只负责SIP协议层面的处理，业务逻辑通过ServerByeProcessorHandler接口实现
- *
- * @author luna
- */
 @Component("serverByeRequestProcessor")
 @Getter
 @Setter
@@ -30,41 +27,19 @@ public class ByeRequestProcessorServer extends ServerAbstractSipRequestProcessor
     private String method = METHOD;
 
     @Autowired
-    @Lazy
-    private ServerByeProcessorHandler serverByeProcessorHandler;
+    private ApplicationEventPublisher publisher;
 
-    /**
-     * 处理BYE请求
-     * 只负责SIP协议层面的处理，业务逻辑通过ServerByeProcessorHandler接口实现
-     *
-     * @param evt 请求事件
-     */
     @Override
     public void process(RequestEvent evt) {
+        SIPRequest request = (SIPRequest) evt.getRequest();
+        String userId = SipUtils.getUserIdFromFromHeader(request);
         try {
-            SIPRequest request = (SIPRequest) evt.getRequest();
-
-            // 解析协议层面的信息
-            String sipId = SipUtils.getUserIdFromToHeader(request);
-            String userId = SipUtils.getUserIdFromFromHeader(request);
-
-            log.debug("处理BYE请求：用户ID = {}, SIP ID = {}", userId, sipId);
-
-            // 验证设备权限
-            if (!serverByeProcessorHandler.validateDevicePermission(userId, sipId, evt)) {
-                log.warn("BYE请求权限验证失败：用户ID = {}, SIP ID = {}", userId, sipId);
-                serverByeProcessorHandler.handleByeError(userId, "权限验证失败", evt);
-                return;
-            }
-
-            // 调用业务处理器
-            serverByeProcessorHandler.handleByeRequest(userId, evt);
-
+            // RFC 3261 §15.1.2: 收到 BYE 必须回 200 OK，否则对端会按 T1 退避重传
+            ResponseCmd.sendResponse(Response.OK, evt);
+            publisher.publishEvent(ServerSessionEvent.bye(this, userId));
         } catch (Exception e) {
-            log.error("处理BYE请求异常：evt = {}", evt, e);
-            String userId = SipUtils.getUserIdFromFromHeader((SIPRequest) evt.getRequest());
-            serverByeProcessorHandler.handleByeError(userId, e.getMessage(), evt);
+            log.error("处理BYE请求异常: userId={}", userId, e);
+            publisher.publishEvent(ServerSessionEvent.byeError(this, userId, e.getMessage()));
         }
     }
-
 }

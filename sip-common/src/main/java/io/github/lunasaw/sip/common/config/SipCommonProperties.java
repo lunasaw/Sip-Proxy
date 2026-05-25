@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * GB28181通用配置属性类 - 支持外部化配置
+ * SIP 协议通用配置属性类 - 支持外部化配置
  * 包含通用的性能配置和缓存配置，client和server特定配置已拆分到各自模块
  *
  * @author luna
@@ -15,6 +15,11 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "sip.common")
 public class SipCommonProperties {
+
+    /**
+     * UserAgent 头默认值，可通过 sip.common.user-agent 覆盖
+     */
+    private String userAgent = "sip-proxy";
 
     /**
      * 时间同步配置

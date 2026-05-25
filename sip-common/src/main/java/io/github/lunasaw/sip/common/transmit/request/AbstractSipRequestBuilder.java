@@ -7,7 +7,7 @@ import javax.sip.address.SipURI;
 import javax.sip.header.*;
 import javax.sip.message.Request;
 
-import org.assertj.core.util.Lists;
+import java.util.ArrayList;
 
 import com.luna.common.check.Assert;
 
@@ -129,7 +129,7 @@ public abstract class AbstractSipRequestBuilder {
             fromDevice.getPort(),
             toDevice.getTransport(),
             sipMessage.getViaTag());
-        List<ViaHeader> viaHeaders = Lists.newArrayList(viaHeader);
+        List<ViaHeader> viaHeaders = new ArrayList<>(java.util.Arrays.asList(viaHeader));
 
         // 创建From头部
         FromHeader fromHeader = SipRequestUtils.createFromHeader(
@@ -194,7 +194,7 @@ public abstract class AbstractSipRequestBuilder {
             localPort,
             sipResponse.getTopmostViaHeader().getTransport(),
             sipMessage.getViaTag());
-        List<ViaHeader> viaHeaders = Lists.newArrayList(viaHeader);
+        List<ViaHeader> viaHeaders = new ArrayList<>(java.util.Arrays.asList(viaHeader));
 
         // 创建MaxForwards头部
         MaxForwardsHeader maxForwards = SipRequestUtils.createMaxForwardsHeader();

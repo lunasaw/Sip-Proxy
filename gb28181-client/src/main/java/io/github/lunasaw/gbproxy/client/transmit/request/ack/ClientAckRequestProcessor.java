@@ -1,7 +1,5 @@
 package io.github.lunasaw.gbproxy.client.transmit.request.ack;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import javax.sip.Dialog;
 import javax.sip.DialogState;
 import javax.sip.RequestEvent;
@@ -32,10 +30,6 @@ public class ClientAckRequestProcessor extends SipRequestProcessorAbstract {
 
     private String method = METHOD;
 
-    @Autowired
-    @Lazy
-    private AckRequestHandler ackRequestHandler;
-
     /**
      * 处理 ACK请求
      *
@@ -60,11 +54,7 @@ public class ClientAckRequestProcessor extends SipRequestProcessorAbstract {
             }
 
             if (dialog.getState() == DialogState.CONFIRMED) {
-                // 发布ACK事件
                 SipSubscribe.publishAckEvent(evt);
-
-                // 调用业务处理器
-                ackRequestHandler.processAck(evt);
             }
 
         } catch (Exception e) {

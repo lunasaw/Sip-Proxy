@@ -153,6 +153,85 @@ public class InviteEntity {
         return content;
     }
 
+    /**
+     * GB28181-2022 §9.12.2 语音对讲 SDP body (audio-only, sendonly)
+     *
+     * 复用 PLAY 的 INVITE 流程，仅替换 m= 为 audio + 编码 PCMA(8) + sendonly。
+     */
+    public static StringBuffer getInviteTalkBody(StreamModeEnum streamModeEnum, String userId,
+                                                  String sdpIp, Integer mediaPort, String ssrc) {
+        StringBuffer content = new StringBuffer(200);
+        content.append("v=0\r\n");
+        content.append("o=").append(userId).append(" 0 0 IN IP4 ").append(sdpIp).append("\r\n");
+        content.append("s=").append(InviteSessionNameEnum.TALK.getType()).append("\r\n");
+        content.append("u=").append(userId).append(":0\r\n");
+        content.append("c=IN IP4 ").append(sdpIp).append("\r\n");
+        content.append("t=0 0\r\n");
+        if (StreamModeEnum.TCP_PASSIVE.equals(streamModeEnum)) {
+            content.append("m=audio ").append(mediaPort).append(" TCP/RTP/AVP 8\r\n");
+        } else if (StreamModeEnum.TCP_ACTIVE.equals(streamModeEnum)) {
+            content.append("m=audio ").append(mediaPort).append(" TCP/RTP/AVP 8\r\n");
+        } else {
+            content.append("m=audio ").append(mediaPort).append(" RTP/AVP 8\r\n");
+        }
+        content.append("a=sendonly\r\n");
+        content.append("a=rtpmap:8 PCMA/8000\r\n");
+        if (StreamModeEnum.TCP_PASSIVE.equals(streamModeEnum)) {
+            content.append("a=setup:passive\r\n");
+            content.append("a=connection:new\r\n");
+        } else if (StreamModeEnum.TCP_ACTIVE.equals(streamModeEnum)) {
+            content.append("a=setup:active\r\n");
+            content.append("a=connection:new\r\n");
+        }
+        // 媒体格式描述: f=v/////a/1/8/1（无视频；音频PCMA/8000Hz/单声道）
+        content.append("f=v/////a/1/8/1\r\n");
+        addSsrc(content, ssrc);
+        return content;
+    }
+
+    /**
+     * GB28181-2022 §9.9 视音频文件下载 SDP body
+     *
+     * @param downloadSpeed 下载倍速 (1/2/4/8 等，可选)
+     */
+    public static StringBuffer getInviteDownloadBody(StreamModeEnum streamModeEnum, String userId,
+                                                      String sdpIp, Integer mediaPort, String ssrc,
+                                                      String startTime, String endTime, Integer downloadSpeed) {
+        StringBuffer content = new StringBuffer(200);
+        content.append("v=0\r\n");
+        content.append("o=").append(userId).append(" 0 0 IN IP4 ").append(sdpIp).append("\r\n");
+        content.append("s=").append(InviteSessionNameEnum.DOWNLOAD.getType()).append("\r\n");
+        content.append("u=").append(userId).append(":3\r\n");
+        content.append("c=IN IP4 ").append(sdpIp).append("\r\n");
+        long startNtp = io.github.lunasaw.sip.common.utils.SipUtils.toNtpTimestamp(startTime);
+        long endNtp = io.github.lunasaw.sip.common.utils.SipUtils.toNtpTimestamp(endTime);
+        content.append("t=").append(startNtp).append(" ").append(endNtp).append("\r\n");
+        if (StreamModeEnum.TCP_PASSIVE.equals(streamModeEnum)) {
+            content.append("m=video ").append(mediaPort).append(" TCP/RTP/AVP 96 97 98 99\r\n");
+        } else if (StreamModeEnum.TCP_ACTIVE.equals(streamModeEnum)) {
+            content.append("m=video ").append(mediaPort).append(" TCP/RTP/AVP 96 97 98 99\r\n");
+        } else {
+            content.append("m=video ").append(mediaPort).append(" RTP/AVP 96 97 98 99\r\n");
+        }
+        content.append("a=recvonly\r\n");
+        content.append("a=rtpmap:96 PS/90000\r\n");
+        content.append("a=rtpmap:97 MPEG4/90000\r\n");
+        content.append("a=rtpmap:98 H264/90000\r\n");
+        content.append("a=rtpmap:99 H265/90000\r\n");
+        if (downloadSpeed != null && downloadSpeed > 0) {
+            content.append("a=downloadspeed:").append(downloadSpeed).append("\r\n");
+        }
+        if (StreamModeEnum.TCP_PASSIVE.equals(streamModeEnum)) {
+            content.append("a=setup:passive\r\n");
+            content.append("a=connection:new\r\n");
+        } else if (StreamModeEnum.TCP_ACTIVE.equals(streamModeEnum)) {
+            content.append("a=setup:active\r\n");
+            content.append("a=connection:new\r\n");
+        }
+        addSsrc(content, ssrc);
+        return content;
+    }
+
     public static StringBuffer addSubStream(StringBuffer content, Boolean subStream, ManufacturerEnum manufacturer) {
         if (ManufacturerEnum.TP_LINK.equals(manufacturer)) {
             if (subStream) {

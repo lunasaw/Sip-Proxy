@@ -1,33 +1,19 @@
 package io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.impl;
 
+import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerCommandStrategy;
-import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.ServerCommandStrategyReq;
 import io.github.lunasaw.sip.common.transmit.SipSender;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-/**
- * INVITE消息类型策略实现
- * 处理INVITE请求相关命令
- *
- * @author luna
- * @date 2024/01/01
- */
-@Slf4j
+@Component("serverInviteCommandStrategy")
 public class InviteCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override
-    public String getCommandType() {
-        return "INVITE";
-    }
+    public String getCommandType() { return "INVITE"; }
 
     @Override
-    public String getCommandDescription() {
-        return "INVITE请求";
-    }
-
-    @Override
-    protected String sendCommand(ServerCommandStrategyReq req) {
-        // 发送INVITE请求
-        return SipSender.doInviteRequest(req.getFromDevice(), req.getToDevice(), req.getContent(), req.getErrorEvent(), req.getOkEvent());
+    protected String doSend(CommandContext ctx) {
+        return SipSender.doInviteRequest(ctx.getFromDevice(), ctx.getToDevice(),
+            ctx.getContent(), ctx.getErrorEvent(), ctx.getOkEvent());
     }
 }

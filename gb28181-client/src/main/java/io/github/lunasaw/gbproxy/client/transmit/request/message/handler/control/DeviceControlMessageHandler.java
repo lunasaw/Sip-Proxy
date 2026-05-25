@@ -2,90 +2,85 @@ package io.github.lunasaw.gbproxy.client.transmit.request.message.handler.contro
 
 import javax.sip.RequestEvent;
 
+import io.github.lunasaw.gbproxy.client.eventbus.event.ClientControlEvent;
 import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageClientHandlerAbstract;
-import io.github.lunasaw.gbproxy.client.transmit.request.message.MessageRequestHandler;
 import io.github.lunasaw.gb28181.common.entity.control.*;
+import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.function.BiConsumer;
 
 /**
- * 设备控制消息处理器
- * 负责处理设备控制请求
+ * 设备控制消息处理器（cmdType=DeviceControl，rootType=Control）。
+ *
+ * <p>v1.5.0 改造：保留 XML 子标签 → Java Class 的映射在 handler 内（懂 XML 结构），
+ * typed payload 通过 {@link ClientControlEvent} 交给 {@code ClientListenerAdapter} 用 instanceof
+ * 路由到 {@code ControlListener} 方法（懂 Java 类型）。
  *
  * @author luna
- * @date 2023/10/19
  */
 @Component
 @Slf4j
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class DeviceControlMessageHandler extends MessageClientHandlerAbstract {
 
     public static final String CMD_TYPE = "DeviceControl";
     private String cmdType = CMD_TYPE;
 
-    @Autowired
-    @Lazy
-    private DeviceControlRequestHandler deviceControlRequestHandler;
-
-    public DeviceControlMessageHandler(MessageRequestHandler messageRequestHandler) {
-        super(messageRequestHandler);
-    }
+    private final ApplicationEventPublisher publisher;
 
     @Override
     public String getRootType() {
         return "Control";
     }
 
-    private static class HandlerEntry<T> {
+    private static class HandlerEntry<T extends DeviceControlBase> {
         final String xmlTag;
         final Class<T> clazz;
-        final BiConsumer<DeviceControlRequestHandler, T> handler;
 
-        HandlerEntry(String xmlTag, Class<T> clazz, BiConsumer<DeviceControlRequestHandler, T> handler) {
+        HandlerEntry(String xmlTag, Class<T> clazz) {
             this.xmlTag = xmlTag;
             this.clazz = clazz;
-            this.handler = handler;
         }
     }
 
-    private static final List<HandlerEntry<?>> HANDLERS = List.of(
-            new HandlerEntry<>("PTZCmd", DeviceControlPtz.class, (h, c) -> h.handlePtzCmd((DeviceControlPtz) c)),
-            new HandlerEntry<>("TeleBoot", DeviceControlTeleBoot.class, (h, c) -> h.handleTeleBoot((DeviceControlTeleBoot) c)),
-            new HandlerEntry<>("RecordCmd", DeviceControlRecordCmd.class, (h, c) -> h.handleRecordCmd((DeviceControlRecordCmd) c)),
-            new HandlerEntry<>("GuardCmd", DeviceControlGuard.class, (h, c) -> h.handleGuardCmd((DeviceControlGuard) c)),
-            new HandlerEntry<>("AlarmCmd", DeviceControlAlarm.class, (h, c) -> h.handleAlarmCmd((DeviceControlAlarm) c)),
-            new HandlerEntry<>("IFameCmd", DeviceControlIFame.class, (h, c) -> h.handleIFameCmd((DeviceControlIFame) c)),
-            new HandlerEntry<>("DragZoomIn", DeviceControlDragIn.class, (h, c) -> h.handleDragZoomIn((DeviceControlDragIn) c)),
-            new HandlerEntry<>("DragZoomOut", DeviceControlDragOut.class, (h, c) -> h.handleDragZoomOut((DeviceControlDragOut) c)),
-            new HandlerEntry<>("HomePosition", DeviceControlPosition.class, (h, c) -> h.handleHomePosition((DeviceControlPosition) c))
+    private static final List<HandlerEntry<? extends DeviceControlBase>> HANDLERS = List.of(
+            new HandlerEntry<>("PTZCmd", DeviceControlPtz.class),
+            new HandlerEntry<>("TeleBoot", DeviceControlTeleBoot.class),
+            new HandlerEntry<>("RecordCmd", DeviceControlRecordCmd.class),
+            new HandlerEntry<>("GuardCmd", DeviceControlGuard.class),
+            new HandlerEntry<>("AlarmCmd", DeviceControlAlarm.class),
+            new HandlerEntry<>("IFameCmd", DeviceControlIFame.class),
+            new HandlerEntry<>("DragZoomIn", DeviceControlDragIn.class),
+            new HandlerEntry<>("DragZoomOut", DeviceControlDragOut.class),
+            new HandlerEntry<>("HomePosition", DeviceControlPosition.class),
+            new HandlerEntry<>("DeviceUpgrade", DeviceUpgradeControl.class),
+            new HandlerEntry<>("PTZPreciseCtrl", DeviceControlPTZPrecise.class),
+            new HandlerEntry<>("FormatSDCard", DeviceControlSDCardFormat.class),
+            new HandlerEntry<>("TargetTrack", DeviceControlTargetTrack.class)
     );
 
     @Override
     public void handForEvt(RequestEvent event) {
         try {
             String xmlStr = getXmlStr();
-            boolean matched = false;
-            for (HandlerEntry<?> entry : HANDLERS) {
+            DeviceSession session = getDeviceSession(event);
+            for (HandlerEntry<? extends DeviceControlBase> entry : HANDLERS) {
                 if (xmlStr.contains("<" + entry.xmlTag + ">")) {
-                    Object cmd = XmlUtils.parseObj(xmlStr, entry.clazz);
-                    //noinspection unchecked
-                    ((BiConsumer<DeviceControlRequestHandler, Object>) entry.handler).accept(deviceControlRequestHandler, cmd);
-                    matched = true;
-                    break;
+                    DeviceControlBase cmd = (DeviceControlBase) XmlUtils.parseObj(xmlStr, entry.clazz);
+                    publisher.publishEvent(new ClientControlEvent(this, session.getUserId(), cmd));
+                    return;
                 }
             }
-            if (!matched) {
-                log.warn("未识别的DeviceControl命令: {}", xmlStr);
-            }
+            log.warn("未识别的DeviceControl命令: {}", xmlStr);
         } catch (Exception e) {
             log.error("处理设备控制请求时发生异常: event = {}", event, e);
         }

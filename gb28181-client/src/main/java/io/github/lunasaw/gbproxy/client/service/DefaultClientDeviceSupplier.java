@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Service
-@ConditionalOnMissingBean(ClientDeviceSupplier.class)
+@ConditionalOnMissingBean(name = "io.github.lunasaw.sip.common.service.ClientDeviceSupplier")
 public class DefaultClientDeviceSupplier implements ClientDeviceSupplier {
 
     /**
@@ -60,8 +60,8 @@ public class DefaultClientDeviceSupplier implements ClientDeviceSupplier {
         if (clientProperties != null) {
             this.clientFromDevice = FromDevice.getInstance(
                     clientProperties.getClientId(),
-                    clientProperties.getDomain(),
-                    clientProperties.getPort()
+                    clientProperties.getEffectiveIp(),
+                    clientProperties.getEffectivePort()
             );
             log.info("客户端发送方设备初始化完成: {}", clientFromDevice.getUserId());
         } else {

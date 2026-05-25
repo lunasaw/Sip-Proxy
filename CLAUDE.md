@@ -1,146 +1,172 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在处理此代码仓库时提供指导。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 项目概述
+## Project Overview
 
-SIP Proxy 是一个基于 Java 17 和 Spring Boot 3.3.1 构建的 GB28181-2016 通信框架。它是一个多模块 Maven
-项目，为构建视频监控和安防系统提供完整的 SIP 协议通信能力。
+SIP Proxy is a GB28181-2016 communication framework built on Java 17 and Spring Boot 3.3.1. It is a multi-module Maven project providing complete SIP protocol communication for video surveillance systems.
 
-## 构建和开发命令
+It is delivered as a **Maven library**, not a standalone service. Business systems (typically a `sip-gateway` layer the user implements on top) embed it in-process and interact via Spring Events (inbound) and `CommandSender` beans (outbound). A single JVM can act as platform server (`gb28181-server`) and device client (`gb28181-client`) simultaneously for cascading scenarios.
 
-### 构建命令
+Current version: **1.5.0** (see `CHANGELOG.md` for breaking changes vs 1.4.x; v1.5.0 删除 4 个 client 业务接口 + 10 个旧 client 事件，新增 listener 化业务 API。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md))。
 
-- `mvn clean compile` - 清理并编译所有模块
-- `mvn clean package` - 将所有模块构建为 JAR 文件
-- `mvn clean install` - 将模块安装到本地仓库
+## Build and Development Commands
 
-### 测试命令
+```bash
+# Build
+mvn clean compile
+mvn clean install
 
-- `mvn test` - 运行单元测试
-- `mvn verify` - 运行集成测试 (failsafe 插件)
-- `mvn test -Dspring.profiles.active=test` - 使用测试配置文件运行测试
+# Test
+mvn test                                    # unit tests (all modules)
+mvn verify                                  # integration tests (failsafe plugin)
+mvn test -Dspring.profiles.active=test      # with test profile
 
-### 运行命令
+# Single test class
+mvn test -pl gb28181-client -Dtest=CancelRequestProcessorTest
 
-- `mvn spring-boot:run` - 运行 Spring Boot 应用程序
-- 测试模块主类：`io.github.lunasaw.gbproxy.test.TestFrameworkVerifyApplication`
+# Single test method
+mvn test -pl gb28181-client -Dtest=CancelRequestProcessorTest#methodName
 
-### 模块构建
+# Single module
+mvn clean install -pl gb28181-test
 
-- 可以使用以下命令构建单个模块：`mvn clean install -pl <module-name>`
-- 构建特定模块：`mvn clean install -pl gb28181-test`
-
-## 架构概述
-
-### 模块结构
-
-```
-sip-proxy (父项目)
-├── sip-common          - 核心 SIP 协议栈和工具
-├── gb28181-common      - GB28181 协议数据模型  
-├── gb28181-client      - GB28181 设备客户端实现
-├── gb28181-server      - GB28181 平台服务器实现
-└── gb28181-test        - 集成测试和示例
+# Protocol-purity check (CI gate, run during `mvn verify`)
+bash scripts/check-sip-common-purity.sh
 ```
 
-### 依赖层次结构
-
-- `gb28181-client` 和 `gb28181-server` 依赖于 `sip-common` 和 `gb28181-common`
-- `gb28181-test` 依赖于所有其他模块
-- `sip-common` 是基础模块，没有内部依赖
-
-### 核心技术栈
-
-- **Java 17** (使用 Jakarta EE 包，不是 javax)
-- **Spring Boot 3.3.1**
-- **JAIN-SIP 1.3.0-91** - SIP 协议栈
-- **Caffeine 3.1.8** - 高性能缓存
-- **Micrometer 1.12.0** - 指标和监控
-- **Maven** - 构建工具
-
-## 关键架构模式
-
-### SIP 消息处理流程
+## Module Structure
 
 ```
-SIP Message → AbstractSipListener → XXXRequestProcessor → XXXRequestHandler → Business Logic
+sip-proxy
+├── sip-common          # Core SIP protocol stack (JAIN-SIP wrapper, listeners, caching, metrics)
+├── gb28181-common      # GB28181 data models (JAXB XML entities, no business logic)
+├── gb28181-client      # Device client (ClientSendCmd, inbound request/response processors)
+├── gb28181-server      # Platform server (ServerSendCmd, inbound request/response processors)
+└── gb28181-test        # Integration tests and runnable examples
 ```
 
-### 主动与被动服务
+Dependency order: `sip-common` ← `gb28181-common` ← `gb28181-client` / `gb28181-server` ← `gb28181-test`
 
-- **主动服务**：`ClientSendCmd`、`ServerSendCmd` - 发送出站 SIP 命令
-- **被动处理**：`XXXRequestProcessor`、`XXXResponseProcessor` - 处理传入的 SIP 消息
+## Architecture
 
-### 消息处理层
+### SIP Message Processing Pipeline
 
-1. **SIP 监听器层**：`AbstractSipListener` - 统一的 SIP 事件分发
-2. **协议层**：`SipRequest` 处理 - 协议级处理
-3. **消息类型层**：`XXXRequestProcessor` - 处理不同的 SIP 消息类型
-4. **业务子类型层**：`XXXRequestSubProcessor` - 处理 MESSAGE 内的 cmdType 路由
-5. **业务逻辑层**：`XXXRequestHandler` - 实际的业务实现
+```
+SIP Message
+  → AbstractSipListener          (unified event dispatch, TraceId propagation)
+  → XXXRequestProcessor          (message type: REGISTER, INVITE, MESSAGE, NOTIFY, BYE…)
+  → XXXRequestSubProcessor       (MESSAGE only: routes by GB28181 cmdType)
+  → XXXRequestHandler            (business logic implementation)
+```
 
-## 重要开发约定
+### Outbound Commands
 
-### Java/Spring 要求
+- **`ClientCommandSender`** / **`ServerCommandSender`** — strategy-pattern command senders for outbound SIP messages. `ServerCommandSender` requires `DeviceSessionCache` to look up device sessions.
 
-- **强制**：使用 `jakarta` 包而不是 `javax` (Spring Boot 3.x 要求)
-- **强制**：在测试中使用 `@MockitoBean` 而不是已弃用的 `@MockBean`
-- 使用 `@Slf4j` 进行日志记录，使用 Lombok 处理样板代码
-- 遵循既定的处理器/处理程序分离模式
+### Event Bus & Listener API
 
-### SIP 协议特性
+**v1.5.0+**: Business接入有两种等价方式：
 
-- 客户端和服务器模块在测试中有单独的设备配置
-- SIP 请求处理需要强类型：在访问实现特定方法时将 `Request` 转换为 `SIPRequest`
-- 异步 SIP 监听器必须在执行器线程中正确处理 TraceId 传播
+1. **Listener 接口（推荐，client/server 形态对称）**
+   - Client 侧：实现 `gb28181-client/api/QueryListener` / `ControlListener` / `ConfigListener` / `SubscribeListener` / `NotifyListener`，或直接继承 `ClientGb28181Adapter`
+   - Server 侧：实现 `gb28181-server/api/DeviceResponseListener` / `DeviceNotifyListener` / `DeviceLifecycleListener` / `DeviceSessionListener`，或直接继承 `ServerGb28181Adapter`
+   - 业务方只 override 关心的方法，框架自动派发与回包（QueryListener 返回非 null 时 Adapter 自动 sendXxxCommand）
+2. **直接监听 L1 协议事件（跨切层 / 高级用法）**
+   - Client 侧 6 个外层事件：`ClientQueryEvent` / `ClientControlEvent` / `ClientKeepaliveEvent` / `ClientConfigEvent` / `ClientSubscribeEvent` / `ClientNotifyEvent`
+   - Client 侧 8 个 SIP method 系事件保留：`ClientInviteEvent` / `ClientByeEvent` / `ClientAckEvent` / `ClientCancelEvent` / `ClientInfoEvent` / `ClientRegister{Success,Failure,Challenge}Event`
+   - Server 侧 32 个 typed `Device*Event` / `ServerInviteEvent` 全部保留（业务侧已广泛使用）
+   - 业务/metrics/audit/tracing 可同时监听同一事件，互不干扰
 
-### 测试模式
+QueryListener 通过 `ObjectProvider#getIfUnique()` 强制单 bean —— 多实例 fail fast；缺失时首次告警一次后静默走默认空响应。Control / Config / Subscribe / Notify listener 全部调用（观察者模式）。
 
-- 在消息发送测试之前设置 SIP 监听点：`sipLayer.setSipListener()` 和
-  `sipLayer.addListeningPoint()`
-- 在测试中使用单独的客户端/服务器设备配置以避免混淆
-- 集成测试使用 TestContainers，包括单元测试和集成测试插件
+历史接口 `MessageRequestHandler` / `DeviceControlRequestHandler` / `SubscribeRequestHandler` / `CustomMessageRequestHandler` 已在 v1.5.0 删除。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md)。
 
-## 关键接口和扩展点
+### Bootstrapping
 
-### 设备管理
+Annotate your `@SpringBootApplication` class with `@EnableSipClient` (device side) or `@EnableSipServer` (platform side). Both import `Gb28181CommonAutoConfig` plus their respective auto-config. `@EnableSipClient` requires a `ClientDeviceSupplier` bean; `@EnableSipServer` requires `ServerDeviceSupplier` + `DeviceSessionCache`.
 
-- `DeviceSupplier` - 提供设备信息的接口
-- `ClientDeviceSupplier`、`ServerDeviceSupplier` - 模块特定的实现
+### Required Beans (must be supplied by the embedding application)
 
-### 消息处理扩展
+| Bean | When required | Implementation guidance |
+|------|---------------|--------------------------|
+| `DeviceSessionCache` | Always (server side) | Stores device session info (ip / port / transport). **Multi-node deployments must back this with shared storage (Redis), never an in-memory map.** Defaults are demo-only. |
+| `ServerDeviceSupplier` | `@EnableSipServer` | Supplies platform-side device identity. `DefaultServerDeviceSupplier` reads from config — single-node only. |
+| `ClientDeviceSupplier` | `@EnableSipClient` | Supplies client-side device identity. `DefaultClientDeviceSupplier` reads from config — single-node only. |
 
-- 为新的 SIP 消息类型扩展 `AbstractSipRequestProcessor`
-- 为业务逻辑实现 `XXXProcessorHandler` 接口
-- 服务器处理器扩展 `ServerAbstractSipResponseProcessor`
-- 客户端处理器扩展 `ClientAbstractSipResponseProcessor`
+### Key Extension Points
 
-### 配置
+| Interface/Base Class | Purpose |
+|---|---|
+| `DeviceSupplier` | Provide device identity info; override `DefaultClientDeviceSupplier` or `DefaultServerDeviceSupplier` |
+| `AbstractSipRequestProcessor` | Base for new inbound message type processors |
+| `XXXProcessorHandler` | Business logic interface per message type |
+| `ServerAbstractSipResponseProcessor` | Base for server-side response processors |
+| `ClientAbstractSipResponseProcessor` | Base for client-side response processors |
+| `ClientCommandStrategy` / `ServerCommandStrategy` | Add custom outbound command strategies via `ClientCommandStrategyFactory` / `ServerCommandStrategyFactory` |
 
-- 主配置：`application.yml`
-- SIP 协议配置在 `sip:` 命名空间下
-- GB28181 协议配置在 `gb28181:` 命名空间下
-- 环境特定配置：`application-{env}.yml`
+## Development Conventions
 
-## 常见开发任务
+- **`jakarta.*` packages only** — Spring Boot 3.x; never `javax.*`
+- **`@MockitoBean`** in tests — `@MockBean` is deprecated
+- Cast `Request` → `SIPRequest` when accessing JAIN-SIP implementation-specific methods
+- TraceId (SkyWalking) must be propagated explicitly in async executor threads
+- JSON serialization uses **fastjson2**
+- JaCoCo enforces **80% line coverage** — tests must meet this threshold
 
-### 添加新的 SIP 消息处理器
+### Protocol Layer Purity (sip-common)
 
-1. 创建扩展适当基类的 `XXXRequestProcessor`
-2. 为业务逻辑创建 `XXXRequestHandler` 接口
-3. 在处理程序中实现业务逻辑
-4. 向 SIP 监听器注册处理器
+**`sip-common` must contain zero GB28181-specific code.** It is the generic SIP transport layer, GB28181 lives in `gb28181-common` / `gb28181-client` / `gb28181-server`.
 
-### 测试 SIP 功能
+This is enforced in CI by `scripts/check-sip-common-purity.sh`, which fails the build if any of these tokens appear in `sip-common/src/main/java`:
 
-1. 在 `@BeforeEach` 中设置测试监听点
-2. 使用单独的客户端/服务器设备配置
-3. 为实现特定方法将 `Request` 转换为 `SIPRequest`
-4. 验证异步操作中的 TraceId 处理
+```
+gb28181 | GB28181 | gbproxy | Catalog | MobilePosition | GbSession | GbSip | GbUtil
+```
 
-### 性能优化
+When working in `sip-common`, route GB28181 logic into `gb28181-common` (e.g. `GbSdpUtils.parseGbSdp`, `GbUtil.generateGB28181Code`). See `doc/PROTOCOL-DECOUPLING-PLAN.md`.
 
-- 利用 Caffeine 缓存处理频繁访问的数据
-- 使用具有适当 TraceId 管理的异步处理模式
-- 使用 Micrometer 指标集成进行监控
+### Test Setup Pattern
+
+```java
+@BeforeEach
+void setup() {
+    sipLayer.setSipListener(...);
+    sipLayer.addListeningPoint(...);  // must precede any message send
+}
+```
+
+Use separate client/server device configurations in tests to avoid port/identity conflicts.
+
+## Configuration Namespaces
+
+- `sip:` — SIP protocol settings (server `ip` / `port`, plus `external-ip` / `external-port` for NAT or VIP — these go into outbound `Via` / `Contact` headers; fallback to `ip` / `port` when unset)
+- `sip.common.*` — common framework knobs (e.g. `user-agent`, `time-sync.*`)
+- `gb28181:` — GB28181 protocol settings
+- Environment overrides: `application-{env}.yml`
+
+> **1.3.0 migration:** `sip.gb28181.time-sync.*` was renamed to `sip.common.time-sync.*`. Default `User-Agent` changed from `LunaSaw-GB28181-Proxy` to `sip-proxy`.
+
+## Horizontal Scaling Constraints
+
+When working on multi-node features, respect this state-locality rule (see `doc/HORIZONTAL-SCALING.md` and `doc/LAYERED-ARCHITECTURE.md`):
+
+| State | Where it lives | Notes |
+|-------|----------------|-------|
+| `ServerTransaction` / `SipTransactionRegistry` | In-process only | SIP protocol constraint — same-device messages must hit the same node (source-IP-hash at the VIP) |
+| `DeviceSessionCache` | **Shared store (Redis)** | Required for multi-node; in-memory implementations break failover |
+| `ServerDeviceSupplier` data | Shared store (Redis) | Read from shared backend |
+| INVITE async response context | In-process key + Redis node-mapping | For cross-node async response routing |
+
+**Rule of thumb:** local node keeps SIP transaction state; everything business-visible must be externalized.
+
+## Reference Documentation
+
+Key docs in `doc/` (consult before non-trivial changes):
+
+- `LAYERED-ARCHITECTURE.md` — sip-proxy ↔ sip-gateway ↔ business server architecture
+- `HORIZONTAL-SCALING.md` — multi-node deployment, state locality, VIP topology
+- `PROTOCOL-DECOUPLING-PLAN.md` — sip-common / gb28181-common boundary rules (1.3.0)
+- `BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md` — 1.3.0 removal of `*Handler` interfaces in favor of pure Spring Events
+- `INVITE-REFACTOR-PLAN.md` — INVITE async refactor (1.3.0)
+- `GB28181-2016.md` / `GBT-28181-2022.md` — protocol references

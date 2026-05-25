@@ -7,7 +7,7 @@ import javax.sip.header.Header;
 import javax.sip.message.Request;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.assertj.core.util.Lists;
+import java.util.ArrayList;
 
 import gov.nist.javax.sip.message.SIPResponse;
 import io.github.lunasaw.sip.common.enums.ContentTypeEnum;
@@ -169,7 +169,7 @@ public class SipMessage {
 
     public SipMessage addHeader(Header header) {
         if (CollectionUtils.isEmpty(headers)) {
-            headers = Lists.newArrayList(header);
+            headers = new ArrayList<>(java.util.Arrays.asList(header));
         } else {
             headers.add(header);
         }
