@@ -1,8 +1,10 @@
 # INVITE 处理重构技术方案
 
-> 版本：1.2 | 日期：2026-05-24
+> 版本：1.3 | 日期：2026-05-25
 >
 > ✅ **实施状态**：v1.2 已合入。本方案描述的协议层改造（INVITE 异步化、INFO 事件化、BYE 200 OK 修复、REGISTER 鉴权下沉到 `ServerDeviceSupplier.authenticate`、`SipTransactionRegistry.extendContext`、`*Handler` 接口全量删除）均已落地，集成测试 `RegistrationFlowTest` / `InvitePlayFlowTest` / `AlarmFlowTest` 通过。
+>
+> v1.2 → v1.3 变更：本方案聚焦**入站 INVITE 异步化**，**出站方向**的 dialog 维护（出站 BYE / SUBSCRIBE refresh 不带 to-tag 触发设备 481）由独立方案 [`OUTBOUND-DIALOG-PLAN.md`](OUTBOUND-DIALOG-PLAN.md)（v1.2，1.7.0 落地）覆盖。两方案正交：本方案管入站事务上下文 (`SipTransactionRegistry`)，OUTBOUND-DIALOG-PLAN 管出站 dialog 引用 (`DialogRegistry`)。
 >
 > v1.1 → v1.2 变更：补充摘要鉴权下沉、`extendContext` 续期接口、INVITE 重传幂等约束、BYE 200 OK 协议合规修复、`ServerDeviceSupplier` 方法改名为 `authenticate` 避免与现有 `checkDevice(RequestEvent)` 语义冲突；新增 `ClientDeviceSupplier.checkDevice` 用于同 JVM 同时启用 client/server 时按 To-Header 隔离两侧 INVITE 处理。
 

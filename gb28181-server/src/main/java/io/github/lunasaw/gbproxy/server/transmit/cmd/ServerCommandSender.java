@@ -605,12 +605,38 @@ public class ServerCommandSender {
             .execute(CommandContext.forAckBye("server", from, to, callId, "ACK"));
     }
 
-    public String deviceBye(String deviceId, String callId) {
-        FromDevice from = deviceSupplier.getServerFromDevice();
-        ToDevice to = getToDevice(deviceId);
-        to.setCallId(callId);
+    /**
+     * 1.7.0：BYE dialog-aware 入口。不再需要 deviceId —— 信息全部从 dialog 取回。
+     *
+     * @param callId INVITE 阶段记录的 Call-ID
+     */
+    public String deviceBye(String callId) {
         return factory.getStrategy("server", "BYE")
-            .execute(CommandContext.forAckBye("server", from, to, callId, "BYE"));
+            .execute(CommandContext.forBye("server", callId));
+    }
+
+    /**
+     * 1.7.0：续订订阅。
+     *
+     * @param callId  初始 SUBSCRIBE 的 Call-ID
+     * @param expires 续订时长（秒）
+     */
+    public String refreshSubscribe(String callId, int expires) {
+        return SipSender.doSubscribeRefresh(callId, null, expires);
+    }
+
+    /**
+     * 1.7.0：续订订阅（带 body）。
+     */
+    public String refreshSubscribe(String callId, String content, int expires) {
+        return SipSender.doSubscribeRefresh(callId, content, expires);
+    }
+
+    /**
+     * 1.7.0：退订（expires=0）。
+     */
+    public String unsubscribe(String callId) {
+        return SipSender.doSubscribeRefresh(callId, null, 0);
     }
 
     public String deviceAckBySipUri(FromDevice from, SipURI sipURI, SIPResponse sipResponse) {

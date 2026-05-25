@@ -1,7 +1,10 @@
 package io.github.lunasaw.sip.common.transmit;
 
+import gov.nist.javax.sip.DialogExt;
+import gov.nist.javax.sip.SipProviderImpl;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.enums.ContentTypeEnum;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import io.github.lunasaw.sip.common.transmit.request.SipRequestBuilderFactory;
@@ -12,8 +15,13 @@ import io.github.lunasaw.sip.common.context.SipTransactionContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.sip.ClientTransaction;
+import javax.sip.Dialog;
+import javax.sip.DialogState;
 import javax.sip.ServerTransaction;
+import javax.sip.SipException;
 import javax.sip.address.SipURI;
+import javax.sip.header.ExpiresHeader;
 import javax.sip.message.Message;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -143,11 +151,83 @@ public class SipSender {
     }
 
     /**
-     * 发送BYE请求
+     * 发送 BYE 请求（dialog-aware 路径）。
+     *
+     * <p>1.7.0 起 BYE 必须基于已 confirmed 的 dialog —— JAIN-SIP 自动携带 to-tag / Route Set /
+     * 正确 CSeq。旧 {@code doByeRequest(FromDevice, ToDevice)} 签名因不带 to-tag 触发设备 481，
+     * 已删除。
+     *
+     * @param callId INVITE 200 OK 的 Call-ID（由 {@link DialogRegistry} 维护）
+     * @return callId
+     * @throws DialogNotFoundException 当 callId 找不到对应 dialog 时
+     * @throws IllegalStateException   当 dialog 不在 CONFIRMED 状态时
      */
-    public static String doByeRequest(FromDevice fromDevice, ToDevice toDevice) {
-        return request(fromDevice, toDevice, "BYE")
-                .send();
+    public static String doByeRequest(String callId) {
+        Dialog dialog = DialogRegistry.get(callId);
+        if (dialog == null) {
+            throw new DialogNotFoundException("no dialog for callId=" + callId
+                    + " — INVITE 200 OK 未建立 dialog 或已 terminate");
+        }
+        if (dialog.getState() != DialogState.CONFIRMED) {
+            throw new IllegalStateException("dialog not confirmed: callId=" + callId
+                    + ", state=" + dialog.getState() + " — 早 dialog 阶段不应发 BYE，应发 CANCEL");
+        }
+        try {
+            Request bye = dialog.createRequest(Request.BYE);
+            SipProviderImpl provider = (SipProviderImpl) ((DialogExt) dialog).getSipProvider();
+            ClientTransaction ct = provider.getNewClientTransaction(bye);
+            dialog.sendRequest(ct);
+            return callId;
+        } catch (SipException e) {
+            throw new RuntimeException("发送 BYE 失败: callId=" + callId, e);
+        }
+    }
+
+    /**
+     * 发送 SUBSCRIBE 续订 / 退订（dialog-aware 路径）。
+     *
+     * <p>必须基于已 confirmed 的 SUBSCRIBE dialog（初始 SUBSCRIBE 200 OK 后注册到
+     * {@link DialogRegistry}）。续订使用与初始 SUBSCRIBE 同一个 Call-ID，JAIN-SIP 自动携带
+     * to-tag / 正确 CSeq / Route Set。
+     *
+     * @param callId  初始 SUBSCRIBE 的 Call-ID
+     * @param content body（XML），通常与初始 SUBSCRIBE 相同；为空则 body 也为空
+     * @param expires 续订时长（秒）；0 表示退订
+     * @return callId
+     * @throws DialogNotFoundException 当 callId 找不到对应 dialog 时
+     * @throws IllegalStateException   当 dialog 不在 CONFIRMED 状态时
+     */
+    public static String doSubscribeRefresh(String callId, String content, int expires) {
+        Dialog dialog = DialogRegistry.get(callId);
+        if (dialog == null) {
+            throw new DialogNotFoundException("no SUBSCRIBE dialog for callId=" + callId
+                    + " — 初始 SUBSCRIBE 200 OK 未建立 dialog 或已自然过期");
+        }
+        if (dialog.getState() != DialogState.CONFIRMED) {
+            throw new IllegalStateException("SUBSCRIBE dialog not confirmed: callId=" + callId
+                    + ", state=" + dialog.getState());
+        }
+        try {
+            Request req = dialog.createRequest(Request.SUBSCRIBE);
+            ExpiresHeader expHeader = SipRequestUtils.createExpiresHeader(expires);
+            req.removeHeader(ExpiresHeader.NAME);
+            req.addHeader(expHeader);
+            if (StringUtils.isNotBlank(content)) {
+                req.setContent(content, ContentTypeEnum.APPLICATION_XML.getContentTypeHeader());
+            }
+            SipProviderImpl provider = (SipProviderImpl) ((DialogExt) dialog).getSipProvider();
+            ClientTransaction ct = provider.getNewClientTransaction(req);
+            dialog.sendRequest(ct);
+            // 退订（expires=0）：等设备发回 NOTIFY: Subscription-State: terminated 后由
+            // processDialogTerminated 清理；为兜底，把 entry 的 expiresAt 重置为 60s 内
+            if (expires == 0) {
+                DialogRegistry.register(callId, dialog,
+                        System.currentTimeMillis() + 60_000L, DialogRegistry.KIND_SUBSCRIBE);
+            }
+            return callId;
+        } catch (SipException | java.text.ParseException e) {
+            throw new RuntimeException("发送 SUBSCRIBE 失败: callId=" + callId, e);
+        }
     }
 
     /**

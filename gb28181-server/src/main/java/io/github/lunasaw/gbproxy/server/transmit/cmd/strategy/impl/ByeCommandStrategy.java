@@ -13,6 +13,6 @@ public class ByeCommandStrategy extends AbstractServerCommandStrategy {
 
     @Override
     protected String doSend(CommandContext ctx) {
-        return SipSender.doByeRequest(ctx.getFromDevice(), ctx.getToDevice());
+        return SipSender.doByeRequest(ctx.getCallId());
     }
 }

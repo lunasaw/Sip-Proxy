@@ -85,7 +85,8 @@
 
 | 状态类型 | 存储位置 | 说明 |
 |---------|---------|------|
-| `ServerTransaction` / `SipTransactionRegistry` | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化，且持有 socket 引用；同一设备消息必须打同一节点 |
+| `ServerTransaction` / `SipTransactionRegistry`（**入站** INVITE 事务上下文） | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化，且持有 socket 引用；同一设备消息必须打同一节点 |
+| `DialogRegistry`（**出站** INVITE / SUBSCRIBE dialog 引用，1.7.0+） | **进程内**（不可外化） | JAIN-SIP `Dialog` 持有 socket / transaction 引用，与 `SipTransactionRegistry` 同构。INVITE 由 `processDialogTerminated` 主路径清理，SUBSCRIBE 由 `DialogRegistryCleaner` 定时清理。详见 [`OUTBOUND-DIALOG-PLAN.md`](OUTBOUND-DIALOG-PLAN.md) §5 |
 | `DeviceSessionCache`（设备注册信息） | **Redis**（共享，需高可用） | 业务方实现，节点间共享，节点故障后新节点可接管 |
 | `ServerDeviceSupplier`（设备信息） | **Redis**（共享，需高可用） | 业务方实现，读 Redis |
 | 设备订阅状态 | 业务方自管 | 框架不再提供 `SubscribeHolder`（v1.3.0 已移除），由业务方根据需要存 Redis 或自行管理 |
@@ -506,4 +507,6 @@ public Map<String, String> nodeAddressMap(GatewayProperties props) {
 | `SubscribeHolder` / `SubscribeTask` | sip-common | ✅ 已删除（v1.3.0），下放业务方 |
 | `nodeAddressMap` 装配示例 | [`gb28181-test/.../gateway/GatewayProperties.java`](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/GatewayProperties.java) | ✅ 参考实现就绪（gb28181-test 模块），生产仍需替换为 K8s/Nacos 动态发现 |
 | sip-gateway 参考实现（`SipEventForwarder` / `SipCommandController` / `InviteContextStore`） | [`gb28181-test/.../gateway/`](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/) | ✅ 单机参考实现就绪，多节点须替换 `InviteContextStore` 为 Redis 实现 |
+| `DialogRegistry`（出站 INVITE / SUBSCRIBE dialog 注册表，1.7.0+） | [`sip-common/.../DialogRegistry.java`](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/DialogRegistry.java) | ✅ 1.7.0 就绪，Entry 含 `expiresAtMs` / `kind`；INVITE 由 `processDialogTerminated` 清理，SUBSCRIBE 由 `DialogRegistryCleaner` 定时清理 |
+| `SipSender.doByeRequest(String callId)` / `doSubscribeRefresh(callId, content, expires)` | [`sip-common/.../SipSender.java`](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipSender.java) | ✅ 1.7.0 dialog-aware 入口，旧 `doByeRequest(FromDevice, ToDevice)` 已删除 |
 

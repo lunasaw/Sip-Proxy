@@ -11,6 +11,7 @@ import io.github.lunasaw.gb28181.common.transmit.cmd.CommandStrategyFactory;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
+import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.transmit.event.Event;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -375,9 +376,35 @@ public class ClientCommandSender implements ApplicationContextAware {
         return send("MESSAGE", from, to, response);
     }
 
-    public static String sendByeCommand(FromDevice from, ToDevice to) {
+    /**
+     * 1.7.0：BYE dialog-aware 入口。client 主动 BYE 同样要求 dialog 已建立。
+     *
+     * @param callId 初始 INVITE（如对讲）的 Call-ID
+     */
+    public static String sendByeCommand(String callId) {
         Assert.notNull(INSTANCE, "ClientCommandSender 尚未初始化，请确保 Spring 容器已启动");
-        return INSTANCE.send(CommandContext.forAckBye("client", from, to, null, "BYE"));
+        return INSTANCE.send(CommandContext.forBye("client", callId));
+    }
+
+    /**
+     * 1.7.0：续订订阅。
+     */
+    public static String refreshSubscribe(String callId, int expires) {
+        return SipSender.doSubscribeRefresh(callId, null, expires);
+    }
+
+    /**
+     * 1.7.0：续订订阅（带 body）。
+     */
+    public static String refreshSubscribe(String callId, String content, int expires) {
+        return SipSender.doSubscribeRefresh(callId, content, expires);
+    }
+
+    /**
+     * 1.7.0：退订（expires=0）。
+     */
+    public static String unsubscribe(String callId) {
+        return SipSender.doSubscribeRefresh(callId, null, 0);
     }
 
     public static String sendAckCommand(FromDevice from, ToDevice to) {

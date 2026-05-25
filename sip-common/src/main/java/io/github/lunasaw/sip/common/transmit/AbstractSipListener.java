@@ -487,11 +487,27 @@ public abstract class AbstractSipListener implements SipListener {
     /**
      * 会话结束 - 基础实现
      *
+     * <p>1.7.0：dialog 终结（BYE / dialog 自然超时）时同步清理 {@link DialogRegistry}，
+     * 防止出站 dialog 注册项泄漏。SUBSCRIBE 自然过期不走此路径，由
+     * {@link DialogRegistry#cleanupExpired()} 兜底。
+     *
      * @param dialogTerminatedEvent -- an event that indicates that the
      *                              dialog has transitioned into the terminated state.
      */
     @Override
     public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
+        Dialog dialog = dialogTerminatedEvent.getDialog();
+        if (dialog != null) {
+            CallIdHeader callIdHeader = dialog.getCallId();
+            String callId = callIdHeader != null ? callIdHeader.getCallId() : null;
+            if (callId != null) {
+                Dialog removed = DialogRegistry.remove(callId);
+                if (removed != null) {
+                    log.debug("DialogTerminatedEvent 清理 DialogRegistry: callId={}", callId);
+                }
+            }
+        }
+
         EventResult eventResult = new EventResult(dialogTerminatedEvent);
 
         Event timeOutSubscribe = SipSubscribe.getErrorSubscribe(eventResult.getCallId());
