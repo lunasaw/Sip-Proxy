@@ -4,34 +4,34 @@
 [![GitHub license](https://img.shields.io/badge/MIT_License-blue.svg)](https://raw.githubusercontent.com/lunasaw/gb28181-proxy/master/LICENSE)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://mvnrepository.com/artifact/io.github.lunasaw/sip-proxy)
+[![Version](https://img.shields.io/badge/version-1.5.x-blue.svg)](CHANGELOG.md)
 
 [项目文档](https://lunasaw.github.io/gb28181-proxy/) | [问题反馈](https://github.com/lunasaw/gb28181-proxy/issues) | [CHANGELOG](CHANGELOG.md)
 
 基于 Java 17 + Spring Boot 3.3.1 实现的 **SIP 协议代理框架**，以 Maven 库的形式集成到业务进程中使用。
 
-**核心定位**：纯协议层框架，屏蔽 SIP 协议细节。业务方通过 Spring `@EventListener` 接收消息、通过 `CommandSender` 发送命令，**不直接接触 JAIN-SIP**。框架内置 GB28181-2016 协议实现，单 JVM 可同时启用平台服务端（`gb28181-server`）和设备客户端（`gb28181-client`），支持级联代理场景。
+**核心定位**：纯协议层框架，屏蔽 SIP 协议细节。业务方实现 [Listener 接口](#二listener-接口业务方主入口)（推荐）或监听 [Layer 1 协议事件](#三layer-1-协议事件跨切层) 接收消息，通过 `ClientCommandSender` / `ServerCommandSender` 发送命令，**不直接接触 JAIN-SIP**。框架内置 GB28181-2016 + GB/T 28181-2022 协议实现，单 JVM 可同时启用平台服务端（`gb28181-server`）和设备客户端（`gb28181-client`），支持级联代理场景。
 
-> **1.3.0 重大变更**：全量删除 `*Handler` 接口，统一为 Spring Event 总线；INVITE 改为异步处理（100 Trying + 事件 + 异步回包）；`sip-common` 与 GB28181 协议解耦。详见 [CHANGELOG.md](CHANGELOG.md) 和 [doc/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md](doc/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md)。
+> **1.5.x 架构主线**：业务接口完全 listener 化（client 5 个 listener + server 4 个 listener，全部默认方法、按需 override）；server 端 32 个 `Device*Event` 已收敛为 4 个 `Server*Event` + 强类型 payload；client 端 4 个旧 `*Handler` 接口与 10 个细粒度 query/config event 已删除；GB/T 28181-2022 命令集（设备升级、抓拍、PTZ 精准、SD 卡、看守位、巡航轨迹、目标跟踪、报警订阅、语音对讲、视频下载等）全量落地。详见 [CHANGELOG.md](CHANGELOG.md)、[doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md)。
 
 ## 模块结构
 
 ```
 sip-proxy
-├── sip-common          # 通用 SIP 协议栈��JAIN-SIP 封装、事务注册表、缓存、指标）；不含任何 GB28181 代码
+├── sip-common          # 通用 SIP 协议栈（JAIN-SIP 封装、事务注册表、缓存、指标、TimeSync）；零 GB28181 代码
 ├── gb28181-common      # GB28181 数据模型 + GB SDP 工具（JAXB XML 实体，无业务逻辑）
-├── gb28181-client      # 设备客户端：ClientCommandSender、入站请求/响应处理器、Client*Event
-├── gb28181-server      # 平台服务端：ServerCommandSender、入站请求/响应处理器、Device*Event / ServerInviteEvent
+├── gb28181-client      # 设备客户端：ClientCommandSender、L0 入站 handler、L1 协议事件、L2 listener API
+├── gb28181-server      # 平台服务端：ServerCommandSender、L0 入站 handler、L1 协议事件、L2 listener API
 └── gb28181-test        # 集成测试 + sip-gateway 业务侧单机参考实现
 ```
 
 依赖顺序：`sip-common` ← `gb28181-common` ← `gb28181-client` / `gb28181-server` ← `gb28181-test`
 
-> ⚠️ **`sip-common` 协议纯净性**：不允许出现任何 GB28181 关键词（`gb28181 / GB28181 / gbproxy / Catalog / MobilePosition / GbSession / GbSip / GbUtil`）。CI 通过 [`scripts/check-sip-common-purity.sh`](scripts/check-sip-common-purity.sh) 强制校验。GB28181 相关逻辑请下沉至 `gb28181-common`（如 `GbSdpUtils`、`GbUtil`）。详见 [doc/PROTOCOL-DECOUPLING-PLAN.md](doc/PROTOCOL-DECOUPLING-PLAN.md)。
+> ⚠️ **`sip-common` 协议纯净性**：不允许出现任何 GB28181 关键词（`gb28181 / GB28181 / gbproxy / Catalog / MobilePosition / GbSession / GbSip / GbUtil`）。CI 通过 [`scripts/check-sip-common-purity.sh`](scripts/check-sip-common-purity.sh) 强制校验。GB28181 相关逻辑下沉至 `gb28181-common`（如 `GbSdpUtils`、`GbUtil`）。详见 [doc/PROTOCOL-DECOUPLING-PLAN.md](doc/PROTOCOL-DECOUPLING-PLAN.md)。
 
-## 整体分层
+## 整体分层（部署形态）
 
-sip-proxy 不是独立服务，而是嵌入到业务方实现的 **sip-gateway** 网关进程中。三层架构如下：
+sip-proxy 不是独立服务，而是嵌入到业务方实现的 **sip-gateway** 网关进程中。三层架构：
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -45,13 +45,15 @@ sip-proxy 不是独立服务，而是嵌入到业务方实现的 **sip-gateway**
 │  Spring Boot 应用，多节点部署，与 sip-proxy 同 JVM         │
 │  ├── 实现 DeviceSessionCache  → Redis（共享）             │
 │  ├── 实现 ServerDeviceSupplier → Redis（共享）            │
-│  ├── @EventListener → 推送业务服务器（HTTP / MQ）          │
+│  ├── 继承 ServerGb28181Adapter / ClientGb28181Adapter    │
+│  │   或 implements 单个 listener interface（按需）        │
 │  └── 暴露 HTTP API → 接收业务指令调 ServerCommandSender    │
 └──────────────────────────┬──────────────────────────────┘
                            │ Maven 依赖
 ┌──────────────────────────▼──────────────────────────────┐
 │                     sip-proxy（本框架）                   │
-│  解析 SIP 消息 → 发布 Spring Event                        │
+│  L0 解析 SIP 消息 → L1 发布外层 ApplicationEvent          │
+│  → L2 ListenerAdapter 分发到 listener 接口（含自动回包）   │
 │  提供 ClientCommandSender / ServerCommandSender           │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -84,14 +86,14 @@ sip-proxy 不是独立服务，而是嵌入到业务方实现的 **sip-gateway**
 <dependency>
     <groupId>io.github.lunasaw</groupId>
     <artifactId>gb28181-server</artifactId>
-    <version>1.3.0</version>
+    <version>1.5.x</version>
 </dependency>
 
 <!-- 设备客户端 -->
 <dependency>
     <groupId>io.github.lunasaw</groupId>
     <artifactId>gb28181-client</artifactId>
-    <version>1.3.0</version>
+    <version>1.5.x</version>
 </dependency>
 ```
 
@@ -108,32 +110,37 @@ public class SipGatewayApplication {
 }
 ```
 
-`@EnableSipServer` 自动激活 `SipProxyServerAutoConfig` + `Gb28181CommonAutoConfig` + `SipProxyAutoConfig`。
+`@EnableSipServer` 自动激活 `SipProxyServerAutoConfig` + `Gb28181CommonAutoConfig` + `SipProxyAutoConfig`；`@EnableSipClient` 同理。
 
 ### 基础配置
 
 ```yaml
 sip:
   server:
-    ip: 0.0.0.0              # 监听地址（推荐 0.0.0.0）
+    enabled: true
+    ip: 0.0.0.0                     # 监听地址（推荐 0.0.0.0）
     port: 5060
-    external-ip: 1.2.3.4     # NAT/多节点场景填 VIP 或公网地址
-    external-port: 5060      # 不填则 fallback 到 port
-    serverId: 34020000002000000001
+    external-ip: 1.2.3.4            # NAT/多节点场景填 VIP 或公网地址
+    external-port: 5060             # 不填则 fallback 到 port
+    server-id: 34020000002000000001
+    domain: 34020000002000000001
     realm: "34020000"
+    enable-udp: true
+    enable-tcp: false
   common:
-    user-agent: sip-proxy    # 1.3.0 默认值（旧值 LunaSaw-GB28181-Proxy 需显式配置保留）
+    user-agent: sip-proxy           # 默认 sip-proxy
     time-sync:
-      enabled: false         # 1.3.0 配置 key 由 sip.gb28181.time-sync.* 改名
+      enabled: true                 # SIP/NTP 校时（详见 SipCommonProperties.TimeSync）
+      mode: SIP                     # SIP / NTP / BOTH
 ```
 
-`external-ip` / `external-port` 会写入出站 SIP 包的 `Via` / `Contact` 头。多节点部署时填 VIP，确保设备后续消息能回到集群。
+`external-ip` / `external-port` 写入出站 SIP 包的 `Via` / `Contact` 头。多节点部署时填 VIP，确保设备后续消息能回到集群。
 
-### 必须实现的接口
+### 必须实现的 Bean
 
-业务方（sip-gateway）至少要实现以下三个接口，框架不提供生产可用的默认实现：
+业务方至少需要实现：
 
-| 接口 | 用途 | 实现要求 |
+| Bean | 用途 | 实现要求 |
 |------|------|---------|
 | `DeviceSessionCache` | 设备会话寻址（ip / port / transport） | **多节点部署必须用 Redis 等共享存储**，框架默认实现仅适用单机演示 |
 | `ServerDeviceSupplier` | 服务端设备身份 + 注册鉴权 | 启用 `@EnableSipServer` 必须实现；`authenticate(userId, SIPRequest)` 默认调 `DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword` 完成摘要校验 |
@@ -141,104 +148,204 @@ sip:
 
 框架提供 `DefaultServerDeviceSupplier` / `DefaultClientDeviceSupplier`（基于配置文件），仅适用于单节点 demo 或测试场景。
 
-## 架构说明
+## 业务接入：三层架构
 
-### SIP 消息处理流水线
+sip-proxy v1.5.x 把入站消息处理拆成三层，业务方主入口在 **L2 Listener 接口**，跨切层走 **L1 Layer 1 协议事件**：
 
 ```
-SIP Message
-  → AbstractSipListener            # 统一事件分发，TraceId 传播
-  → XXXRequestProcessor            # 消息类型路由（REGISTER / INVITE / MESSAGE / NOTIFY / BYE …）
-  → XXXSubProcessor                # MESSAGE 子类型路由（按 GB28181 cmdType）
-  → Spring ApplicationEvent 发布   # 业务方通过 @EventListener 接收
+┌──────────────────────────────────────────────────────────┐
+│  L2 业务接口 + Adapter（gb28181-{client,server}/api）       │
+│    Listener 接口（业务方实现，默认方法按需 override）         │
+│    ListenerAdapter（框架内部，按 payload 类型分发，自动回包） │
+└──────────────────┬─────────────────────────────────────���─┘
+                   │ Spring ApplicationEvent
+┌──────────────────▼───────────────────────────────────────┐
+│  L1 协议层事件（gb28181-{client,server}/eventbus|event）   │
+│    Client: ClientQuery/Control/Keepalive/Config/Subscribe/ │
+│            Notify/Invite/Bye/Ack/Cancel/Info/Register*Event│
+│    Server: ServerLifecycleEvent / ServerSessionEvent /     │
+│            ServerNotifyEvent / ServerQueryResponseEvent    │
+│    跨切层（metrics / audit / tracing）可同时监听            │
+└──────────────────┬───────────────────────────────────────┘
+                   │ publishEvent
+┌──────────────────▼───────────────────────────────────────┐
+│  L0 协议解析（*MessageHandler / *RequestProcessor）        │
+│    parseXml → publishEvent(L1 外层事件 + 多态 payload)     │
+└──────────────────────────────────────────────────────────┘
 ```
 
-业务方**只通过 Spring Event 接收消息**，无需关心协议解析。1.3.0 起所有 `*Handler` 接口已删除，统一事件总线模式。
+> 📌 每行 cmdType 在 L0 / L1 / L2 三层的具体落点，见 [doc/PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md)。新增 cmdType 时**先改矩阵，再改代码**。
 
-### 命令发送
+### 一、Listener 接口（业务方主入口）
 
-服务端用 `ServerCommandSender`，客户端用 `ClientCommandSender`。`ServerCommandSender` 按 `deviceId` 寻址，依赖 `DeviceSessionCache`：
+#### Client 端（设备侧）— 5 个 listener
+
+| 接口 | 职责 | 调用语义 | 多 listener 策略 |
+|------|------|---------|----------------|
+| `QueryListener` | 平台主动查询：13 个查询 hook（Catalog/DeviceInfo/DeviceStatus/RecordInfo/Alarm/ConfigDownload/Preset/MobilePosition/PTZPosition/SDCardStatus/HomePosition/CruiseTrackList/CruiseTrack） | 返回非 null = Adapter 自动 `sendXxxResponse` 回包；返回 null = 不回包 | **强制单 bean**（`ObjectProvider#getIfUnique()`），多实例 fail fast |
+| `ControlListener` | 平台控制：13 个 cmdType=DeviceControl 子标签（PTZ / TeleBoot / Record / Guard / AlarmReset / IFrame / DragIn / DragOut / HomePosition / DeviceUpgrade / PtzPrecise / FormatSdCard / TargetTrack）+ Keepalive | fire-and-forget | 全部调用（观察者） |
+| `ConfigListener` | 平台配置：12 个 cmdType=DeviceConfig 子标签（BasicParam / VideoParamOpt / SVAC{En,De}code / VideoParamAttribute / VideoRecordPlan / VideoAlarmRecord / PictureMask / FrameMirror / AlarmReport / Osd / SnapShot） | fire-and-forget；用 `Class<?> → Consumer` 显式映射避免 instanceof 顺序陷阱 | 全部调用 |
+| `SubscribeListener` | 平台订阅：4 个订阅 hook（Catalog / Alarm / MobilePosition / PTZPosition） | fire-and-forget；200 OK 由协议层同步返回，listener 不能拒绝订阅 | 全部调用 |
+| `NotifyListener` | 平台通知：Broadcast 语音广播 + 兜底 | fire-and-forget | 全部调用 |
+
+#### Server 端（平台侧）— 4 个 listener
+
+| 接口 | 职责 | 调用语义 |
+|------|------|---------|
+| `DeviceLifecycleListener` | 设备生命周期：注册 / 挑战 / 在线 / 离线 / 远端地址变更（NAT 漂移） | fire-and-forget |
+| `DeviceSessionListener` | INVITE/BYE/ACK 状态机：onInviteTrying / onInviteOk / onInviteFailure / onAck / onBye / onByeError + **`onServerInvite`**（设备主动 INVITE，含 `transactionContextKey` 用于异步回包） | fire-and-forget；UDP 重传场景需按 callId 自行幂等 |
+| `DeviceNotifyListener` | 设备主动通知：Alarm / Keepalive / MediaStatus / MobilePosition / UpgradeResult / SnapShotFinished / VideoUploadNotify | fire-and-forget |
+| `DeviceResponseListener` | 设备应答：Catalog / DeviceInfo / DeviceStatus / RecordInfo / PTZPosition / SDCardStatus / HomePosition / CruiseTrack{List,Single} / DeviceConfig / ConfigDownload / PresetQuery / Subscribe / NotifyUpdate（目录变更通知） | fire-and-forget |
+
+#### 一站式 Adapter
 
 ```java
-@Autowired ServerCommandSender serverCommandSender;
-
-// 查询类
-String callId = serverCommandSender.deviceInfoQuery(deviceId);
-String callId = serverCommandSender.deviceCatalogQuery(deviceId);
-String callId = serverCommandSender.deviceRecordInfoQuery(deviceId, startMs, endMs);
-
-// 控制类
-String callId = serverCommandSender.deviceControlPtzCmd(deviceId, PtzCmdEnum.UP, 50);
-String callId = serverCommandSender.deviceControlReboot(deviceId);
-
-// 点播 / 回放
-String callId = serverCommandSender.deviceInvitePlay(deviceId, mediaIp, mediaPort, StreamModeEnum.UDP);
-String callId = serverCommandSender.deviceInvitePlayBack(deviceId, mediaIp, mediaPort, startMs, endMs, StreamModeEnum.UDP);
-
-// 终止会话
-String callId = serverCommandSender.deviceBye(deviceId, originalCallId);
-```
-
-### 事件监听
-
-业务逻辑通过 Spring `@EventListener` 实现。
-
-**服务端事件**（`io.github.lunasaw.gbproxy.server.transmit.event`）：
-
-| 事件 | 触发时机 |
-|------|---------|
-| `DeviceRegisterEvent` / `DeviceRegisterChallengeEvent` | 设备注册（含鉴权挑战） |
-| `DeviceOnlineEvent` / `DeviceOfflineEvent` | 设备上线 / 下线 |
-| `DeviceKeepaliveEvent` | 设备心跳 |
-| `DeviceInfoEvent` / `DeviceStatusEvent` / `DeviceCatalogEvent` / `DeviceConfigEvent` / `DeviceRecordEvent` | 设备查询结果 |
-| `DeviceAlarmEvent` / `DeviceMobilePositionEvent` / `DeviceNotifyUpdateEvent` | 设备主动上报 |
-| `DeviceInviteTryingEvent` / `DeviceInviteOkEvent` / `DeviceInviteFailureEvent` | 平台发起 INVITE 的响应 |
-| **`ServerInviteEvent`** | **设备主动 INVITE（含 `transactionContextKey`，用于异步回包）** |
-| `DeviceMediaStatusEvent` / `DeviceByeEvent` / `DeviceAckEvent` | 媒体会话状态变更 |
-| `DeviceInfoRequestEvent` / `DeviceSubscribeResponseEvent` | 设备 INFO / 订阅响应 |
-
-**客户端事件**（`io.github.lunasaw.gbproxy.client.eventbus.event`）：
-
-| 事件 | 触发时机 |
-|------|---------|
-| `ClientRegisterSuccessEvent` / `ClientRegisterFailureEvent` / `ClientRegisterChallengeEvent` | 客户端注册响应 |
-| `ClientInviteEvent` | 收到上级 INVITE（含 `transactionContextKey`，用于异步回包） |
-| `ClientAckEvent` / `ClientByeEvent` / `ClientCancelEvent` / `ClientInfoEvent` | 上级 ACK / BYE / CANCEL / INFO |
-
-```java
+// Server 端：业务方继承基类即可获得全部 4 个 listener 的所有 hook
 @Component
-@Slf4j
-public class SipEventForwarder {
+public class MyServerAdapter extends ServerGb28181Adapter {
 
-    @EventListener
-    public void onRegister(DeviceRegisterEvent e) {
-        log.info("设备注册: {}", e.getDeviceId());
+    @Override
+    public void onDeviceRegister(String deviceId, RegisterInfo info) {
+        log.info("设备上线: {} from {}", deviceId, info.getRemoteIp());
     }
 
-    @EventListener
-    public void onAlarm(DeviceAlarmEvent e) {
-        log.info("设备告警: {} type={}", e.getDeviceId(), e.getAlarmType());
+    @Override
+    public void onAlarmNotify(String deviceId, DeviceAlarmNotify notify) {
+        alarmService.dispatch(deviceId, notify);
     }
 
-    @EventListener
-    public void onServerInvite(ServerInviteEvent e) {
-        // 设备主动 INVITE（语音对讲等场景）：异步回包，详见下文
-        log.info("设备 INVITE: callId={} ctxKey={}", e.getCallId(), e.getTransactionContextKey());
+    @Override
+    public void onServerInvite(String callId, String fromUserId, String toUserId,
+                               GbSessionDescription sd, String transactionContextKey) {
+        inviteContextStore.save(callId, nodeId, transactionContextKey, ttlMs);
+        businessNotifier.inviteIncoming(callId, fromUserId, toUserId, sd);
+    }
+    // 其他 hook 不写一行
+}
+
+// Client 端：同理
+@Component
+public class MyDeviceImpl extends ClientGb28181Adapter {
+
+    @Override
+    public DeviceResponse onCatalogQuery(String platformId, DeviceQuery q) {
+        return buildCatalogResponse();   // 返回非 null = 框架自动回包
+    }
+
+    @Override
+    public void onPtzControl(String platformId, DeviceControlPtz cmd) {
+        ptzExecutor.execute(cmd);
     }
 }
 ```
 
-### INVITE 异步回包模型（1.3.0 关键变更）
+业务方也可按需 `implements` 单个或几个 listener interface，不必继承 Adapter。
 
-设备主动发起的 INVITE（如语音对讲）需要业务方准备 SDP，框架已重构为**两步异步**：
+### 二、Layer 1 协议事件（跨切层）
+
+适合 metrics / audit / tracing / 全链路 trace 等横切关注点，与 listener 互不干扰：
+
+#### Client 端 L1 事件
+
+| 事件 | 触发时机 |
+|------|---------|
+| `ClientQueryEvent` | rootType=Query 的统一外层事件，多态承载 13 类 query payload |
+| `ClientControlEvent` | rootType=Control + cmdType=DeviceControl |
+| `ClientKeepaliveEvent` | cmdType=Keepalive（独立事件，与控制指令拆开） |
+| `ClientConfigEvent` | cmdType=DeviceConfig，多态 payload |
+| `ClientSubscribeEvent` | method=SUBSCRIBE |
+| `ClientNotifyEvent` | rootType=Notify（含 Broadcast 等） |
+| `ClientInviteEvent` / `ClientByeEvent` / `ClientAckEvent` / `ClientCancelEvent` / `ClientInfoEvent` | 上级 INVITE / BYE / ACK / CANCEL / INFO（INFO 含结构化 MANSRTSP） |
+| `ClientRegister{Success,Failure,Challenge,Redirect}Event` | 客户端注册响应 |
+
+#### Server 端 L1 事件（v1.5.2 起从 32 个 typed event 收敛为 4 个外层事件）
+
+| 事件 | type/payload | 覆盖语义 |
+|------|--------------|---------|
+| `ServerLifecycleEvent` | `LifecycleType` ∈ {REGISTER / CHALLENGE / ONLINE / OFFLINE / REMOTE_ADDRESS_CHANGED} | 注册 / 上下线 / NAT 漂移 |
+| `ServerSessionEvent` | `SessionType` ∈ {INVITE_TRYING / INVITE_OK / INVITE_FAILURE / ACK / BYE / BYE_ERROR / SERVER_INVITE} | INVITE 三向握手 + BYE + 设备主动 INVITE（语音对讲等场景，携带 `transactionContextKey`） |
+| `ServerNotifyEvent` | typed payload：`DeviceAlarmNotify` / `DeviceKeepLiveNotify` / `MediaStatusNotify` / `MobilePositionNotify` / `UpgradeResultNotify` / `UploadSnapShotFinishedNotify` / `VideoUploadNotify` | 设备主动通知 |
+| `ServerQueryResponseEvent` | typed payload：`DeviceResponse`(Catalog) / `DeviceInfo` / `DeviceStatus` / `DeviceRecord` / `PTZPositionResponse` / `SDCardStatusResponse` / `HomePositionResponse` / `CruiseTrackListResponse` / `CruiseTrackResponse` / `DeviceConfigResponse` / `DeviceConfigDownloadResponse` / `PresetQueryResponse` / `DeviceOtherUpdateNotify` / 订阅应答元数据 | 设备查询应答 + 错误返回 |
+
+L1 事件携带强类型 payload，业务方既可走 listener 接口，也可 `@EventListener` 直接监听 L1 事件做跨切。
+
+### 三、命令发送
+
+#### `ServerCommandSender`（平台 → 设备，按 `deviceId` 寻址，依赖 `DeviceSessionCache`）
+
+48 个出站方法，覆盖 GB/T 28181-2022 全集：
+
+```java
+@Autowired ServerCommandSender serverCommandSender;
+
+// 查询类（GB/T 28181-2022 §A.2.4）
+String callId = serverCommandSender.deviceInfoQuery(deviceId);
+String callId = serverCommandSender.deviceCatalogQuery(deviceId);
+String callId = serverCommandSender.deviceStatusQuery(deviceId);
+String callId = serverCommandSender.deviceRecordInfoQuery(deviceId, startMs, endMs);
+String callId = serverCommandSender.devicePresetQuery(deviceId);
+String callId = serverCommandSender.devicePtzPositionQuery(deviceId);
+String callId = serverCommandSender.deviceSdCardStatusQuery(deviceId);
+String callId = serverCommandSender.deviceHomePositionQuery(deviceId);
+String callId = serverCommandSender.deviceCruiseTrackListQuery(deviceId);
+String callId = serverCommandSender.deviceCruiseTrackQuery(deviceId, trackNumber);
+String callId = serverCommandSender.deviceConfigDownload(deviceId, "BasicParam");
+String callId = serverCommandSender.deviceMobilePositionQuery(deviceId, interval);
+String callId = serverCommandSender.deviceAlarmQuery(deviceId, start, end, level, method, type);
+
+// 订阅类（§9.11）
+String callId = serverCommandSender.deviceCatalogSubscribe(deviceId, expires, eventType);
+String callId = serverCommandSender.deviceMobilePositionSubscribe(deviceId, interval, expires);
+String callId = serverCommandSender.deviceAlarmSubscribe(deviceId, expires, eventType, /* AlarmSubscribeInfo */);
+String callId = serverCommandSender.devicePtzPositionSubscribe(deviceId, expires);
+
+// 控制类（§A.2.3.1）
+String callId = serverCommandSender.deviceControlPtzCmd(deviceId, PtzCmdEnum.UP, 50);
+String callId = serverCommandSender.deviceControlReboot(deviceId);
+String callId = serverCommandSender.deviceControlPtzPrecise(deviceId, pan, tilt, zoom);
+String callId = serverCommandSender.deviceControlIFrame(deviceId);
+String callId = serverCommandSender.deviceControlDragZoomIn(deviceId, dragZoom);
+String callId = serverCommandSender.deviceControlFormatSDCard(deviceId, sdNumber);
+String callId = serverCommandSender.deviceControlHomePosition(deviceId, "true", resetTime, presetIndex);
+String callId = serverCommandSender.deviceControlTargetTrack(deviceId, mode, target, /* TargetArea */);
+String callId = serverCommandSender.deviceUpgrade(deviceId, firmware, fileURL, manufacturer, sessionId);
+String callId = serverCommandSender.deviceSnapShot(deviceId, snapNum, interval, uploadURL, sessionId);
+
+// 配置类（§A.2.3.2）
+String callId = serverCommandSender.deviceConfig(deviceId, name, expiration, /* heartBeatInterval */, /* heartBeatCount */);
+String callId = serverCommandSender.deviceConfigOsd(deviceId, osdInfo);
+String callId = serverCommandSender.deviceConfigVideoAlarmRecord(deviceId, /* config */);
+String callId = serverCommandSender.deviceConfigAlarmReport(deviceId, /* config */);
+
+// 媒体会话（§9.2 / §9.7~9 / §9.12）
+String callId = serverCommandSender.deviceInvitePlay(deviceId, mediaIp, mediaPort, StreamModeEnum.UDP);
+String callId = serverCommandSender.deviceInvitePlayBack(deviceId, mediaIp, mediaPort, startMs, endMs, StreamModeEnum.UDP);
+String callId = serverCommandSender.deviceInviteTalk(deviceId, mediaIp, mediaPort, StreamModeEnum.UDP);
+String callId = serverCommandSender.deviceInviteDownload(deviceId, mediaIp, mediaPort, startMs, endMs, downloadSpeed, StreamModeEnum.UDP);
+String callId = serverCommandSender.deviceInvitePlayBackControl(deviceId, PlayActionEnums.PAUSE);
+String callId = serverCommandSender.deviceBye(deviceId, originalCallId);
+
+// 语音广播（§9.12.1）
+String callId = serverCommandSender.deviceBroadcast(deviceId);
+```
+
+> v1.5.1 起 `ServerCommandSender` 31 个 `@Deprecated` 静态门面方法已删除，业务侧需注入 bean 调用同名实例方法。
+
+#### `ClientCommandSender`（设备 → 平台）
+
+设备侧主动上报与应答（注册、心跳、Catalog 通知、报警上报、抓拍完成通知、升级结果通知、视频上传通知等）。绝大部分查询应答由 `ClientListenerAdapter` 在 `QueryListener` 返回非 null 时自动调用，业务方一般无需直接接触。
+
+### 四、INVITE 异步回包模型（设备主动 INVITE）
+
+设备主动发起的 INVITE（如语音对讲）需要业务方准备 SDP，框架采用**两步异步**模型：
 
 ```
 设备 → INVITE
   → sip-proxy: ServerInviteRequestProcessor
       1. 立即发 100 Trying（防对端重传）
-      2. 存 SipTransactionRegistry（contextKey = callId_fromTag_cseq → RequestEvent，进程内）
-      3. 发布 ServerInviteEvent（含 callId、contextKey、SDP）
-  → sip-gateway: @EventListener
+      2. 存 SipTransactionRegistry（contextKey = callId_fromTag_cseq → RequestEvent，���程内）
+      3. 发布 ServerSessionEvent.serverInvite(callId, fromUserId, toUserId, sdp, contextKey)
+  → sip-gateway: ServerListenerAdapter → DeviceSessionListener.onServerInvite
       1. 存 Redis: "sip:invite:ctx:{callId}" → "{nodeId}:{contextKey}"（30s TTL）
       2. 推送业务服务器（含 callId、SDP）
 
@@ -252,15 +359,28 @@ public class SipEventForwarder {
 
 > ⚠️ **设备 Timer B 限制**：即使框架侧 `extendContext` 续期到 90 秒，设备侧（INVITE 客户端）按 RFC 3261 §17.1.1.2 在 `Timer B = 64*T1 = 32s` 后会放弃事务。业务处理时间应控制在 **30s 内直接回包**；30~60s 需主动发 `180 Ringing` + `extendContext`；> 60s 改为先回 200 OK + 占位 SDP，后续走 re-INVITE。详见 [doc/LAYERED-ARCHITECTURE.md §7](doc/LAYERED-ARCHITECTURE.md)。
 
-### 扩展点（进阶）
+### 五、协议层扩展点（进阶）
 
-业务方一般只需实现 `DeviceSessionCache` / `*DeviceSupplier` 接口。少数高级场景才需要扩展协议层：
+业务方一般只需实现 `DeviceSessionCache` / `*DeviceSupplier` + listener。少数高级场景才需要扩展协议层：
 
 | 扩展点 | 用途 |
 |--------|------|
 | `MessageHandler` 接口 | 新增 GB28181 cmdType 处理器，通过 `SipRequestProcessorAbstract.addHandler()` 注册 |
 | `SipRequestProcessorAbstract` 子类 | 新增 SIP method 处理器（如自定义非标准方法）；server 端可继承 `ServerAbstractSipRequestProcessor` |
 | `ClientCommandStrategy` / `ServerCommandStrategy` | 新增出站命令策略，通过对应的 `CommandStrategyFactory` 注册 |
+
+## SIP 消息处理流水线（内部）
+
+```
+SIP Message
+  → AbstractSipListener            # 统一事件分发，TraceId 传播
+  → XXXRequestProcessor            # 消息类型路由（REGISTER / INVITE / MESSAGE / NOTIFY / BYE / SUBSCRIBE / ACK / INFO …）
+  → XXXSubProcessor                # MESSAGE 子类型路由（按 GB28181 cmdType）
+  → L0 *MessageHandler             # parseXml + publishEvent(L1)
+  → L1 ApplicationEvent            # ClientQueryEvent / ServerSessionEvent / ...
+  → L2 ListenerAdapter             # @EventListener 监听 L1，按 payload 分发到 listener
+  → 业务方 listener 实现             # QueryListener.onCatalogQuery 等
+```
 
 ## 水平扩容
 
@@ -275,7 +395,7 @@ public class SipEventForwarder {
 | `ServerTransaction` / `SipTransactionRegistry` | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化、持有 socket 引用；同设备消息必须打同节点 |
 | `DeviceSessionCache`（设备注册信息） | **Redis**（共享，需高可用） | 业务方实现，节点间共享，节点故障后新节点可接管 |
 | `ServerDeviceSupplier`（设备信息） | **Redis**（共享，需高可用） | 业务方实现，读 Redis |
-| 设备订阅状态 | 业务方自管 | 框架 1.3.0 已删除 `SubscribeHolder`，由业务方按需自管 |
+| 设备订阅状态 | 业务方自管（client 端协议层 `SubscribeRegistry` 内化） | 框架 1.3.0 已删除全局 `SubscribeHolder`；client 端 SUBSCRIBE 200 OK 由 `SubscribeRegistry.put()` 内部维护 |
 | INVITE 事务上下文 | **进程内** + Redis 存路由映射（需高可用） | `transactionContextKey` 仅在收到 INVITE 的节点有效；Redis 用 `callId` 作键存 `{nodeId}:{contextKey}` 供跨节点回包路由 |
 
 > ⚠️ **Redis 是新的 SPOF**：跨节点 INVITE 路由、设备会话、注册鉴权全部依赖 Redis。生产环境必须使用 Redis Sentinel 或 Cluster；`InviteContextStore` 实现需把后端故障显式抛 `ResponseStatusException(SERVICE_UNAVAILABLE)`，让 `/sip/invite/response` 返回 503 触发业务侧重试。
@@ -336,15 +456,27 @@ bash scripts/check-sip-common-purity.sh
 - 异步线程中需显式传播 TraceId（SkyWalking）
 - JSON 序列化统一使用 `fastjson2`
 - `sip-common` 中禁止出现 GB28181 关键词（CI 校验，详见模块结构小节）
+- 新增 cmdType 时**先更新 [PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md)，再改代码**
 
 ## 配置命名空间
 
-- `sip.server.*` — SIP 协议监听设置（`ip` / `port` / `external-ip` / `external-port` / `serverId` / `realm`）
-- `sip.common.*` — 通用框架配置（`user-agent`、`time-sync.*`）
-- `gb28181:` — GB28181 协议设置
+- `sip.server.*` — 服务端协议监听设置（`enabled` / `ip` / `port` / `external-ip` / `external-port` / `server-id` / `domain` / `realm` / `enable-udp` / `enable-tcp` 等）
+- `sip.client.*` — 客户端协议设置
+- `sip.common.*` — 通用框架配置（`user-agent`、`time-sync.{enabled,mode,offset-threshold,ntp-server,ntp-sync-interval,...}`）
 - 环境覆盖：`application-{env}.yml`
 
-> **1.3.0 配置迁移**：`sip.gb28181.time-sync.*` → `sip.common.time-sync.*`；默认 `User-Agent` 由 `LunaSaw-GB28181-Proxy` 改为 `sip-proxy`。
+## 协议覆盖度
+
+| 章节 | 覆盖范围 | 状态 |
+|------|---------|------|
+| GB/T 28181-2022 §A.2.3.1 设备控制 | 13/13 cmdType | ✅ 全部 listener 化 |
+| GB/T 28181-2022 §A.2.3.2 设备配置 | 11/11 cmdType（外加 1 个 GB28181-2016 兼容） | ✅ 全部 listener 化 |
+| GB/T 28181-2022 §A.2.4 查询 | 13/13 cmdType | ✅ 全部 listener 化 |
+| GB/T 28181-2022 §A.2.5 通知 | 8/8 cmdType | ✅ 全部 listener 化 |
+| GB/T 28181-2022 §A.2.6 应答 | 12/15 listener 化 + 3 transport-only | ✅（剩余 3 项无业务语义） |
+| GB/T 28181-2022 §9.x 流程级能力 | 注册 / 实时点播 / 历史检索回放下载 / 网络校时 / 订阅通知 / 语音广播 / 语音对讲 / 软件升级 / 图像抓拍 | ✅ |
+
+详细矩阵见 [doc/PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md)。
 
 ## 参考文档
 
@@ -352,7 +484,10 @@ bash scripts/check-sip-common-purity.sh
 
 | 文档 | 内容 |
 |------|------|
-| [LAYERED-ARCHITECTURE.md](doc/LAYERED-ARCHITECTURE.md) | sip-proxy ↔ sip-gateway ↔ 业务服务器分层架构（v2.5） |
+| [LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) | Listener 化业务接口分层设计（v1.5.0 主干） |
+| [LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md) | v1.4.0 → v1.5.0 业务侧迁移指南 |
+| [PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md) | L0/L1/L2 三层协议栈逐 cmdType 落地矩阵（v1.5.6 基于代码事实） |
+| [LAYERED-ARCHITECTURE.md](doc/LAYERED-ARCHITECTURE.md) | sip-proxy ↔ sip-gateway ↔ 业务服务器分层架构 |
 | [HORIZONTAL-SCALING.md](doc/HORIZONTAL-SCALING.md) | 多节点部署、状态分层、VIP 拓扑、NAT 处理 |
 | [PROTOCOL-DECOUPLING-PLAN.md](doc/PROTOCOL-DECOUPLING-PLAN.md) | sip-common / gb28181-common 边界规则（1.3.0） |
 | [BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md](doc/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md) | 1.3.0 全量删除 `*Handler` 接口、统一 Spring Event |
