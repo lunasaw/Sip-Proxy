@@ -4,7 +4,7 @@ import io.github.lunasaw.gb28181.common.entity.control.DeviceControlGuard;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlPtz;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlRecordCmd;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlTeleBoot;
-import io.github.lunasaw.gb28181.common.entity.utils.PtzCmdEnum;
+import io.github.lunasaw.gb28181.common.entity.control.instruction.enums.PTZControlEnum;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
@@ -62,7 +62,7 @@ class DeviceControlFlowTest {
         CountDownLatch latch = new CountDownLatch(1);
         testClient.reset(latch);
 
-        commandSender.deviceControlPtzCmd(clientId, PtzCmdEnum.UP, 50);
+        commandSender.deviceControlPtzCmd(clientId, PTZControlEnum.TILT_UP, 50);
 
         boolean completed = latch.await(3, TimeUnit.SECONDS);
 
