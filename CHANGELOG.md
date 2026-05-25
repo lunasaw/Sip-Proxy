@@ -2,7 +2,7 @@
 
 本文档记录 sip-proxy 各版本的对外可见变更。版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
-## [1.7.0] - 2026-XX-XX
+## [1.7.0] - 2026-05-25
 
 ### 🚨 BREAKING CHANGES — 出站 Dialog 维护（[doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md)）
 
