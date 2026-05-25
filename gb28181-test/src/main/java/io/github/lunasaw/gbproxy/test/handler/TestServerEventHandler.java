@@ -2,16 +2,21 @@ package io.github.lunasaw.gbproxy.test.handler;
 
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceKeepLiveNotify;
+import io.github.lunasaw.gb28181.common.entity.notify.DeviceOtherUpdateNotify;
+import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.UpgradeResultNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.UploadSnapShotFinishedNotify;
+import io.github.lunasaw.gb28181.common.entity.notify.VideoUploadNotify;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
 import io.github.lunasaw.gb28181.common.entity.response.HomePositionResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
+import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
 import io.github.lunasaw.gb28181.common.entity.response.SDCardStatusResponse;
 import io.github.lunasaw.gbproxy.server.api.ServerGb28181Adapter;
 import lombok.Getter;
@@ -20,9 +25,10 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * 集成测试用 server 端一站式 listener 实现（v1.5.x：取代旧 TestServerEventHandler 的 @EventListener
+ * 集成测试用 server 端一站式 listener 实现（v1.5.x：取��旧 TestServerEventHandler 的 @EventListener
  * 散点形式，承载 Catalog/Info/Status/Alarm/Keepalive/Record/InviteOk/InviteFailure/SubscribeResponse/
- * UpgradeResult/SnapShotFinished/PtzPosition/SDCardStatus/HomePosition/CruiseTrack 全部最近一次记录）。
+ * UpgradeResult/SnapShotFinished/PtzPosition/SDCardStatus/HomePosition/CruiseTrack/MobilePosition/
+ * VideoUpload/ConfigDownload/PresetQuery/CatalogNotifyUpdate 全部最近一次记录）。
  *
  * <p>FlowTest 通过 reset(latch)+typed getter 断言，accessor 直接返回 typed payload。
  */
@@ -45,6 +51,11 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Getter private volatile HomePositionResponse lastHomePosition;
     @Getter private volatile CruiseTrackListResponse lastCruiseTrackList;
     @Getter private volatile CruiseTrackResponse lastCruiseTrack;
+    @Getter private volatile MobilePositionNotify lastMobilePosition;
+    @Getter private volatile VideoUploadNotify lastVideoUpload;
+    @Getter private volatile DeviceConfigDownloadResponse lastConfigDownload;
+    @Getter private volatile PresetQueryResponse lastPresetQuery;
+    @Getter private volatile DeviceOtherUpdateNotify lastCatalogNotifyUpdate;
 
     private volatile CountDownLatch latch;
 
@@ -60,6 +71,11 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
         lastHomePosition = null;
         lastCruiseTrackList = null;
         lastCruiseTrack = null;
+        lastMobilePosition = null;
+        lastVideoUpload = null;
+        lastConfigDownload = null;
+        lastPresetQuery = null;
+        lastCatalogNotifyUpdate = null;
     }
 
     private void signal() { if (latch != null) latch.countDown(); }
@@ -83,4 +99,9 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Override public void onHomePositionResponse(String deviceId, HomePositionResponse response) { lastHomePosition = response; signal(); }
     @Override public void onCruiseTrackListResponse(String deviceId, CruiseTrackListResponse response) { lastCruiseTrackList = response; signal(); }
     @Override public void onCruiseTrackResponse(String deviceId, CruiseTrackResponse response) { lastCruiseTrack = response; signal(); }
+    @Override public void onMobilePositionNotify(String deviceId, MobilePositionNotify notify) { lastMobilePosition = notify; signal(); }
+    @Override public void onVideoUploadNotify(String deviceId, VideoUploadNotify notify) { lastVideoUpload = notify; signal(); }
+    @Override public void onConfigDownloadResponse(String deviceId, DeviceConfigDownloadResponse response) { lastConfigDownload = response; signal(); }
+    @Override public void onPresetQueryResponse(String deviceId, PresetQueryResponse response) { lastPresetQuery = response; signal(); }
+    @Override public void onNotifyUpdate(String deviceId, DeviceOtherUpdateNotify notify) { lastCatalogNotifyUpdate = notify; signal(); }
 }

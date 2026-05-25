@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.server.api;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceOtherUpdateNotify;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
@@ -10,6 +11,7 @@ import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
 import io.github.lunasaw.gb28181.common.entity.response.HomePositionResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
+import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
 import io.github.lunasaw.gb28181.common.entity.response.SDCardStatusResponse;
 
 /**
@@ -54,8 +56,18 @@ public interface DeviceResponseListener {
     /** 巡航轨迹应答（cmdType=CruiseTrackQuery）。 */
     default void onCruiseTrackResponse(String deviceId, CruiseTrackResponse response) {}
 
-    /** 设备配置应答（cmdType=DeviceConfig）。 */
+    /** 设备配置应答（cmdType=DeviceConfig，仅结果码）。 */
     default void onConfigResponse(String deviceId, String sn, DeviceConfigResponse response) {}
+
+    /**
+     * GB28181-2022 §A.2.6.9 设备配置查询应答（cmdType=ConfigDownload，携带 BasicParam/SVAC/OSD 等配置画像）。
+     */
+    default void onConfigDownloadResponse(String deviceId, DeviceConfigDownloadResponse response) {}
+
+    /**
+     * GB28181-2022 §A.2.6.10 设备预置位查询应答（cmdType=PresetQuery，含 PresetID + PresetName 列表）。
+     */
+    default void onPresetQueryResponse(String deviceId, PresetQueryResponse response) {}
 
     /** 设备订阅应答（method=SUBSCRIBE，server 收到 200 OK 等）。 */
     default void onSubscribeResponse(String deviceId, String callId, int statusCode) {}

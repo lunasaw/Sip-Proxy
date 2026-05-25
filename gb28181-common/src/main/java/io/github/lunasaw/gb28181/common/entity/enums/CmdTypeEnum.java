@@ -35,6 +35,11 @@ public enum CmdTypeEnum {
     UPLOAD_SNAP_SHOT_FINISHED("UploadSnapShotFinished", "图像抓拍传输完成通知"),
 
     /**
+     * GB28181-2022 A.2.5.8 设备实时视音频回传通知
+     */
+    VIDEO_UPLOAD_NOTIFY("VideoUploadNotify", "设备实时视音频回传通知"),
+
+    /**
      * GB28181-2022 A.2.4.13 / A.2.6.15 PTZ 精确状态查询/应答
      */
     PTZ_POSITION("PTZPosition", "PTZ 精确状态查询/应答"),

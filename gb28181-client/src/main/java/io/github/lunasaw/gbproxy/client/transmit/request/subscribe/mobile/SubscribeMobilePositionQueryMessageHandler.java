@@ -1,13 +1,12 @@
-package io.github.lunasaw.gbproxy.client.transmit.request.subscribe.catalog;
+package io.github.lunasaw.gbproxy.client.transmit.request.subscribe.mobile;
 
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
-import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
+import io.github.lunasaw.gb28181.common.entity.query.DeviceMobileQuery;
 import io.github.lunasaw.gbproxy.client.eventbus.event.ClientSubscribeEvent;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeHandlerAbstract;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRegistry;
 import io.github.lunasaw.gbproxy.client.transmit.request.subscribe.SubscribeRequestProcessor;
-import io.github.lunasaw.sip.common.entity.Device;
 import io.github.lunasaw.sip.common.entity.DeviceSession;
 import io.github.lunasaw.sip.common.enums.ContentTypeEnum;
 import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
@@ -23,27 +22,28 @@ import org.springframework.stereotype.Component;
 
 import javax.sip.RequestEvent;
 import javax.sip.header.ContentTypeHeader;
-import javax.sip.header.EventHeader;
 import javax.sip.header.ExpiresHeader;
 import javax.sip.message.Response;
 
 /**
- * 处理设备通道订阅消息（rootType=Query, cmdType=Catalog, method=SUBSCRIBE）。
+ * GB28181-2022 §9.11.1 / §A.2.4.9 移动设备位置数据订阅请求
+ * (rootType=Query, cmdType=MobilePosition, method=SUBSCRIBE)。
  *
- * <p>v1.5.0 改造：协议层同步发 200 OK + 维护内部 {@link SubscribeRegistry}，
- * 然后发布 {@link ClientSubscribeEvent}，业务方通过 {@code SubscribeListener.onCatalogSubscribe} 接收。
- * 业务方主动催发 NOTIFY 时使用 {@code ClientCommandSender.sendCatalogCommand}。
+ * <p>v1.5.6 起补全：此前 v1.5.5 矩阵审计发现 client 端没有此 handler，平台对设备 GPS 订阅
+ * 收不到 200 OK，订阅事务超时。本 handler 同步回 200 OK + 维护 {@link SubscribeRegistry}，
+ * 然后发布 {@link ClientSubscribeEvent}，业务方通过
+ * {@code SubscribeListener.onMobilePositionSubscribe} 接收。
  *
  * @author luna
  */
-@Component("subscribeCatalogQueryMessageHandler")
+@Component("subscribeMobilePositionQueryMessageHandler")
 @Slf4j
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class SubscribeCatalogQueryMessageHandler extends SubscribeHandlerAbstract {
+public class SubscribeMobilePositionQueryMessageHandler extends SubscribeHandlerAbstract {
 
-    public static final String CMD_TYPE = CmdTypeEnum.CATALOG.getType();
+    public static final String CMD_TYPE = CmdTypeEnum.MOBILE_POSITION.getType();
 
     private final ApplicationEventPublisher publisher;
 
@@ -60,38 +60,22 @@ public class SubscribeCatalogQueryMessageHandler extends SubscribeHandlerAbstrac
     @Override
     public void handForEvt(RequestEvent event) {
         DeviceSession deviceSession = getDeviceSession(event);
-
-        EventHeader header = (EventHeader) event.getRequest().getHeader(EventHeader.NAME);
-        if (header == null) {
-            log.info("handForEvt::event = {}", event);
-            return;
-        }
-
-        // 订阅消息过来
-        String sipId = deviceSession.getSipId();
-        String userId = deviceSession.getUserId();
         SIPRequest request = (SIPRequest) event.getRequest();
-        SubscribeInfo subscribeInfo = new SubscribeInfo(request, sipId);
-        Device fromDevice = deviceSession.getFromDevice();
-        if (fromDevice == null || !userId.equals(fromDevice.getUserId())) {
+        SubscribeInfo subscribeInfo = new SubscribeInfo(request, deviceSession.getSipId());
+
+        DeviceMobileQuery query = parseXml(DeviceMobileQuery.class);
+        if (query == null) {
+            log.warn("解析移动位置订阅请求失败");
             return;
         }
+        SubscribeRegistry.put(query.getDeviceId(), subscribeInfo);
 
-        DeviceQuery deviceQuery = parseXml(DeviceQuery.class);
-        if (deviceQuery == null) {
-            log.warn("解析 Catalog 订阅请求失败");
-            return;
-        }
-        // 协议层内化订阅注册（v1.5.0：替代原 SubscribeRequestHandler.putSubscribe）
-        SubscribeRegistry.put(deviceQuery.getDeviceId(), subscribeInfo);
-
-        // 同步回 200 OK（毫秒级，必须在 listener 通知之前）
         ExpiresHeader expiresHeader = SipRequestUtils.createExpiresHeader(subscribeInfo.getExpires());
         ContentTypeHeader contentTypeHeader = ContentTypeEnum.APPLICATION_XML.getContentTypeHeader();
         ResponseCmd.sendResponse(Response.OK, "OK", contentTypeHeader, event, expiresHeader);
 
-        // 异步通知业务（业务方按需主动发 Catalog NOTIFY）
-        publisher.publishEvent(new ClientSubscribeEvent(this, userId, sipId, subscribeInfo.getExpires(), deviceQuery));
+        publisher.publishEvent(new ClientSubscribeEvent(this,
+                deviceSession.getUserId(), deviceSession.getSipId(), subscribeInfo.getExpires(), query));
     }
 
     @Override
