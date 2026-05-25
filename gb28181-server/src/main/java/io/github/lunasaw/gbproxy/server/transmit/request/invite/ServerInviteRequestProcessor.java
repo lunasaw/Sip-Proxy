@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
-import io.github.lunasaw.gb28181.common.entity.utils.GbSdpUtils;
+import io.github.lunasaw.gb28181.common.sdp.Gb28181SdpParser;
 import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
@@ -19,6 +19,8 @@ import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.StandardCharsets;
 
 /**
  * 服务端 INVITE 请求处理器：协议层立即回 100 Trying 并发布 {@link ServerInviteEvent}，
@@ -43,6 +45,9 @@ public class ServerInviteRequestProcessor extends SipRequestProcessorAbstract {
 
     @Autowired
     private ServerDeviceSupplier serverDeviceSupplier;
+
+    @Autowired
+    private Gb28181SdpParser sdpParser;
 
     @Override
     public void process(RequestEvent evt) {
@@ -69,7 +74,7 @@ public class ServerInviteRequestProcessor extends SipRequestProcessorAbstract {
             GbSessionDescription sessionDescription = null;
             byte[] rawContent = request.getRawContent();
             if (rawContent != null) {
-                sessionDescription = GbSdpUtils.parseGbSdp(new String(rawContent));
+                sessionDescription = sdpParser.parse(new String(rawContent, StandardCharsets.UTF_8));
             }
             publisher.publishEvent(ServerSessionEvent.serverInvite(this, callId, fromUserId, toUserId,
                     sessionDescription, ctx.getContextKey()));

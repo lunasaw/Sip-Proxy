@@ -153,6 +153,44 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
             </plugin>
+            <plugin>
+                <!--
+                    协议分层守门：mvn verify 阶段同时跑两条 grep 脚本：
+                      1) check-sip-common-purity.sh  — sip-common 不得含 GB28181 关键字
+                      2) check-business-no-base-parser.sh — gb28181-{client,server} 不得越级调 RFC 4566 base parser
+                    详见 doc/SDP-PARSER-LAYERING-PLAN.md §4.4
+                -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>check-sip-common-purity</id>
+                        <phase>verify</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            <arguments>
+                                <argument>${maven.multiModuleProjectDirectory}/scripts/check-sip-common-purity.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check-business-no-base-parser</id>
+                        <phase>verify</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            <arguments>
+                                <argument>${maven.multiModuleProjectDirectory}/scripts/check-business-no-base-parser.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <inherited>false</inherited>
+            </plugin>
         </plugins>
     </build>
 

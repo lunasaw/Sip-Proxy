@@ -2,11 +2,12 @@ package io.github.lunasaw.gbproxy.server.transmit.response.invite;
 
 import gov.nist.javax.sip.ResponseEventExt;
 import gov.nist.javax.sip.message.SIPResponse;
+import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
+import io.github.lunasaw.gb28181.common.sdp.Gb28181SdpParser;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.event.ServerSessionEvent;
 import io.github.lunasaw.gbproxy.server.transmit.response.ServerAbstractSipResponseProcessor;
 import io.github.lunasaw.sip.common.entity.FromDevice;
-import io.github.lunasaw.sip.common.entity.SdpSessionDescription;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
@@ -22,6 +23,7 @@ import javax.sdp.SessionDescription;
 import javax.sip.ResponseEvent;
 import javax.sip.address.SipURI;
 import javax.sip.message.Response;
+import java.nio.charset.StandardCharsets;
 
 /**
  * INVITE响应处理器
@@ -47,6 +49,9 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
 
     @Autowired
     private ServerCommandSender serverCommandSender;
+
+    @Autowired
+    private Gb28181SdpParser sdpParser;
 
     /**
      * 处理INVITE响应
@@ -97,8 +102,8 @@ public class InviteResponseProcessor extends ServerAbstractSipResponseProcessor 
                 return;
             }
 
-            String contentString = new String(rawContent);
-            SdpSessionDescription gb28181Sdp = SipUtils.parseSdp(contentString);
+            String contentString = new String(rawContent, StandardCharsets.UTF_8);
+            GbSessionDescription gb28181Sdp = sdpParser.parse(contentString);
             SessionDescription sdp = gb28181Sdp.getBaseSdb();
 
             SipURI requestUri = SipRequestUtils.createSipUri(sdp.getOrigin().getUsername(),
