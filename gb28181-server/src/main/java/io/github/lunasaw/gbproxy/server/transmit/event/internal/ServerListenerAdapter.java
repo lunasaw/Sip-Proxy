@@ -7,8 +7,10 @@ import io.github.lunasaw.gb28181.common.entity.notify.MediaStatusNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.UpgradeResultNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.UploadSnapShotFinishedNotify;
+import io.github.lunasaw.gb28181.common.entity.notify.VideoUploadNotify;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigDownloadResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
@@ -16,6 +18,7 @@ import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceStatus;
 import io.github.lunasaw.gb28181.common.entity.response.HomePositionResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
+import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
 import io.github.lunasaw.gb28181.common.entity.response.SDCardStatusResponse;
 import io.github.lunasaw.gbproxy.server.api.DeviceLifecycleListener;
 import io.github.lunasaw.gbproxy.server.api.DeviceNotifyListener;
@@ -92,6 +95,10 @@ public class ServerListenerAdapter {
                 l.onCruiseTrackResponse(e.getDeviceId(), resp);
             } else if (p instanceof DeviceConfigResponse resp) {
                 l.onConfigResponse(e.getDeviceId(), e.getSn(), resp);
+            } else if (p instanceof DeviceConfigDownloadResponse resp) {
+                l.onConfigDownloadResponse(e.getDeviceId(), resp);
+            } else if (p instanceof PresetQueryResponse resp) {
+                l.onPresetQueryResponse(e.getDeviceId(), resp);
             } else if (p instanceof DeviceSubscribeResponse subRes) {
                 l.onSubscribeResponse(e.getDeviceId(), subRes.callId(), subRes.statusCode());
             } else if (p instanceof DeviceOtherUpdateNotify notify) {
@@ -124,6 +131,8 @@ public class ServerListenerAdapter {
                 l.onUpgradeResult(e.getDeviceId(), notify);
             } else if (p instanceof UploadSnapShotFinishedNotify notify) {
                 l.onSnapShotFinished(e.getDeviceId(), notify);
+            } else if (p instanceof VideoUploadNotify notify) {
+                l.onVideoUploadNotify(e.getDeviceId(), notify);
             } else {
                 log.debug("ServerNotifyEvent 未识别 payload: {}", p == null ? "null" : p.getClass().getSimpleName());
             }

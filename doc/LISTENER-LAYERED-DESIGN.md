@@ -1,6 +1,10 @@
 # Listener 化业务接口分层设计
 
-> 版本：1.3 | 日期：2026-05-24 | 状态：待实施 | 优先级：高
+> 版本：1.3 | 日期：2026-05-24 | 状态：1.5.0 已落地 | 优先级：高
+>
+> 📌 **运行时事实**（每行 cmdType 的 L0 类 / L1 事件 / L2 Listener 方法对应表）请参见
+> [PROTOCOL-LAYERING-MATRIX.md](PROTOCOL-LAYERING-MATRIX.md) —— 本文档侧重设计动机与决策，
+> 矩阵文档侧重当前代码的逐行落地。新增 cmdType 时**先改矩阵，再改代码**。
 >
 > v1.3 修订（基于代码事实核查）：
 > - **修正 §3.2 KeepaliveControl 论据**：实际继承链为 `KeepaliveControl → ControlBase → DeviceControlBase`，并非"不继承 DeviceControlBase"。独立 `ClientKeepaliveEvent` 的合理性改由"L0 handler 按 cmdType 分流"承担，而非类型差异
@@ -19,7 +23,7 @@
 > - **PR 重排**：原 PR-2 + PR-3 合并为单个破坏性 PR，避免出现"中间状态不可用"
 > - **新增**：sip-gateway / voglander 业务侧迁移影响章节
 >
-> 关联：[REFACTOR-HANDLER-TO-SPRING-EVENT.md](REFACTOR-HANDLER-TO-SPRING-EVENT.md)、[GBT-28181-2022-IMPLEMENTATION-PLAN.md](GBT-28181-2022-IMPLEMENTATION-PLAN.md)
+> 关联：[PROTOCOL-LAYERING-MATRIX.md](PROTOCOL-LAYERING-MATRIX.md)（运行时落地矩阵）、[REFACTOR-HANDLER-TO-SPRING-EVENT.md](REFACTOR-HANDLER-TO-SPRING-EVENT.md)、[GBT-28181-2022-IMPLEMENTATION-PLAN.md](GBT-28181-2022-IMPLEMENTATION-PLAN.md)、[LISTENER-MIGRATION-GUIDE.md](LISTENER-MIGRATION-GUIDE.md)
 
 ---
 

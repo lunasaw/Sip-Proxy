@@ -288,6 +288,20 @@ public class ClientCommandSender implements ApplicationContextAware {
     }
 
     /**
+     * GB28181-2022 §A.2.6.9 设备配置查询应答（cmdType=ConfigDownload，携带 BasicParam/SVAC/OSD 等配置画像）。
+     */
+    public static String sendConfigDownloadResponse(FromDevice from, ToDevice to, DeviceConfigDownloadResponse response) {
+        return send("MESSAGE", from, to, response);
+    }
+
+    /**
+     * GB28181-2022 §A.2.5.8 设备实时视音频回传通知（移动设备开始/结束实时回传时主动上报）。
+     */
+    public static String sendVideoUploadNotify(FromDevice from, ToDevice to, VideoUploadNotify notify) {
+        return send("MESSAGE", from, to, notify);
+    }
+
+    /**
      * GB28181-2022 A.2.5.9 设备软件升级结果通知
      */
     public static String sendUpgradeResultNotify(FromDevice from, ToDevice to, UpgradeResultNotify notify) {

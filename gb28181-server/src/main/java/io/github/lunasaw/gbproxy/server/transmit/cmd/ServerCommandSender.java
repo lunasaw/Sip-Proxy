@@ -8,8 +8,6 @@ import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.enums.StreamModeEnum;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
 import io.github.lunasaw.gb28181.common.entity.query.*;
-import io.github.lunasaw.gb28181.common.entity.utils.PtzCmdEnum;
-import io.github.lunasaw.gb28181.common.entity.utils.PtzUtils;
 import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
 import io.github.lunasaw.gb28181.common.transmit.cmd.CommandStrategyFactory;
 import io.github.lunasaw.gbproxy.server.entity.InviteRequest;
@@ -200,8 +198,23 @@ public class ServerCommandSender {
         return send("MESSAGE", deviceId, a);
     }
 
-    public String deviceControlPtzCmd(String deviceId, PtzCmdEnum ptzCmdEnum, Integer speed) {
-        return deviceControlPtzCmd(deviceId, PtzUtils.getPtzCmd(ptzCmdEnum, speed));
+    /**
+     * GBT-28181-2022 §A.3.2 PTZ 控制（云台 + 变倍，单方向）。
+     *
+     * @param control PTZ 控制类型
+     * @param speed   水平/垂直/变倍统一速度（0-255，变倍取低 4 位）
+     */
+    public String deviceControlPtzCmd(String deviceId,
+                                       io.github.lunasaw.gb28181.common.entity.control.instruction.enums.PTZControlEnum control,
+                                       int speed) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addPTZControl(control)
+            .horizontalSpeed(Math.min(speed, 0xFF))
+            .verticalSpeed(Math.min(speed, 0xFF))
+            .zoomSpeed(Math.min(speed, 0xF))
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
     }
 
     public String deviceControlPtzCmd(String deviceId, String ptzCmd) {
@@ -209,6 +222,108 @@ public class ServerCommandSender {
         p.setPtzCmd(ptzCmd);
         p.setPtzInfo(new DeviceControlPtz.PtzInfo());
         return send("MESSAGE", deviceId, p);
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.3 FI 控制（光圈 + 聚焦）。
+     */
+    public String deviceControlFI(String deviceId,
+                                   io.github.lunasaw.gb28181.common.entity.control.instruction.enums.FIControlEnum.IrisDirection iris,
+                                   io.github.lunasaw.gb28181.common.entity.control.instruction.enums.FIControlEnum.FocusDirection focus,
+                                   int focusSpeed, int irisSpeed) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addFIControl(iris, focus)
+            .focusSpeed(focusSpeed)
+            .irisSpeed(irisSpeed)
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.4 预置位（设置/调用/删除）。
+     *
+     * @param presetNumber 预置位号 1-255（0 号预留）
+     */
+    public String deviceControlPreset(String deviceId,
+                                       io.github.lunasaw.gb28181.common.entity.control.instruction.enums.PresetControlEnum action,
+                                       int presetNumber) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addPresetControl(action, presetNumber)
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.5 巡航（加入巡航点 / 设置速度 / 设置停留时间 / 开始巡航 / 删除巡航点）。
+     *
+     * @param groupNumber  巡航组号 0-255
+     * @param presetNumber 预置位号 1-255（删除整条巡航时传 0）
+     */
+    public String deviceControlCruise(String deviceId,
+                                       io.github.lunasaw.gb28181.common.entity.control.instruction.enums.CruiseControlEnum action,
+                                       int groupNumber, int presetNumber) {
+        io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder builder =
+            io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+                .address(0x001);
+        if (presetNumber == 0 && action == io.github.lunasaw.gb28181.common.entity.control.instruction.enums.CruiseControlEnum.DELETE_CRUISE_POINT) {
+            // 删除整条巡航：字节 6 = 00H
+            builder.addCruiseControl(action, groupNumber);
+        } else {
+            builder.addCruiseControl(action, groupNumber, presetNumber);
+        }
+        return deviceControlPtzCmd(deviceId, builder.buildToHex());
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.5 巡航速度/停留时间设置（数据范围 0-4095，跨字节 6+7 高 4 位）。
+     */
+    public String deviceControlCruiseSpeedOrTime(String deviceId,
+                                                  io.github.lunasaw.gb28181.common.entity.control.instruction.enums.CruiseControlEnum action,
+                                                  int groupNumber, int presetNumber, int speedOrTime) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addCruiseControl(action, groupNumber, presetNumber, speedOrTime)
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.6 扫描（开始/设置左边界/设置右边界）。
+     */
+    public String deviceControlScan(String deviceId, int groupNumber,
+                                     io.github.lunasaw.gb28181.common.entity.control.instruction.enums.ScanControlEnum.ScanOperationType operationType) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addScanControl(io.github.lunasaw.gb28181.common.entity.control.instruction.enums.ScanControlEnum.START_AUTO_SCAN,
+                groupNumber, operationType)
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.6 设置自动扫描速度（数据范围 0-4095）。
+     */
+    public String deviceControlScanSpeed(String deviceId, int groupNumber, int speed) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addScanSpeedControl(groupNumber, speed)
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
+    }
+
+    /**
+     * GBT-28181-2022 §A.3.7 辅助开关（开/关，switchNumber=1 表示雨刷）。
+     */
+    public String deviceControlAuxiliary(String deviceId,
+                                          io.github.lunasaw.gb28181.common.entity.control.instruction.enums.AuxiliaryControlEnum action,
+                                          int switchNumber) {
+        String hex = io.github.lunasaw.gb28181.common.entity.control.instruction.builder.PTZInstructionBuilder.create()
+            .address(0x001)
+            .addAuxiliaryControl(action, switchNumber)
+            .buildToHex();
+        return deviceControlPtzCmd(deviceId, hex);
     }
 
     public String deviceControlReboot(String deviceId) {
