@@ -181,7 +181,10 @@ public class DeviceItem extends DeviceCatalog {
             deviceItem.setRegisterWay(1);
             deviceItem.setSecrecy(0);
         }
-        if (DeviceGbType.VIRTUAL_ORGANIZATION_DIRECTORY.equals(deviceGbType)) {
+        // 215/216：2022 = BUSINESS_GROUP / VIRTUAL_ORGANIZATION（同时兼容 2016 旧命名常量）
+        if (DeviceGbType.BUSINESS_GROUP.equals(deviceGbType)
+                || DeviceGbType.VIRTUAL_ORGANIZATION.equals(deviceGbType)
+                || DeviceGbType.VIRTUAL_ORGANIZATION_DIRECTORY.equals(deviceGbType)) {
             deviceItem.setParentId("0");
         } else {
             // 业务分组/虚拟组织/行政区划 不设置以下属性

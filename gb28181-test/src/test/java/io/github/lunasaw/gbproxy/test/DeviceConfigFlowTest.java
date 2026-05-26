@@ -1,8 +1,15 @@
 package io.github.lunasaw.gbproxy.test;
 
 import io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig;
 import io.github.lunasaw.gbproxy.client.transmit.cmd.ClientCommandSender;
 import io.github.lunasaw.gbproxy.server.transmit.cmd.ServerCommandSender;
 import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
@@ -98,5 +105,153 @@ class DeviceConfigFlowTest {
         AlarmReportConfig cfg = testClient.getLastAlarmReportConfig();
         assertThat(cfg.getAlarmReport().getMotionDetection()).isEqualTo(1);
         assertThat(cfg.getAlarmReport().getFieldDetection()).isEqualTo(0);
+    }
+
+    /** GB28181-2022 §A.2.3.2.2 基本参数配置（BasicParam）。 */
+    @Test
+    void basicParamConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        commandSender.deviceConfig(clientId, "TestDevice", "3600", "60", "3");
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("基本参数配置应在3秒内被处理").isTrue();
+        var cfg = testClient.getLastBasicParamConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getBasicParam()).isNotNull();
+        assertThat(cfg.getBasicParam().getName()).isEqualTo("TestDevice");
+        assertThat(cfg.getBasicParam().getExpiration()).isEqualTo("3600");
+        assertThat(cfg.getBasicParam().getHeartBeatInterval()).isEqualTo("60");
+        assertThat(cfg.getBasicParam().getHeartBeatCount()).isEqualTo("3");
+    }
+
+    /** GB28181-2022 §A.2.3.2.3 SVAC 编码配置。 */
+    @Test
+    void svacEncodeConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        SVACEncodeConfig.SVACEncodeInfo info = new SVACEncodeConfig.SVACEncodeInfo(1, 1, 2, 3, 1, 0);
+        commandSender.deviceConfigSvacEncode(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("SVAC 编码配置应在3秒内被处理").isTrue();
+        SVACEncodeConfig cfg = testClient.getLastSvacEncodeConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getSvacEncodeConfig()).isNotNull();
+        assertThat(cfg.getSvacEncodeConfig().getRoiEnable()).isEqualTo(1);
+        assertThat(cfg.getSvacEncodeConfig().getSvcEnable()).isEqualTo(1);
+        assertThat(cfg.getSvacEncodeConfig().getSvcSpaceSupportMode()).isEqualTo(2);
+        assertThat(cfg.getSvacEncodeConfig().getSurveillanceOnOff()).isEqualTo(1);
+    }
+
+    /** GB28181-2022 §A.2.3.2.4 SVAC 解码配置。 */
+    @Test
+    void svacDecodeConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        SVACDecodeConfig.SVACDecodeInfo info = new SVACDecodeConfig.SVACDecodeInfo();
+        info.setSvcSpaceSupportMode(1);
+        info.setSvcTimeSupportMode(0);
+        info.setSurveillanceOnOff(1);
+        commandSender.deviceConfigSvacDecode(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("SVAC 解码配置应在3秒内被处理").isTrue();
+        SVACDecodeConfig cfg = testClient.getLastSvacDecodeConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getSvacDecodeConfig()).isNotNull();
+        assertThat(cfg.getSvacDecodeConfig().getSvcSpaceSupportMode()).isEqualTo(1);
+        assertThat(cfg.getSvacDecodeConfig().getSurveillanceOnOff()).isEqualTo(1);
+    }
+
+    /** GB28181-2022 §A.2.3.2.5 视频参数属性配置。 */
+    @Test
+    void videoParamAttributeConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        VideoParamAttributeConfig.VideoParamAttribute info = new VideoParamAttributeConfig.VideoParamAttribute();
+        info.setStreamNumber(0);
+        info.setVideoFormat("H.264");
+        commandSender.deviceConfigVideoParamAttribute(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("视频参数属性配置应在3秒内被处理").isTrue();
+        VideoParamAttributeConfig cfg = testClient.getLastVideoParamAttributeConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getVideoParamAttribute()).isNotNull();
+        assertThat(cfg.getVideoParamAttribute().getStreamNumber()).isEqualTo(0);
+        assertThat(cfg.getVideoParamAttribute().getVideoFormat()).isEqualTo("H.264");
+    }
+
+    /** GB28181-2022 §A.2.3.2.x 视频参数范围配置（2016 兼容遗留）。 */
+    @Test
+    void videoParamOptConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        VideoParamOptConfig.VideoParamOpt info = new VideoParamOptConfig.VideoParamOpt();
+        info.setDownloadSpeed("10/15/25/30");
+        info.setResolution("1080P");
+        commandSender.deviceConfigVideoParamOpt(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("视频参数范围配置应在3秒内被处理").isTrue();
+        VideoParamOptConfig cfg = testClient.getLastVideoParamOptConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getVideoParamOpt()).isNotNull();
+        assertThat(cfg.getVideoParamOpt().getDownloadSpeed()).isEqualTo("10/15/25/30");
+        assertThat(cfg.getVideoParamOpt().getResolution()).isEqualTo("1080P");
+    }
+
+    /** GB28181-2022 §A.2.3.2.6 录像计划配置。 */
+    @Test
+    void videoRecordPlanConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        VideoRecordPlanConfig.VideoRecordPlan info = new VideoRecordPlanConfig.VideoRecordPlan();
+        info.setName("DefaultPlan");
+        commandSender.deviceConfigVideoRecordPlan(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("录像计划配置应在3秒内被处理").isTrue();
+        VideoRecordPlanConfig cfg = testClient.getLastVideoRecordPlanConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getVideoRecordPlan()).isNotNull();
+        assertThat(cfg.getVideoRecordPlan().getName()).isEqualTo("DefaultPlan");
+    }
+
+    /** GB28181-2022 §A.2.3.2.8 视频遮挡区域配置（PictureMask）。 */
+    @Test
+    void pictureMaskConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        PictureMaskConfig.PictureMask info = new PictureMaskConfig.PictureMask();
+        info.setOn(1);
+        commandSender.deviceConfigPictureMask(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("视频遮挡配置应在3秒内被处理").isTrue();
+        PictureMaskConfig cfg = testClient.getLastPictureMaskConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getPictureMask()).isNotNull();
+        assertThat(cfg.getPictureMask().getOn()).isEqualTo(1);
+    }
+
+    /** GB28181-2022 §A.2.3.2.9 画面镜像配置（FrameMirror）。 */
+    @Test
+    void frameMirrorConfig_shouldReachClientEvent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        FrameMirrorConfig.FrameMirror info = new FrameMirrorConfig.FrameMirror();
+        info.setHorizontal(1);
+        info.setVertical(0);
+        commandSender.deviceConfigFrameMirror(clientId, info);
+
+        assertThat(latch.await(3, TimeUnit.SECONDS)).as("画面镜像配置应在3秒内被处理").isTrue();
+        FrameMirrorConfig cfg = testClient.getLastFrameMirrorConfig();
+        assertThat(cfg).isNotNull();
+        assertThat(cfg.getFrameMirror()).isNotNull();
+        assertThat(cfg.getFrameMirror().getHorizontal()).isEqualTo(1);
+        assertThat(cfg.getFrameMirror().getVertical()).isEqualTo(0);
     }
 }

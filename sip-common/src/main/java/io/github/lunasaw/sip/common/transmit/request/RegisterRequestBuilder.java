@@ -11,11 +11,11 @@ import javax.sip.header.UserAgentHeader;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 
-import org.springframework.util.DigestUtils;
-
+import io.github.lunasaw.sip.common.config.SipCommonProperties;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.SipMessage;
 import io.github.lunasaw.sip.common.entity.ToDevice;
+import io.github.lunasaw.sip.common.utils.SipDigestUtils;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 
 /**
@@ -67,13 +67,17 @@ public class RegisterRequestBuilder extends AbstractSipRequestBuilder {
         String userId = toDevice.getUserId();
         String password = toDevice.getPassword();
 
+        // GBT-28181-2022 §8.3：摘要算法按 WWW-Authenticate 头中 algorithm 参数选择，
+        // 缺省为 MD5（RFC 3261），SM3 时走国密路径。
+        String algorithm = resolveDigestAlgorithm(www);
+
         if (www == null) {
             try {
                 AuthorizationHeader authorizationHeader = SipRequestUtils.createAuthorizationHeader("Digest");
                 String username = fromDevice.getUserId();
                 authorizationHeader.setUsername(username);
                 authorizationHeader.setURI(requestURI);
-                authorizationHeader.setAlgorithm("MD5");
+                authorizationHeader.setAlgorithm(algorithm);
                 registerRequest.addHeader(authorizationHeader);
                 return registerRequest;
             } catch (ParseException e) {
@@ -94,14 +98,14 @@ public class RegisterRequestBuilder extends AbstractSipRequestBuilder {
             }
         }
 
-        String HA1 = DigestUtils.md5DigestAsHex((userId + ":" + realm + ":" + password).getBytes());
-        // auth-int: HA2 = MD5(method:uri:MD5(body))，body 为空时 MD5("") 固定值
+        String HA1 = SipDigestUtils.digestHex(algorithm, userId + ":" + realm + ":" + password);
+        // auth-int: HA2 = digest(method:uri:digest(body))，body 为空时 digest("") 固定值
         String HA2;
         if ("auth-int".equalsIgnoreCase(qop)) {
-            String bodyHash = DigestUtils.md5DigestAsHex("".getBytes());
-            HA2 = DigestUtils.md5DigestAsHex((Request.REGISTER + ":" + requestURI + ":" + bodyHash).getBytes());
+            String bodyHash = SipDigestUtils.digestHex(algorithm, "");
+            HA2 = SipDigestUtils.digestHex(algorithm, Request.REGISTER + ":" + requestURI + ":" + bodyHash);
         } else {
-            HA2 = DigestUtils.md5DigestAsHex((Request.REGISTER + ":" + requestURI.toString()).getBytes());
+            HA2 = SipDigestUtils.digestHex(algorithm, Request.REGISTER + ":" + requestURI.toString());
         }
 
         StringBuilder reStr = new StringBuilder(200);
@@ -119,13 +123,40 @@ public class RegisterRequestBuilder extends AbstractSipRequestBuilder {
         }
         reStr.append(HA2);
 
-        String RESPONSE = DigestUtils.md5DigestAsHex(reStr.toString().getBytes());
+        String RESPONSE = SipDigestUtils.digestHex(algorithm, reStr.toString());
 
         AuthorizationHeader authorizationHeader = SipRequestUtils.createAuthorizationHeader(
             scheme, userId, requestURI, realm, nonce, qop, cNonce, RESPONSE);
+        try {
+            authorizationHeader.setAlgorithm(algorithm);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
         registerRequest.addHeader(authorizationHeader);
 
         return registerRequest;
+    }
+
+    /**
+     * 解析摘要算法：
+     * <ol>
+     *   <li>如果 WWW-Authenticate 显式指定 algorithm（MD5 / SM3），按对端要求</li>
+     *   <li>否则查 {@code sip.common.signal-auth.algorithm} 配置</li>
+     *   <li>都缺失时回落到 MD5（RFC 3261 默认）</li>
+     * </ol>
+     */
+    private String resolveDigestAlgorithm(WWWAuthenticateHeader www) {
+        if (www != null && www.getAlgorithm() != null && !www.getAlgorithm().isBlank()) {
+            return www.getAlgorithm();
+        }
+        GbExtensionHeaderDecorator decorator = GbExtensionHeaderDecorator.getInstance();
+        if (decorator != null) {
+            SipCommonProperties.SignalAuth cfg = decorator.getProperties().getSignalAuth();
+            if (cfg.isEnabled() && cfg.getAlgorithm() != null && !cfg.getAlgorithm().isBlank()) {
+                return cfg.getAlgorithm();
+            }
+        }
+        return SipDigestUtils.ALGORITHM_MD5;
     }
 
     @Override
@@ -142,6 +173,15 @@ public class RegisterRequestBuilder extends AbstractSipRequestBuilder {
         if (toDevice.getExpires() != null) {
             ExpiresHeader expiresHeader = SipRequestUtils.createExpiresHeader(toDevice.getExpires());
             request.addHeader(expiresHeader);
+        }
+
+        // GBT-28181-2022 附录 I：协议版本标识 X-GB-Ver
+        // GBT-28181-2022 §8.3：信令认证扩展（Note / Monitor-User-Identity，启用时）
+        GbExtensionHeaderDecorator decorator = GbExtensionHeaderDecorator.getInstance();
+        if (decorator != null) {
+            decorator.addXGbVer(request);
+            decorator.addNoteHeader(request, fromDevice.getUserId());
+            decorator.addMonitorUserIdentity(request, null);
         }
     }
 }

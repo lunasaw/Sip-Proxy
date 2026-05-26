@@ -183,6 +183,25 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <!--
+                跨模块覆盖率汇总：gb28181-test 是集成测试入口，运行时跨模块覆盖
+                sip-common / gb28181-common / gb28181-client / gb28181-server。
+                report-aggregate 把所有同 reactor 模块的 jacoco.exec 合并成一份
+                target/site/jacoco-aggregate/index.html。
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jacoco-report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

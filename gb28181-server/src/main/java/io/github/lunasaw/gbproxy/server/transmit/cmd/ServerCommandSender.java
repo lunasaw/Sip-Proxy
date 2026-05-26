@@ -190,7 +190,19 @@ public class ServerCommandSender {
     }
 
     public String deviceControlAlarm(String deviceId, String alarmMethod, String alarmType) {
+        return deviceControlAlarm(deviceId, "ResetAlarm", alarmMethod, alarmType);
+    }
+
+    /**
+     * GBT-28181-2022 §A.2.3.1.6 报警复位（AlarmCmd）。
+     *
+     * @param alarmCmd  报警命令文本，标准取值 "ResetAlarm"
+     * @param alarmMethod 报警方式
+     * @param alarmType   报警类型
+     */
+    public String deviceControlAlarm(String deviceId, String alarmCmd, String alarmMethod, String alarmType) {
         DeviceControlAlarm a = new DeviceControlAlarm(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
+        a.setAlarmCmd(alarmCmd);
         DeviceControlAlarm.AlarmInfo info = new DeviceControlAlarm.AlarmInfo();
         info.setAlarmMethod(alarmMethod);
         info.setAlarmType(alarmType);
@@ -516,6 +528,83 @@ public class ServerCommandSender {
         DeviceConfigDownload d = new DeviceConfigDownload(CmdTypeEnum.CONFIG_DOWNLOAD.getType(), sn(), deviceId);
         d.setConfigType(configType);
         return send("MESSAGE", deviceId, d);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.3 SVAC 编码配置（cmdType=DeviceConfig，子标签 SVACEncodeConfig）。
+     */
+    public String deviceConfigSvacEncode(String deviceId,
+                                          io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig.SVACEncodeInfo info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setSvacEncodeConfig(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.4 SVAC 解码配置（cmdType=DeviceConfig，子标签 SVACDecodeConfig）。
+     */
+    public String deviceConfigSvacDecode(String deviceId,
+                                          io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig.SVACDecodeInfo info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setSvacDecodeConfig(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.5 视频参数属性配置（cmdType=DeviceConfig，子标签 VideoParamAttribute）。
+     */
+    public String deviceConfigVideoParamAttribute(String deviceId,
+                                                    io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig.VideoParamAttribute info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setVideoParamAttribute(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.2 视频参数范围配置（cmdType=DeviceConfig，子标签 VideoParamOpt，2016 遗留兼容）。
+     */
+    public String deviceConfigVideoParamOpt(String deviceId,
+                                              io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig.VideoParamOpt info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setVideoParamOpt(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.6 录像计划配置（cmdType=DeviceConfig，子标签 VideoRecordPlan）。
+     */
+    public String deviceConfigVideoRecordPlan(String deviceId,
+                                                io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig.VideoRecordPlan info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setVideoRecordPlan(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.8 视频遮挡区域配置（cmdType=DeviceConfig，子标签 PictureMask）。
+     */
+    public String deviceConfigPictureMask(String deviceId,
+                                            io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig.PictureMask info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setPictureMask(info);
+        return send("MESSAGE", deviceId, cfg);
+    }
+
+    /**
+     * GB28181-2022 §A.2.3.2.9 画面镜像配置（cmdType=DeviceConfig，子标签 FrameMirror）。
+     */
+    public String deviceConfigFrameMirror(String deviceId,
+                                            io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig.FrameMirror info) {
+        io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig cfg =
+            new io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig(CmdTypeEnum.DEVICE_CONFIG.getType(), sn(), deviceId);
+        cfg.setFrameMirror(info);
+        return send("MESSAGE", deviceId, cfg);
     }
 
     public String deviceBroadcast(String deviceId) {

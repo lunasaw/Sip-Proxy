@@ -34,10 +34,15 @@ import javax.sip.address.URI;
 import javax.sip.header.AuthorizationHeader;
 import javax.sip.message.Request;
 
+import io.github.lunasaw.sip.common.utils.SipDigestUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Implements the HTTP digest authentication method server side functionality.
+ *
+ * <p>v1.7.x 起：摘要算法按 {@link AuthorizationHeader#getAlgorithm()} 选择，支持
+ * MD5（RFC 3261 默认）与 SM3（GBT-28181-2022 §8.3 推荐）。算法名缺失时回落到
+ * {@link #DEFAULT_ALGORITHM}。
  *
  * @author M. Ranganathan
  * @author Marc Bednarek
@@ -49,11 +54,6 @@ public class DigestServerAuthenticationHelper {
     public static final MessageDigest messageDigest;
     public static final String DEFAULT_ALGORITHM = "MD5";
     public static final String DEFAULT_SCHEME = "Digest";
-    /**
-     * to hex converter
-     */
-    private static final char[] toHex = {'0', '1', '2', '3', '4', '5', '6',
-            '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     /**
      * Default constructor.
@@ -68,16 +68,6 @@ public class DigestServerAuthenticationHelper {
         }
     }
 
-    public static String toHexString(byte b[]) {
-        int pos = 0;
-        char[] c = new char[b.length * 2];
-        for (int i = 0; i < b.length; i++) {
-            c[pos++] = toHex[(b[i] >> 4) & 0x0F];
-            c[pos++] = toHex[b[i] & 0x0f];
-        }
-        return new String(c);
-    }
-
     /**
      * Generate the challenge string.
      *
@@ -89,8 +79,7 @@ public class DigestServerAuthenticationHelper {
         long pad = rand.nextLong();
         String nonceString = Long.valueOf(time).toString()
                 + Long.valueOf(pad).toString();
-        byte mdbytes[] = messageDigest.digest(nonceString.getBytes());
-        return toHexString(mdbytes);
+        return SipDigestUtils.digestHex(DEFAULT_ALGORITHM, nonceString);
     }
 
 
@@ -98,7 +87,7 @@ public class DigestServerAuthenticationHelper {
      * Authenticate the inbound request.
      *
      * @param request        - the request to authenticate.
-     * @param hashedPassword -- the MD5 hashed string of username:realm:plaintext password.
+     * @param hashedPassword -- the {algorithm}(username:realm:plaintext password) hashed string.
      * @return true if authentication succeded and false otherwise.
      */
     public static boolean doAuthenticateHashedPassword(Request request, String hashedPassword) {
@@ -119,11 +108,10 @@ public class DigestServerAuthenticationHelper {
             return false;
         }
 
+        String algorithm = resolveAlgorithm(authHeader);
         String A2 = request.getMethod().toUpperCase() + ":" + uri.toString();
         String HA1 = hashedPassword;
-
-        byte[] mdbytes = messageDigest.digest(A2.getBytes());
-        String HA2 = toHexString(mdbytes);
+        String HA2 = SipDigestUtils.digestHex(algorithm, A2);
 
         String cnonce = authHeader.getCNonce();
         String KD = HA1 + ":" + nonce;
@@ -131,8 +119,7 @@ public class DigestServerAuthenticationHelper {
             KD += ":" + cnonce;
         }
         KD += ":" + HA2;
-        mdbytes = messageDigest.digest(KD.getBytes());
-        String mdString = toHexString(mdbytes);
+        String mdString = SipDigestUtils.digestHex(algorithm, KD);
         String response = authHeader.getResponse();
 
         return mdString.equals(response);
@@ -172,28 +159,17 @@ public class DigestServerAuthenticationHelper {
         // nonce计数器，是一个16进制的数值，表示同一nonce下客户端发送出请求的数量
         int nc = authHeader.getNonceCount();
         String ncStr = String.format("%08x", nc).toUpperCase();
-        // String ncStr = new DecimalFormat("00000000").format(nc);
-        // String ncStr = new DecimalFormat("00000000").format(Integer.parseInt(nc + "", 16));
 
+        String algorithm = resolveAlgorithm(authHeader);
         String A1 = username + ":" + realm + ":" + pass;
-
         String A2 = request.getMethod().toUpperCase() + ":" + uri.toString();
 
-        byte mdbytes[] = messageDigest.digest(A1.getBytes());
-        String HA1 = toHexString(mdbytes);
-        log.debug("A1: " + A1);
-        log.debug("A2: " + A2);
-        mdbytes = messageDigest.digest(A2.getBytes());
-        String HA2 = toHexString(mdbytes);
-        log.debug("HA1: " + HA1);
-        log.debug("HA2: " + HA2);
-        // String cnonce = authHeader.getCNonce();
-        log.debug("nonce: " + nonce);
-        log.debug("nc: " + ncStr);
-        log.debug("cnonce: " + cnonce);
-        log.debug("qop: " + qop);
-        String KD = HA1 + ":" + nonce;
+        String HA1 = SipDigestUtils.digestHex(algorithm, A1);
+        String HA2 = SipDigestUtils.digestHex(algorithm, A2);
+        log.debug("algorithm: {}, A1: {}, A2: {}, HA1: {}, HA2: {}", algorithm, A1, A2, HA1, HA2);
+        log.debug("nonce: {}, nc: {}, cnonce: {}, qop: {}", nonce, ncStr, cnonce, qop);
 
+        String KD = HA1 + ":" + nonce;
         if (qop != null && qop.equalsIgnoreCase("auth")) {
             if (nc != -1) {
                 KD += ":" + ncStr;
@@ -204,14 +180,21 @@ public class DigestServerAuthenticationHelper {
             KD += ":" + qop;
         }
         KD += ":" + HA2;
-        log.debug("KD: " + KD);
-        mdbytes = messageDigest.digest(KD.getBytes());
-        String mdString = toHexString(mdbytes);
-        log.debug("mdString: " + mdString);
-        String response = authHeader.getResponse();
-        log.debug("response: " + response);
-        return mdString.equals(response);
 
+        String mdString = SipDigestUtils.digestHex(algorithm, KD);
+        String response = authHeader.getResponse();
+        log.debug("KD: {}, mdString: {}, response: {}", KD, mdString, response);
+        return mdString.equals(response);
     }
 
+    /**
+     * GBT-28181-2022 §8.3：从 AuthorizationHeader 解析摘要算法名，缺失回落到 MD5。
+     */
+    private static String resolveAlgorithm(AuthorizationHeader authHeader) {
+        String algorithm = authHeader.getAlgorithm();
+        if (algorithm == null || algorithm.isBlank()) {
+            return DEFAULT_ALGORITHM;
+        }
+        return algorithm;
+    }
 }

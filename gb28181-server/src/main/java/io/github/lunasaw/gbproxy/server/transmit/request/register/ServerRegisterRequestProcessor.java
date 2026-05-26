@@ -25,10 +25,12 @@ import gov.nist.javax.sip.message.SIPRequest;
 import io.github.lunasaw.gb28181.common.entity.GbSipDate;
 import io.github.lunasaw.gbproxy.server.transmit.event.ServerLifecycleEvent;
 import io.github.lunasaw.gbproxy.server.transmit.request.ServerAbstractSipRequestProcessor;
+import io.github.lunasaw.sip.common.constant.SipHeaderConstants;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 import io.github.lunasaw.sip.common.service.ServerDeviceSupplier;
 import io.github.lunasaw.sip.common.transmit.ResponseCmd;
+import io.github.lunasaw.sip.common.transmit.request.GbExtensionHeaderDecorator;
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 import lombok.Getter;
@@ -114,7 +116,15 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
                     SipRequestUtils.createWWWAuthenticateHeader(DigestServerAuthenticationHelper.DEFAULT_SCHEME,
                             "3402000000", nonce, DigestServerAuthenticationHelper.DEFAULT_ALGORITHM);
 
-            ResponseCmd.response(Response.UNAUTHORIZED).phrase("Unauthorized").requestEvent(evt).header(wwwAuthenticateHeader).send();
+            // GBT-28181-2022 附录 I：401 挑战响应也需携带 X-GB-Ver
+            List<Header> headers = new ArrayList<>();
+            headers.add(wwwAuthenticateHeader);
+            Header xGbVer = buildXGbVerHeader();
+            if (xGbVer != null) {
+                headers.add(xGbVer);
+            }
+
+            ResponseCmd.response(Response.UNAUTHORIZED).phrase("Unauthorized").requestEvent(evt).headers(headers).send();
             publisher.publishEvent(ServerLifecycleEvent.challenge(this, userId));
         } catch (Exception e) {
             log.error("发送认证挑战失败：用户ID = {}", userId, e);
@@ -137,7 +147,35 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
         registerInfo.setRemotePort(remoteAddressInfo.getPort());
         registerInfo.setRemoteIp(remoteAddressInfo.getIp());
 
+        // GBT-28181-2022 附录 I：解析对端协议版本
+        Header peerVerHeader = request.getHeader(SipHeaderConstants.X_GB_VER_HEADER);
+        if (peerVerHeader != null) {
+            registerInfo.setPeerProtocolVersion(extractHeaderValue(peerVerHeader));
+        }
+        // GBT-28181-2022 §8.3：解析对端 Note / Monitor-User-Identity
+        Header noteHeader = request.getHeader(SipHeaderConstants.NOTE_HEADER);
+        if (noteHeader != null) {
+            registerInfo.setPeerNote(extractHeaderValue(noteHeader));
+        }
+        Header muiHeader = request.getHeader(SipHeaderConstants.MONITOR_USER_IDENTITY_HEADER);
+        if (muiHeader != null) {
+            registerInfo.setPeerMonitorUserIdentity(extractHeaderValue(muiHeader));
+        }
+
         return registerInfo;
+    }
+
+    /**
+     * 把 JAIN-SIP 头域 {@code "Name: value\r\n"} 转换为纯 value，解析失败返回 null。
+     */
+    private static String extractHeaderValue(Header header) {
+        String headerValue = header.toString();
+        int colonIdx = headerValue.indexOf(':');
+        if (colonIdx <= 0) {
+            return null;
+        }
+        String trimmed = headerValue.substring(colonIdx + 1).trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private List<Header> getRegisterOkHeaderList(Request request) {
@@ -148,6 +186,27 @@ public class ServerRegisterRequestProcessor extends ServerAbstractSipRequestProc
         list.add(dateHeader);
         list.add(request.getHeader(ContactHeader.NAME));
         list.add(request.getExpires());
+
+        // GBT-28181-2022 附录 I：200 OK 响应中携带平台 X-GB-Ver
+        Header xGbVer = buildXGbVerHeader();
+        if (xGbVer != null) {
+            list.add(xGbVer);
+        }
         return list;
+    }
+
+    /**
+     * GBT-28181-2022 附录 I：构造 X-GB-Ver 头域，配置缺失时返回 null（向后兼容）。
+     */
+    private Header buildXGbVerHeader() {
+        GbExtensionHeaderDecorator decorator = GbExtensionHeaderDecorator.getInstance();
+        if (decorator == null) {
+            return null;
+        }
+        String version = decorator.getProperties().getProtocolVersion();
+        if (version == null || version.isBlank()) {
+            return null;
+        }
+        return SipRequestUtils.createHeader(SipHeaderConstants.X_GB_VER_HEADER, version);
     }
 }

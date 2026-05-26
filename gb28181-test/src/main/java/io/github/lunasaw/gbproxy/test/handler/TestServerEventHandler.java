@@ -3,6 +3,7 @@ package io.github.lunasaw.gbproxy.test.handler;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceKeepLiveNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceOtherUpdateNotify;
+import io.github.lunasaw.gb28181.common.entity.notify.MediaStatusNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.UpgradeResultNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.UploadSnapShotFinishedNotify;
@@ -10,6 +11,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.VideoUploadNotify;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackListResponse;
 import io.github.lunasaw.gb28181.common.entity.response.CruiseTrackResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigDownloadResponse;
+import io.github.lunasaw.gb28181.common.entity.response.DeviceConfigResponse;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceInfo;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceRecord;
 import io.github.lunasaw.gb28181.common.entity.response.DeviceResponse;
@@ -19,6 +21,7 @@ import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
 import io.github.lunasaw.gb28181.common.entity.response.SDCardStatusResponse;
 import io.github.lunasaw.gbproxy.server.api.ServerGb28181Adapter;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.RegisterInfo;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
@@ -58,6 +61,11 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Getter private volatile PresetQueryResponse lastPresetQuery;
     @Getter private volatile DeviceOtherUpdateNotify lastCatalogNotifyUpdate;
     @Getter private volatile RemoteAddressInfo lastRemoteAddressInfo;
+    @Getter private volatile MediaStatusNotify lastMediaStatus;
+    @Getter private volatile DeviceConfigResponse lastConfigResponse;
+    @Getter private volatile String lastDeviceInfoRequestContent;
+    @Getter private volatile String lastDeviceInfoErrorReason;
+    @Getter private volatile RegisterInfo lastRegisterInfo;
 
     private volatile CountDownLatch latch;
     private volatile CountDownLatch lifecycleLatch;
@@ -80,12 +88,17 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
         lastPresetQuery = null;
         lastCatalogNotifyUpdate = null;
         lastRemoteAddressInfo = null;
+        lastMediaStatus = null;
+        lastConfigResponse = null;
+        lastDeviceInfoRequestContent = null;
+        lastDeviceInfoErrorReason = null;
     }
 
     /** NAT 漂移等 lifecycle 用例独立装载 latch，避免与 notify latch 互相 countDown 干扰。 */
     public void resetLifecycle(CountDownLatch lifecycleLatch) {
         this.lifecycleLatch = lifecycleLatch;
         this.lastRemoteAddressInfo = null;
+        this.lastRegisterInfo = null;
     }
 
     private void signal() { if (latch != null) latch.countDown(); }
@@ -116,4 +129,9 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Override public void onPresetQueryResponse(String deviceId, PresetQueryResponse response) { lastPresetQuery = response; signal(); }
     @Override public void onNotifyUpdate(String deviceId, DeviceOtherUpdateNotify notify) { lastCatalogNotifyUpdate = notify; signal(); }
     @Override public void onRemoteAddressChanged(String deviceId, RemoteAddressInfo remoteAddressInfo) { lastRemoteAddressInfo = remoteAddressInfo; signalLifecycle(); }
+    @Override public void onMediaStatus(String deviceId, MediaStatusNotify notify) { lastMediaStatus = notify; signal(); }
+    @Override public void onConfigResponse(String deviceId, String sn, DeviceConfigResponse response) { lastConfigResponse = response; signal(); }
+    @Override public void onDeviceInfoRequest(String deviceId, String content) { lastDeviceInfoRequestContent = content; signal(); }
+    @Override public void onDeviceInfoError(String deviceId, String reason) { lastDeviceInfoErrorReason = reason; signal(); }
+    @Override public void onDeviceRegister(String deviceId, RegisterInfo registerInfo) { lastRegisterInfo = registerInfo; signalLifecycle(); }
 }
