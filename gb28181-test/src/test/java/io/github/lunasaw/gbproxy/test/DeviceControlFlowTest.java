@@ -1,5 +1,6 @@
 package io.github.lunasaw.gbproxy.test;
 
+import io.github.lunasaw.gb28181.common.entity.control.DeviceControlAlarm;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlGuard;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlPtz;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlRecordCmd;
@@ -113,5 +114,23 @@ class DeviceControlFlowTest {
         assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlGuard.class);
         DeviceControlGuard cmd = (DeviceControlGuard) testClient.getLastCommand();
         assertThat(cmd.getGuardCmd()).isEqualTo("SetGuard");
+    }
+
+    /** GB28181-2022 §A.2.3.1.6 报警复位（AlarmCmd）。 */
+    @Test
+    void alarmReset_shouldInvokeHandler() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        testClient.reset(latch);
+
+        commandSender.deviceControlAlarm(clientId, "1", "2");
+
+        boolean completed = latch.await(3, TimeUnit.SECONDS);
+
+        assertThat(completed).as("报警复位命令应在3秒内被处理").isTrue();
+        assertThat(testClient.getLastCommand()).isInstanceOf(DeviceControlAlarm.class);
+        DeviceControlAlarm cmd = (DeviceControlAlarm) testClient.getLastCommand();
+        assertThat(cmd.getAlarmInfo()).isNotNull();
+        assertThat(cmd.getAlarmInfo().getAlarmMethod()).isEqualTo("1");
+        assertThat(cmd.getAlarmInfo().getAlarmType()).isEqualTo("2");
     }
 }

@@ -59,11 +59,22 @@ public class InfoRequestProcessor extends SipRequestProcessorAbstract {
                 parsed = ManSrtspParser.parse(content);
             }
 
-            ResponseCmd.sendResponse(Response.OK, evt);
+            // 业务事件先发布：网络层 200 OK 失败（如测试环境 self-loop / 偶发 JAIN-SIP 异常）
+            // 不应遮蔽 INFO 业务语义。事件 fan-out 是本地操作，已在内存解析完成后即可触发。
             publisher.publishEvent(new ClientInfoEvent(this, userId, content, contentType, parsed));
+
+            try {
+                ResponseCmd.sendResponse(Response.OK, evt);
+            } catch (Exception responseEx) {
+                log.warn("INFO 200 OK 发送失败（业务事件已派发）: {}", responseEx.getMessage());
+            }
         } catch (Exception e) {
             log.error("处理INFO请求异常: evt = {}", evt, e);
-            ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, e.getMessage(), evt);
+            try {
+                ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, e.getMessage(), evt);
+            } catch (Exception ignore) {
+                log.warn("INFO 500 响应发送失败: {}", ignore.getMessage());
+            }
         }
     }
 }

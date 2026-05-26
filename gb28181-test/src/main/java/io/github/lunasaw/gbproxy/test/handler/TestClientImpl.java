@@ -16,9 +16,17 @@ import io.github.lunasaw.gb28181.common.entity.control.DeviceControlTargetTrack;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceControlTeleBoot;
 import io.github.lunasaw.gb28181.common.entity.control.DeviceUpgradeControl;
 import io.github.lunasaw.gb28181.common.entity.control.SnapShotConfig;
+import io.github.lunasaw.gb28181.common.entity.control.DeviceConfigControl;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.AlarmReportConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.FrameMirrorConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.OsdConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.PictureMaskConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACDecodeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.SVACEncodeConfig;
 import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoAlarmRecordConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamAttributeConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoParamOptConfig;
+import io.github.lunasaw.gb28181.common.entity.control.cfg.VideoRecordPlanConfig;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceBroadcastNotify;
@@ -91,6 +99,22 @@ public class TestClientImpl extends ClientGb28181Adapter {
     private volatile VideoAlarmRecordConfig lastVideoAlarmRecordConfig;
     @Getter
     private volatile AlarmReportConfig lastAlarmReportConfig;
+    @Getter
+    private volatile DeviceConfigControl lastBasicParamConfig;
+    @Getter
+    private volatile SVACEncodeConfig lastSvacEncodeConfig;
+    @Getter
+    private volatile SVACDecodeConfig lastSvacDecodeConfig;
+    @Getter
+    private volatile VideoParamAttributeConfig lastVideoParamAttributeConfig;
+    @Getter
+    private volatile VideoParamOptConfig lastVideoParamOptConfig;
+    @Getter
+    private volatile VideoRecordPlanConfig lastVideoRecordPlanConfig;
+    @Getter
+    private volatile PictureMaskConfig lastPictureMaskConfig;
+    @Getter
+    private volatile FrameMirrorConfig lastFrameMirrorConfig;
 
     // ============ 查询���求最近一次（用于断言 server 发出的查询确实到达 client）============
     @Getter
@@ -124,6 +148,14 @@ public class TestClientImpl extends ClientGb28181Adapter {
         this.lastOsdConfig = null;
         this.lastVideoAlarmRecordConfig = null;
         this.lastAlarmReportConfig = null;
+        this.lastBasicParamConfig = null;
+        this.lastSvacEncodeConfig = null;
+        this.lastSvacDecodeConfig = null;
+        this.lastVideoParamAttributeConfig = null;
+        this.lastVideoParamOptConfig = null;
+        this.lastVideoRecordPlanConfig = null;
+        this.lastPictureMaskConfig = null;
+        this.lastFrameMirrorConfig = null;
         this.lastPtzPositionQuery = null;
         this.lastSdCardStatusQuery = null;
         this.lastHomePositionQuery = null;
@@ -340,6 +372,54 @@ public class TestClientImpl extends ClientGb28181Adapter {
     @Override
     public void onVideoAlarmRecordConfig(String platformId, VideoAlarmRecordConfig cfg) {
         this.lastVideoAlarmRecordConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onBasicParamConfig(String platformId, DeviceConfigControl cfg) {
+        this.lastBasicParamConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onSvacEncodeConfig(String platformId, SVACEncodeConfig cfg) {
+        this.lastSvacEncodeConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onSvacDecodeConfig(String platformId, SVACDecodeConfig cfg) {
+        this.lastSvacDecodeConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onVideoParamAttributeConfig(String platformId, VideoParamAttributeConfig cfg) {
+        this.lastVideoParamAttributeConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onVideoParamOptConfig(String platformId, VideoParamOptConfig cfg) {
+        this.lastVideoParamOptConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onVideoRecordPlanConfig(String platformId, VideoRecordPlanConfig cfg) {
+        this.lastVideoRecordPlanConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onPictureMaskConfig(String platformId, PictureMaskConfig cfg) {
+        this.lastPictureMaskConfig = cfg;
+        signal(cfg);
+    }
+
+    @Override
+    public void onFrameMirrorConfig(String platformId, FrameMirrorConfig cfg) {
+        this.lastFrameMirrorConfig = cfg;
         signal(cfg);
     }
 
