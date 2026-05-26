@@ -26,6 +26,25 @@ public class SipCommonProperties {
      */
     private TimeSync timeSync = new TimeSync();
 
+    /**
+     * GBT-28181-2022 附录 I 协议版本标识 X-GB-Ver。
+     * 默认 3.0（GBT-28181-2022），可通过 sip.common.protocol-version 覆盖。
+     */
+    private String protocolVersion = "3.0";
+
+    /**
+     * GBT-28181-2022 附录 J 目录类型语义版本：2016 / 2022。
+     * 2016 标准下 215=虚拟组织，216=中心信令控制服务器；
+     * 2022 标准下 215=业务分组，216=虚拟组织。
+     * 默认 2022，可通过 sip.common.directory-version 覆盖。
+     */
+    private String directoryVersion = "2022";
+
+    /**
+     * §8.3 SIP 信令认证扩展配置（默认关闭，开启后注入 Note 头域）。
+     */
+    private SignalAuth signalAuth = new SignalAuth();
+
 
     /**
      * 时间同步方式枚举
@@ -86,5 +105,29 @@ public class SipCommonProperties {
          * 是否在时间偏差较大时自动调整注册过期时间
          */
         private boolean autoAdjustExpire = true;
+    }
+
+    /**
+     * §8.3 SIP 信令认证扩展配置。
+     *
+     * <p>默认 {@link #enabled}=false，开启后框架会在 REGISTER 注入 Note 头域，
+     * 并按 {@link #algorithm} 计算摘要。{@code algorithm} 取值 {@code MD5} / {@code SM3}。
+     */
+    @Data
+    public static class SignalAuth {
+        /** 是否启用 §8.3 信令认证扩展（注入 Note 头域）。 */
+        private boolean enabled = false;
+
+        /** 数字摘要算法：MD5（默认，RFC 3261）/ SM3（GBT-28181-2022 §8.3 推荐）。 */
+        private String  algorithm = "MD5";
+
+        /** 信令安全路由网关 ID（启用 Monitor-User-Identity 时必填，跨域转发链首段）。 */
+        private String  gatewayId;
+
+        /** 用户 ID（启用 Monitor-User-Identity 时必填，跨域转发链次段）。 */
+        private String  userId;
+
+        /** 用户身份属性（隶属机构/类别/职级），跨域转发链尾段，可选。 */
+        private String  userAttribute;
     }
 }

@@ -8,6 +8,7 @@ import io.github.lunasaw.gbproxy.client.eventbus.event.ClientRegisterRedirectEve
 import io.github.lunasaw.gbproxy.client.eventbus.event.ClientRegisterSuccessEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import io.github.lunasaw.gbproxy.client.transmit.response.ClientAbstractSipResponseProcessor;
+import io.github.lunasaw.sip.common.constant.SipHeaderConstants;
 import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.entity.ToDevice;
 import io.github.lunasaw.sip.common.service.ClientDeviceSupplier;
@@ -28,6 +29,7 @@ import javax.sip.header.CallIdHeader;
 import javax.sip.header.ContactHeader;
 import javax.sip.header.DateHeader;
 import javax.sip.header.ExpiresHeader;
+import javax.sip.header.Header;
 import javax.sip.header.WWWAuthenticateHeader;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
@@ -223,9 +225,12 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
      */
     private void handleRegisterSuccess(SIPResponse response, String toUserId) {
         try {
-            // 发布注册成功事件
-            publisher.publishEvent(new ClientRegisterSuccessEvent(this, toUserId));
-            log.info("Register成功：toUserId = {}", toUserId);
+            // GBT-28181-2022 附录 I：解析平台 X-GB-Ver 头
+            String peerProtocolVersion = parsePeerProtocolVersion(response);
+
+            // 发布注册成功事件（携带对端协议版本）
+            publisher.publishEvent(new ClientRegisterSuccessEvent(this, toUserId, peerProtocolVersion));
+            log.info("Register成功：toUserId = {}, peerProtocolVersion = {}", toUserId, peerProtocolVersion);
 
             // 处理SIP校时 - 从Date头域同步时间
             handleSipTimeSync(response);
@@ -233,6 +238,24 @@ public class ClientRegisterResponseProcessor extends ClientAbstractSipResponsePr
         } catch (Exception e) {
             log.error("处理注册成功响应异常：toUserId = {}", toUserId, e);
         }
+    }
+
+    /**
+     * GBT-28181-2022 附录 I：从注册响应头里解析对端 X-GB-Ver 协议版本号。
+     * 缺失时返回 null，表示对端为 2016 之前实现。
+     */
+    private String parsePeerProtocolVersion(SIPResponse response) {
+        Header header = response.getHeader(SipHeaderConstants.X_GB_VER_HEADER);
+        if (header == null) {
+            return null;
+        }
+        String headerValue = header.toString();
+        int colonIdx = headerValue.indexOf(':');
+        if (colonIdx <= 0) {
+            return null;
+        }
+        String version = headerValue.substring(colonIdx + 1).trim();
+        return version.isEmpty() ? null : version;
     }
 
     /**

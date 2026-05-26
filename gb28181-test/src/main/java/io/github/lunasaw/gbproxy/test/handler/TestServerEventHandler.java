@@ -21,6 +21,7 @@ import io.github.lunasaw.gb28181.common.entity.response.PTZPositionResponse;
 import io.github.lunasaw.gb28181.common.entity.response.PresetQueryResponse;
 import io.github.lunasaw.gb28181.common.entity.response.SDCardStatusResponse;
 import io.github.lunasaw.gbproxy.server.api.ServerGb28181Adapter;
+import io.github.lunasaw.gbproxy.server.transmit.request.register.RegisterInfo;
 import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
@@ -64,6 +65,7 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Getter private volatile DeviceConfigResponse lastConfigResponse;
     @Getter private volatile String lastDeviceInfoRequestContent;
     @Getter private volatile String lastDeviceInfoErrorReason;
+    @Getter private volatile RegisterInfo lastRegisterInfo;
 
     private volatile CountDownLatch latch;
     private volatile CountDownLatch lifecycleLatch;
@@ -96,6 +98,7 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     public void resetLifecycle(CountDownLatch lifecycleLatch) {
         this.lifecycleLatch = lifecycleLatch;
         this.lastRemoteAddressInfo = null;
+        this.lastRegisterInfo = null;
     }
 
     private void signal() { if (latch != null) latch.countDown(); }
@@ -130,4 +133,5 @@ public class TestServerEventHandler extends ServerGb28181Adapter {
     @Override public void onConfigResponse(String deviceId, String sn, DeviceConfigResponse response) { lastConfigResponse = response; signal(); }
     @Override public void onDeviceInfoRequest(String deviceId, String content) { lastDeviceInfoRequestContent = content; signal(); }
     @Override public void onDeviceInfoError(String deviceId, String reason) { lastDeviceInfoErrorReason = reason; signal(); }
+    @Override public void onDeviceRegister(String deviceId, RegisterInfo registerInfo) { lastRegisterInfo = registerInfo; signalLifecycle(); }
 }
