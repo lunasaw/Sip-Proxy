@@ -153,6 +153,49 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
             </plugin>
+            <!--
+                JaCoCo 覆盖率：prepare-agent 在 initialize 阶段 attach（0 开销），
+                report 在 verify 阶段渲染 target/site/jacoco/index.html。
+                每个子模块独立产报告；aggregate 跨模块汇总报告由 gb28181-test 单独配置。
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+                Surefire HTML 报告：把已有 surefire-reports/*.xml 渲染为
+                target/reports/surefire.html。绑到 verify 阶段自动产出。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>3.2.5</version>
+                <executions>
+                    <execution>
+                        <id>surefire-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-only</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <!--
                     协议分层守门：mvn verify 阶段同时跑两条 grep 脚本：
