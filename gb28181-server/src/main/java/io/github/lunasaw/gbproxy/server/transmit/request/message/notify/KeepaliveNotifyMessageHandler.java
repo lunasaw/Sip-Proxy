@@ -44,16 +44,19 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
 
 
     @Override
+    public boolean needResponseAck() {
+        return false;
+    }
+
+    @Override
     public void handForEvt(RequestEvent event) {
         DeviceSession deviceSession = getDeviceSession(event);
 
         String userId = deviceSession.getUserId();
-        // 设备查询
         Device device = serverDeviceSupplier.getDevice(userId);
         if (device == null) {
-            // 未注册的设备回复失败
             log.warn("device not register, userId: {}", userId);
-            ResponseCmd.sendResponse(Response.NOT_FOUND, event);
+            ResponseCmd.sendResponse(Response.NOT_FOUND, event, event.getServerTransaction());
             return;
         }
         DeviceKeepLiveNotify deviceKeepLiveNotify = parseXml(DeviceKeepLiveNotify.class);
@@ -62,8 +65,7 @@ public class KeepaliveNotifyMessageHandler extends MessageServerHandlerAbstract 
         RemoteAddressInfo remoteAddressInfo = SipUtils.getRemoteAddressFromRequest((SIPRequest) event.getRequest());
         publisher.publishEvent(ServerLifecycleEvent.remoteAddressChanged(this, userId, remoteAddressInfo));
 
-        // 发送200 OK响应
-        responseAck(event);
+        ResponseCmd.sendResponse(Response.OK, "OK", event, event.getServerTransaction());
     }
 
     @Override

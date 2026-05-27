@@ -258,12 +258,16 @@ public class ResponseCmd {
          * 获取服务器事务
          */
         private ServerTransaction getServerTransaction() {
+            // 优先使用外部传入的事务
+            if (serverTransaction != null) {
+                return serverTransaction;
+            }
 
-            // 其次尝试从RequestEvent中获取事务
+            // 尝试从RequestEvent中获取事务
             if (requestEvent != null) {
-                serverTransaction = requestEvent.getServerTransaction();
-                if (serverTransaction != null) {
-                    log.debug("从RequestEvent获取服务器事务: {}", serverTransaction);
+                ServerTransaction tx = requestEvent.getServerTransaction();
+                if (tx != null) {
+                    serverTransaction = tx;
                     return serverTransaction;
                 }
                 if (request == null) {
@@ -271,25 +275,19 @@ public class ResponseCmd {
                 }
             }
 
-            // 关键修复：尝试从SIPRequest直接获取事务（NIST-SIP实现特定方法）
+            // 尝试从SIPRequest直接获取事务（NIST-SIP实现特定方法）
             if (request instanceof SIPRequest) {
                 try {
-                    // 使用NIST-SIP的内部方法直接从请求对象获取事务
                     Object transaction = ((SIPRequest) request).getTransaction();
                     if (transaction instanceof ServerTransaction) {
                         serverTransaction = (ServerTransaction) transaction;
-                        log.debug("从SIPRequest直接获取服务器事务: {}", serverTransaction);
                         return serverTransaction;
-                    } else if (transaction != null) {
-                        log.warn("SIPRequest.getTransaction()返回了非ServerTransaction类型: {}", transaction.getClass());
                     }
                 } catch (Exception e) {
                     log.debug("从SIPRequest获取事务时发生异常: {}", e.getMessage());
                 }
             }
 
-            // 禁止创建新事务！这会导致"Response does not belong to this transaction"错误
-            // 因为新创建的事务与原始请求的Branch参数和SentBy信息不匹配
             return null;
         }
     }
