@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
- * 复制类 无实际使用
+ * 设备配置应答处理器（cmdType=DeviceConfig，仅结果码）。
  *
  * @author luna
  * @date 2023/10/19

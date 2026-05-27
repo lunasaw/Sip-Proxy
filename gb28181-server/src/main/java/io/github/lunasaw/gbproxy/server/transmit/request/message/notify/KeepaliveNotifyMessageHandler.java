@@ -22,6 +22,8 @@ import javax.sip.RequestEvent;
 import javax.sip.message.Response;
 
 /**
+ * 设备心跳通知处理器（cmdType=Keepalive），回 200 OK 并发布心跳事件和远端地址变更事件。
+ *
  * @author luna
  * @date 2023/10/19
  */

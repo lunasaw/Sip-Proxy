@@ -117,6 +117,11 @@ public class ClientListenerAdapter {
 
     // ============ Query 分发 ============
 
+    /**
+     * 分发平台查询事件到 {@link QueryListener}。
+     *
+     * @param event 平台查询事件
+     */
     @EventListener
     public void dispatch(ClientQueryEvent event) {
         QueryListener listener = queryListenerProvider.getIfUnique();
@@ -284,6 +289,11 @@ public class ClientListenerAdapter {
 
     // ============ Control 分发 ============
 
+    /**
+     * 分发平台控制事件到所有 {@link ControlListener}。
+     *
+     * @param event 平台控制事件
+     */
     @EventListener
     public void dispatch(ClientControlEvent event) {
         List<ControlListener> listeners = safeList(controlListeners);
@@ -325,6 +335,11 @@ public class ClientListenerAdapter {
         }
     }
 
+    /**
+     * 分发平台心跳事件到所有 {@link ControlListener}。
+     *
+     * @param event 平台心跳事件
+     */
     @EventListener
     public void dispatch(ClientKeepaliveEvent event) {
         List<ControlListener> listeners = safeList(controlListeners);
@@ -364,6 +379,11 @@ public class ClientListenerAdapter {
                     (l, c) -> l.onSnapShotConfig(c.userId, (SnapShotConfig) c.cfg))
     );
 
+    /**
+     * 分发平台配置事件到所有 {@link ConfigListener}。
+     *
+     * @param event 平台配置事件
+     */
     @EventListener
     public void dispatch(ClientConfigEvent event) {
         List<ConfigListener> listeners = safeList(configListeners);
@@ -391,6 +411,11 @@ public class ClientListenerAdapter {
 
     // ============ Subscribe 分发（fire-and-forget）============
 
+    /**
+     * 分发平台订阅事件到所有 {@link SubscribeListener}。
+     *
+     * @param event 平台订阅事件
+     */
     @EventListener
     public void dispatch(ClientSubscribeEvent event) {
         List<SubscribeListener> listeners = safeList(subscribeListeners);
@@ -415,6 +440,11 @@ public class ClientListenerAdapter {
 
     // ============ Notify 分发 ============
 
+    /**
+     * 分发平台通知事件到所有 {@link NotifyListener}。
+     *
+     * @param event 平台通知事件
+     */
     @EventListener
     public void dispatch(ClientNotifyEvent event) {
         List<NotifyListener> listeners = safeList(notifyListeners);

@@ -16,6 +16,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 服务端 BYE 请求处理器，收到设备发来的 BYE 后回 200 OK 并发布 {@link ServerSessionEvent}。
+ */
 @Component("serverByeRequestProcessor")
 @Getter
 @Setter

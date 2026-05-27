@@ -18,8 +18,23 @@ import java.nio.charset.StandardCharsets;
  */
 public interface SdpParser<T extends SdpSessionDescription> {
 
+    /**
+     * 解析SDP消息体为会话描述对象。
+     *
+     * @param body    SDP消息体字符串
+     * @param charset 字符集
+     * @return 会话描述对象
+     * @throws SdpParseException 解析失败时抛出
+     */
     T parse(String body, Charset charset) throws SdpParseException;
 
+    /**
+     * 使用UTF-8解析SDP消息体。
+     *
+     * @param body SDP消息体字符串
+     * @return 会话描述对象
+     * @throws SdpParseException 解析失败时抛出
+     */
     default T parse(String body) throws SdpParseException {
         return parse(body, StandardCharsets.UTF_8);
     }

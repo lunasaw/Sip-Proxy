@@ -25,6 +25,14 @@ import org.springframework.stereotype.Component;
 import javax.sip.address.SipURI;
 import java.util.Date;
 
+/**
+ * 平台服务端出向命令发送器，封装所有平台 → 设备方向的 SIP 指令。
+ *
+ * <p>调用方只需传 {@code deviceId}，内部通过 {@link DeviceSessionCache} 查找设备寻址信息，
+ * 再经 {@link io.github.lunasaw.gb28181.common.transmit.cmd.CommandStrategyFactory} 路由到对应策略执行。
+ *
+ * <p>1.7.0 起 BYE/SUBSCRIBE 刷新/退订均为 dialog-aware，需传 {@code callId} 而非 {@code deviceId}。
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,26 +44,58 @@ public class ServerCommandSender {
 
     // ==================== 实例方法（新 API） ====================
 
+    /**
+     * 发送设备信息查询（cmdType=DeviceInfo）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String deviceInfoQuery(String deviceId) {
         return send("MESSAGE", deviceId,
             new DeviceQuery(CmdTypeEnum.DEVICE_INFO.getType(), sn(), deviceId));
     }
 
+    /**
+     * 发送设备状态查询（cmdType=DeviceStatus）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String deviceStatusQuery(String deviceId) {
         return send("MESSAGE", deviceId,
             new DeviceQuery(CmdTypeEnum.DEVICE_STATUS.getType(), sn(), deviceId));
     }
 
+    /**
+     * 发送设备目录查询（cmdType=Catalog）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String deviceCatalogQuery(String deviceId) {
         return send("MESSAGE", deviceId,
             new DeviceQuery(CmdTypeEnum.CATALOG.getType(), sn(), deviceId));
     }
 
+    /**
+     * 发送预置位查询（cmdType=PresetQuery）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String devicePresetQuery(String deviceId) {
         return send("MESSAGE", deviceId,
             new DeviceQuery(CmdTypeEnum.PRESET_QUERY.getType(), sn(), deviceId));
     }
 
+    /**
+     * 发送录像信息查询（cmdType=RecordInfo，时间参数为字符串格式）。
+     *
+     * @param deviceId  目标设备 ID
+     * @param startTime 查询起始时间（ISO 8601 格式）
+     * @param endTime   查询结束时间（ISO 8601 格式）
+     * @return SIP Call-ID
+     */
     public String deviceRecordInfoQuery(String deviceId, String startTime, String endTime) {
         DeviceRecordQuery q = new DeviceRecordQuery(CmdTypeEnum.RECORD_INFO.getType(), sn(), deviceId);
         q.setStartTime(startTime);
@@ -63,18 +103,41 @@ public class ServerCommandSender {
         return send("MESSAGE", deviceId, q);
     }
 
+    /**
+     * 发送录像信息查询（cmdType=RecordInfo，时间参数为毫秒时间戳）。
+     *
+     * @param deviceId  目标设备 ID
+     * @param startTime 查询起始时间（毫秒时间戳）
+     * @param endTime   查询结束时间（毫秒时间戳）
+     * @return SIP Call-ID
+     */
     public String deviceRecordInfoQuery(String deviceId, long startTime, long endTime) {
         return deviceRecordInfoQuery(deviceId,
             DateUtils.formatDateTime(new Date(startTime)),
             DateUtils.formatDateTime(new Date(endTime)));
     }
 
+    /**
+     * 发送移动位置查询（cmdType=MobilePosition）。
+     *
+     * @param deviceId 目标设备 ID
+     * @param interval 上报间隔（秒）
+     * @return SIP Call-ID
+     */
     public String deviceMobilePositionQuery(String deviceId, String interval) {
         DeviceMobileQuery q = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), sn(), deviceId);
         q.setInterval(interval);
         return send("MESSAGE", deviceId, q);
     }
 
+    /**
+     * 发送目录订阅（SUBSCRIBE Catalog）。
+     *
+     * @param deviceId  目标设备 ID
+     * @param expires   订阅有效期（秒），0 表示退订
+     * @param eventType 事件类型，固定 "Catalog"
+     * @return SIP Call-ID
+     */
     public String deviceCatalogSubscribe(String deviceId, Integer expires, String eventType) {
         ToDevice to = getToDevice(deviceId);
         to.setExpires(expires);
@@ -89,6 +152,16 @@ public class ServerCommandSender {
                 .toBuilder().body(body).build());
     }
 
+    /**
+     * 发送移动位置订阅（SUBSCRIBE MobilePosition）。
+     *
+     * @param deviceId  目标设备 ID
+     * @param interval  上报间隔（秒）
+     * @param expires   订阅有效期（秒），0 表示退订
+     * @param eventType 事件类型，固定 "MobilePosition"
+     * @param eventId   事件 ID
+     * @return SIP Call-ID
+     */
     public String deviceMobilePositionSubscribe(String deviceId, String interval,
                                                  Integer expires, String eventType, String eventId) {
         ToDevice to = getToDevice(deviceId);
@@ -170,6 +243,18 @@ public class ServerCommandSender {
                 .toBuilder().body(body).build());
     }
 
+    /**
+     * 发送报警查询（cmdType=Alarm）。
+     *
+     * @param deviceId      目标设备 ID
+     * @param startTime     查询起始时间
+     * @param endTime       查询结束时间
+     * @param startPriority 起始报警等级（可选）
+     * @param endPriority   结束报警等级（可选）
+     * @param alarmMethod   报警方式（可选）
+     * @param alarmType     报警类型（可选）
+     * @return SIP Call-ID
+     */
     public String deviceAlarmQuery(String deviceId, Date startTime, Date endTime,
                                     String startPriority, String endPriority,
                                     String alarmMethod, String alarmType) {
@@ -183,12 +268,27 @@ public class ServerCommandSender {
         return send("MESSAGE", deviceId, q);
     }
 
+    /**
+     * 发送布防/撤防控制（GuardCmd）。
+     *
+     * @param deviceId     目标设备 ID
+     * @param guardCmdStr  布防命令，取值 "SetGuard"（布防）或 "ResetGuard"（撤防）
+     * @return SIP Call-ID
+     */
     public String deviceControlGuardCmd(String deviceId, String guardCmdStr) {
         DeviceControlGuard g = new DeviceControlGuard(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
         g.setGuardCmd(guardCmdStr);
         return send("MESSAGE", deviceId, g);
     }
 
+    /**
+     * 发送报警复位（AlarmCmd=ResetAlarm，简化重载）。
+     *
+     * @param deviceId    目标设备 ID
+     * @param alarmMethod 报警方式
+     * @param alarmType   报警类型
+     * @return SIP Call-ID
+     */
     public String deviceControlAlarm(String deviceId, String alarmMethod, String alarmType) {
         return deviceControlAlarm(deviceId, "ResetAlarm", alarmMethod, alarmType);
     }
@@ -229,6 +329,13 @@ public class ServerCommandSender {
         return deviceControlPtzCmd(deviceId, hex);
     }
 
+    /**
+     * 发送 PTZ 控制指令（原始十六进制字符串）。
+     *
+     * @param deviceId 目标设备 ID
+     * @param ptzCmd   PTZ 控制字节串（十六进制，8 字节）
+     * @return SIP Call-ID
+     */
     public String deviceControlPtzCmd(String deviceId, String ptzCmd) {
         DeviceControlPtz p = new DeviceControlPtz(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
         p.setPtzCmd(ptzCmd);
@@ -338,11 +445,24 @@ public class ServerCommandSender {
         return deviceControlPtzCmd(deviceId, hex);
     }
 
+    /**
+     * 发送设备重启控制（TeleBoot）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String deviceControlReboot(String deviceId) {
         return send("MESSAGE", deviceId,
             new DeviceControlTeleBoot(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId));
     }
 
+    /**
+     * 发送录像控制（RecordCmd）。
+     *
+     * @param deviceId  目标设备 ID
+     * @param recordCmd 录像命令，取值 "Record"（开始录像）或 "StopRecord"（停止录像）
+     * @return SIP Call-ID
+     */
     public String deviceControlRecord(String deviceId, String recordCmd) {
         DeviceControlRecordCmd r = new DeviceControlRecordCmd(CmdTypeEnum.DEVICE_CONTROL.getType(), sn(), deviceId);
         r.setRecordCmd(recordCmd);
@@ -607,12 +727,27 @@ public class ServerCommandSender {
         return send("MESSAGE", deviceId, cfg);
     }
 
+    /**
+     * 发送广播通知（cmdType=Broadcast）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String deviceBroadcast(String deviceId) {
         FromDevice from = deviceSupplier.getServerFromDevice();
         return send("MESSAGE", deviceId,
             new DeviceBroadcastNotify(CmdTypeEnum.BROADCAST.getType(), from.getUserId(), deviceId));
     }
 
+    /**
+     * 发送实时点播 INVITE（s=Play）。
+     *
+     * @param deviceId   目标设备 ID
+     * @param sdpIp      收流 IP
+     * @param mediaPort  收流端口
+     * @param streamMode 流传输模式
+     * @return SIP Call-ID
+     */
     public String deviceInvitePlay(String deviceId, String sdpIp, Integer mediaPort, StreamModeEnum streamMode) {
         ToDevice to = getToDevice(deviceId);
         to.setStreamMode(streamMode.name());
@@ -624,6 +759,17 @@ public class ServerCommandSender {
                 .fromDevice(from).toDevice(to).content(req.getContent()).build());
     }
 
+    /**
+     * 发送历史回放 INVITE（s=Playback）。
+     *
+     * @param deviceId   目标设备 ID
+     * @param sdpIp      收流 IP
+     * @param mediaPort  收流端口
+     * @param streamMode 流传输模式
+     * @param startTime  回放起始时间（ISO 8601）
+     * @param endTime    回放结束时间（ISO 8601）
+     * @return SIP Call-ID
+     */
     public String deviceInvitePlayBack(String deviceId, String sdpIp, Integer mediaPort,
                                         StreamModeEnum streamMode, String startTime, String endTime) {
         ToDevice to = getToDevice(deviceId);
@@ -670,6 +816,13 @@ public class ServerCommandSender {
                 .fromDevice(from).toDevice(to).content(content).build());
     }
 
+    /**
+     * 发送回放控制 INFO（暂停/恢复/定位/倍速）。
+     *
+     * @param deviceId        目标设备 ID
+     * @param playActionEnums 回放操作类型
+     * @return SIP Call-ID
+     */
     public String deviceInvitePlayBackControl(String deviceId, PlayActionEnums playActionEnums) {
         String controlBody = playActionEnums.getControlBody();
         Assert.notNull(controlBody, "不支持的操作类型");
@@ -679,6 +832,12 @@ public class ServerCommandSender {
             .execute(CommandContext.forInfo("server", from, to, controlBody));
     }
 
+    /**
+     * 发送 ACK（不带 callId，框架自动匹配事务）。
+     *
+     * @param deviceId 目标设备 ID
+     * @return SIP Call-ID
+     */
     public String deviceAck(String deviceId) {
         FromDevice from = deviceSupplier.getServerFromDevice();
         ToDevice to = getToDevice(deviceId);
@@ -686,6 +845,13 @@ public class ServerCommandSender {
             .execute(CommandContext.forAckBye("server", from, to, null, "ACK"));
     }
 
+    /**
+     * 发送 ACK（指定 callId，用于 INVITE 三向握手最后一步）。
+     *
+     * @param deviceId 目标设备 ID
+     * @param callId   INVITE 阶段的 Call-ID
+     * @return SIP Call-ID
+     */
     public String deviceAck(String deviceId, String callId) {
         FromDevice from = deviceSupplier.getServerFromDevice();
         ToDevice to = getToDevice(deviceId);
@@ -728,12 +894,26 @@ public class ServerCommandSender {
         return SipSender.doSubscribeRefresh(callId, null, 0);
     }
 
+    /**
+     * 通过 SipURI 发送 ACK（用于 INVITE 200 OK 后的 dialog-aware ACK）。
+     *
+     * @param from        平台发送方设备信息
+     * @param sipURI      目标 SIP URI
+     * @param sipResponse INVITE 200 OK 响应
+     * @return SIP Call-ID
+     */
     public String deviceAckBySipUri(FromDevice from, SipURI sipURI, SIPResponse sipResponse) {
         return SipSender.doAckRequest(from, sipURI, sipResponse);
     }
 
     // ==================== 通用发送 ====================
 
+    /**
+     * 通过 CommandContext 直接发送自定义指令。
+     *
+     * @param ctx 已构建好的命令上下文
+     * @return SIP Call-ID
+     */
     public String send(CommandContext ctx) {
         return factory.getStrategy(ctx.getRole(), ctx.getCommandType()).execute(ctx);
     }

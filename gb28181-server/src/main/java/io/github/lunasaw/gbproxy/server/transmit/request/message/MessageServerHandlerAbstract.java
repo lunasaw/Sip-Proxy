@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
+ * 服务端 MESSAGE 请求处理器抽象基类，提供设备会话获取和前置校验能力。
+ *
  * @author luna
  */
 @Data
@@ -41,6 +43,12 @@ public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstrac
         return "MESSAGE";
     }
 
+    /**
+     * 从 SIP 请求中提取设备会话信息（fromHeader=设备ID，toHeader=平台ID）。
+     *
+     * @param event SIP 请求事件
+     * @return 设备会话信息
+     */
     public DeviceSession getDeviceSession(RequestEvent event) {
         SIPRequest sipRequest = (SIPRequest) event.getRequest();
 
@@ -53,6 +61,12 @@ public abstract class MessageServerHandlerAbstract extends MessageHandlerAbstrac
         return new DeviceSession(userId, sipId);
     }
 
+    /**
+     * 前置校验：验证设备身份并确认设备已注册。
+     *
+     * @param event SIP 请求事件
+     * @return 校验通过返回 true，否则返回 false
+     */
     public boolean preCheck(RequestEvent event) {
         if (!serverDeviceSupplier.checkDevice(event)) {
             return false;

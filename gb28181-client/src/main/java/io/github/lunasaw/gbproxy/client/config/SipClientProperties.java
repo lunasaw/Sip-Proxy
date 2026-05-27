@@ -72,10 +72,20 @@ public class SipClientProperties {
      */
     private int externalPort = 0;
 
+    /**
+     * 获取对外可达 IP，优先返回 externalIp，未配置时返回 domain。
+     *
+     * @return 对外可达 IP 地址
+     */
     public String getEffectiveIp() {
         return externalIp != null && !externalIp.isBlank() ? externalIp : domain;
     }
 
+    /**
+     * 获取对外可达端口，优先返回 externalPort，未配置时返回 port。
+     *
+     * @return 对外可达端口
+     */
     public int getEffectivePort() {
         return externalPort > 0 ? externalPort : port;
     }

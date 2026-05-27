@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 服务端 INVITE 命令策略，发送 stateful INVITE 请求（实时点播/历史回放/语音对讲/文件下载）。
+ */
 @Component("serverInviteCommandStrategy")
 public class InviteCommandStrategy extends AbstractServerCommandStrategy {
 

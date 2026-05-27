@@ -39,6 +39,12 @@ public interface DeviceSupplier {
         return this.getClass().getSimpleName();
     }
 
+    /**
+     * 根据设备ID获取 ToDevice 实例，内部调用 {@link #getDevice(String)} 并转换。
+     *
+     * @param deviceId 设备ID
+     * @return ToDevice实例
+     */
     default ToDevice getToDevice(String deviceId) {
         Assert.notNull(deviceId, "设备Id不能为空");
         Device device = getDevice(deviceId);
@@ -46,6 +52,12 @@ public interface DeviceSupplier {
         return getToDevice(device);
     }
 
+    /**
+     * 将 Device 转换为 ToDevice，device 为 null 时返回 null。
+     *
+     * @param device 设备信息
+     * @return ToDevice实例，或 null
+     */
     default ToDevice getToDevice(Device device) {
         if (device == null) {
             return null;

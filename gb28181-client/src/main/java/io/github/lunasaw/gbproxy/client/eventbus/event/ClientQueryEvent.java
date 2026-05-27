@@ -25,10 +25,21 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ClientQueryEvent extends ApplicationEvent {
 
+    /** 本端设备编码（deviceId）。 */
     private final String userId;
+    /** 发起查询的上级平台 SIP 编码。 */
     private final String sipId;
+    /** 查询请求体，具体类型由 cmdType 决定。 */
     private final XmlBean query;
 
+    /**
+     * 构造平台查询事件。
+     *
+     * @param source 事件来源对象
+     * @param userId 本端设备编码
+     * @param sipId  发起查询的上级平台 SIP 编码
+     * @param query  查询请求体
+     */
     public ClientQueryEvent(Object source, String userId, String sipId, XmlBean query) {
         super(source);
         this.userId = userId;

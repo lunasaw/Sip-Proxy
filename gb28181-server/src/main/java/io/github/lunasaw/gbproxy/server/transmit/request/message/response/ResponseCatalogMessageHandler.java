@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
+ * 设备目录应答处理器（cmdType=Catalog）。
+ *
  * @author luna
  * @date 2023/10/19
  */

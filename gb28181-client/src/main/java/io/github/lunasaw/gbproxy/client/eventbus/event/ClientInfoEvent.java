@@ -13,15 +13,35 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ClientInfoEvent extends ApplicationEvent {
 
+    /** 本端设备编码（deviceId）。 */
     private final String userId;
+    /** INFO 消息体原始内容。 */
     private final String content;
+    /** Content-Type 头字段值。 */
     private final String contentType;
+    /** 当 Content-Type 为 Application/MANSRTSP 时的结构化解析结果，其他类型为 null。 */
     private final ManSrtspRequest parsed;
 
+    /**
+     * 构造 INFO 事件（不含 Content-Type 和结构化解析结果）。
+     *
+     * @param source  事件来源对象
+     * @param userId  本端设备编码
+     * @param content INFO 消息体原始内容
+     */
     public ClientInfoEvent(Object source, String userId, String content) {
         this(source, userId, content, null, null);
     }
 
+    /**
+     * 构造 INFO 事件（含 Content-Type 和结构化解析结果）。
+     *
+     * @param source      事件来源对象
+     * @param userId      本端设备编码
+     * @param content     INFO 消息体原始内容
+     * @param contentType Content-Type 头字段值
+     * @param parsed      MANSRTSP 结构化解析结果，非 MANSRTSP 时为 null
+     */
     public ClientInfoEvent(Object source, String userId, String content, String contentType, ManSrtspRequest parsed) {
         super(source);
         this.userId = userId;

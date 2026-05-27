@@ -12,17 +12,10 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 客户端设备提供器默认实现
- * 基于SipClientProperties配置的客户端设备管理
- * <p>
- * 设计原则：
- * 1. 线程安全的设备管理
- * 2. 基于配置的客户端设备初始化
- * 3. 支持动态设备添加和移除
- * 4. 自动生成客户端发送方设备信息
+ * 客户端设备提供器默认实现，基于 {@link SipClientProperties} 配置管理本端设备信息。
  *
- * @author luna
- * @date 2025/8/2
+ * <p>仅在业务方未注册 {@code ClientDeviceSupplier} bean 时生效（{@code @ConditionalOnMissingBean}）。
+ * 多节点部署时应替换为从共享存储读取设备信息的实现。
  */
 @Slf4j
 @Service

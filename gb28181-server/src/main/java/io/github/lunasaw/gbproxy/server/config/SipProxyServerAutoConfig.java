@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
+ * GB28181 服务端自动配置类，扫描并注册所有 {@link MessageServerHandlerAbstract} 子类到消息分发器。
+ *
  * @author luna
  * @date 2023/10/16
  */

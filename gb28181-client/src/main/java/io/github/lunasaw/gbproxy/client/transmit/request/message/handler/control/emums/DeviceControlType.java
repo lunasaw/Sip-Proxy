@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 
 /**
+ * 设备控制命令类型枚举，定义 GB28181 DeviceControl 消息中各子命令标签与对应实体类的映射关系。
+ *
  * @author luna
  */
 @Getter
@@ -55,6 +57,7 @@ public enum DeviceControlType {
      */
     HOME_POSITION("HomePosition", "看守位", DeviceControlPosition.class, "HomePositionControl");
 
+    /** val 到枚举的快速查找表。 */
     private static final Map<String, DeviceControlType> MAP = new ConcurrentHashMap<>();
 
     static {
@@ -64,9 +67,13 @@ public enum DeviceControlType {
         }
     }
 
+    /** 命令标签值，对应 XML 子元素名称。 */
     private final String   val;
+    /** 命令描述。 */
     private final String   desc;
+    /** 对应的实体类。 */
     private final Class<?> clazz;
+    /** Spring Bean 名称。 */
     @Setter
     private String         beanName;
 
@@ -77,6 +84,12 @@ public enum DeviceControlType {
         this.beanName = beanName;
     }
 
+    /**
+     * 根据消息内容模糊匹配控制类型（包含匹配）。
+     *
+     * @param content 消息内容字符串
+     * @return 匹配的控制类型，未匹配时返回 null
+     */
     public static DeviceControlType getDeviceControlTypeFilter(String content) {
         if (ObjectUtils.isEmpty(content)) {
             return null;
@@ -86,6 +99,12 @@ public enum DeviceControlType {
         return getDeviceControlType(key);
     }
 
+    /**
+     * 根据标签值精确查找控制类型。
+     *
+     * @param key 命令标签值
+     * @return 对应的控制类型，未找到时返回 null
+     */
     @SneakyThrows
     public static DeviceControlType getDeviceControlType(String key) {
         if (key == null) {

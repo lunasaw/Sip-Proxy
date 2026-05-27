@@ -21,6 +21,12 @@ public class SdpSessionDescription {
     private SessionDescription baseSdb;
 
 
+    /**
+     * 创建 SdpSessionDescription 实例。
+     *
+     * @param sdp JAIN-SDP 会话描述对象
+     * @return SdpSessionDescription实例
+     */
     public static SdpSessionDescription getInstance(SessionDescription sdp) {
         SdpSessionDescription sdpSessionDescription = new SdpSessionDescription();
         sdpSessionDescription.setBaseSdb(sdp);

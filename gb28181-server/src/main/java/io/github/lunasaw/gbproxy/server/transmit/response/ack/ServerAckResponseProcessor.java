@@ -14,6 +14,9 @@ import org.springframework.stereotype.Component;
 import javax.sip.ResponseEvent;
 import javax.sip.header.CallIdHeader;
 
+/**
+ * 服务端 ACK 响应处理器，收到 ACK 响应后发布 {@link ServerSessionEvent}。
+ */
 @Slf4j
 @Getter
 @Setter

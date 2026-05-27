@@ -18,6 +18,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 服务端 INFO 请求处理器，收到设备发来的 INFO 后回 200 OK 并发布 {@link ServerQueryResponseEvent}。
+ */
 @Component("serverInfoRequestProcessor")
 @Getter
 @Setter

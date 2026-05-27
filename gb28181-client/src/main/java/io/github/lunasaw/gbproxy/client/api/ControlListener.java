@@ -34,51 +34,124 @@ import io.github.lunasaw.gb28181.common.entity.control.KeepaliveControl;
  */
 public interface ControlListener {
 
-    /** PTZ 控制（PTZCmd）。 */
+    /**
+     * PTZ 控制（PTZCmd）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        PTZ 控制命令
+     */
     default void onPtzControl(String platformId, DeviceControlPtz cmd) {}
 
-    /** 远程重启（TeleBoot）。 */
+    /**
+     * 远程重启（TeleBoot）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        远程重启命令
+     */
     default void onTeleBoot(String platformId, DeviceControlTeleBoot cmd) {}
 
-    /** 录像控制（RecordCmd）。 */
+    /**
+     * 录像控制（RecordCmd）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        录像控制命令
+     */
     default void onRecord(String platformId, DeviceControlRecordCmd cmd) {}
 
-    /** 设防/撤防（GuardCmd）。 */
+    /**
+     * 设防/撤防（GuardCmd）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        设防/撤防控制命令
+     */
     default void onGuard(String platformId, DeviceControlGuard cmd) {}
 
-    /** 报警复位（AlarmCmd）。 */
+    /**
+     * 报警复位（AlarmCmd）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        报警复位命令
+     */
     default void onAlarmReset(String platformId, DeviceControlAlarm cmd) {}
 
-    /** 强制 I 帧（IFameCmd）。 */
+    /**
+     * 强制 I 帧（IFameCmd）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        强制 I 帧命令
+     */
     default void onIFrame(String platformId, DeviceControlIFame cmd) {}
 
-    /** 拉框放大（DragZoomIn）。 */
+    /**
+     * 拉框放大（DragZoomIn）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        拉框放大命令
+     */
     default void onDragIn(String platformId, DeviceControlDragIn cmd) {}
 
-    /** 拉框缩小（DragZoomOut）。 */
+    /**
+     * 拉框缩小（DragZoomOut）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        拉框缩小命令
+     */
     default void onDragOut(String platformId, DeviceControlDragOut cmd) {}
 
-    /** 看守位控制（HomePosition）。 */
+    /**
+     * 看守位控制（HomePosition）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        看守位控制命令
+     */
     default void onHomePositionControl(String platformId, DeviceControlPosition cmd) {}
 
-    /** 设备升级（DeviceUpgrade，GB28181-2022 §A.2.3.6）。 */
+    /**
+     * 设备升级（DeviceUpgrade，GB28181-2022 §A.2.3.6）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        设备升级命令
+     */
     default void onDeviceUpgrade(String platformId, DeviceUpgradeControl cmd) {}
 
-    /** PTZ 精确控制（PTZPreciseCtrl，GB28181-2022 §A.2.3.7）。 */
+    /**
+     * PTZ 精确控制（PTZPreciseCtrl，GB28181-2022 §A.2.3.7）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        PTZ 精确控制命令
+     */
     default void onPtzPrecise(String platformId, DeviceControlPTZPrecise cmd) {}
 
-    /** SD 卡格式化（FormatSDCard，GB28181-2022 §A.2.3.8）。 */
+    /**
+     * SD 卡格式化（FormatSDCard，GB28181-2022 §A.2.3.8）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        SD 卡格式化命令
+     */
     default void onFormatSdCard(String platformId, DeviceControlSDCardFormat cmd) {}
 
-    /** 目标跟踪（TargetTrack，GB28181-2022 §A.2.3.9）。 */
+    /**
+     * 目标跟踪（TargetTrack，GB28181-2022 §A.2.3.9）。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        目标跟踪命令
+     */
     default void onTargetTrack(String platformId, DeviceControlTargetTrack cmd) {}
 
-    /** 平台心跳（cmdType=Keepalive）。 */
+    /**
+     * 平台心跳（cmdType=Keepalive）。
+     *
+     * @param platformId 发送心跳的上级平台编码
+     * @param keepalive  心跳消息体
+     */
     default void onKeepalive(String platformId, KeepaliveControl keepalive) {}
 
     /**
      * 框架内部分发兜底：当 ClientControlEvent 携带的 control 类不属于上述 13 类时调用。
      * 业务方一般无需 override；保留此 hook 用于诊断和未来 control 子类的扩展。
+     *
+     * @param platformId 下发控制的上级平台编码
+     * @param cmd        未识别的控制命令基类对象
      */
     default void onUnknownControl(String platformId, DeviceControlBase cmd) {}
 }

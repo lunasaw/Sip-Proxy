@@ -2,6 +2,9 @@ package io.github.lunasaw.gbproxy.client.entity;
 
 import lombok.Data;
 
+/**
+ * RTP 推流任务信息，记录一次媒体流推送的目标地址、状态及关联标识。
+ */
 @Data
 public class SendRtpItem {
 

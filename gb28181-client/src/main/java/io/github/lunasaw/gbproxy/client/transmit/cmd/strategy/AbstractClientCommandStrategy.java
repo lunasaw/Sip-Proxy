@@ -5,6 +5,9 @@ import io.github.lunasaw.gb28181.common.transmit.cmd.CommandContext;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import io.github.lunasaw.sip.common.utils.XmlUtils;
 
+/**
+ * 客户端侧命令策略抽象基类，固定 role 为 "client" 并提供通用的内容构建和发送逻辑。
+ */
 public abstract class AbstractClientCommandStrategy extends AbstractCommandStrategy {
 
     @Override

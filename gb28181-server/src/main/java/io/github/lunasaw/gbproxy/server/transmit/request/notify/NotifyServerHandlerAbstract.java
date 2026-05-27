@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
+ * 服务端 NOTIFY 请求处理器抽象基类，提供设备会话提取能力。
+ *
  * @author luna
  */
 @Data
@@ -32,6 +34,12 @@ public abstract class NotifyServerHandlerAbstract extends MessageHandlerAbstract
         return "Root";
     }
 
+    /**
+     * 从 SIP 请求中提取设备会话信息。
+     *
+     * @param event SIP 请求事件
+     * @return 设备会话信息
+     */
     public DeviceSession getDeviceSession(RequestEvent event) {
         SIPRequest sipRequest = (SIPRequest) event.getRequest();
 

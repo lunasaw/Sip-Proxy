@@ -18,16 +18,40 @@ import io.github.lunasaw.gb28181.common.entity.query.PTZPositionQuery;
  */
 public interface SubscribeListener {
 
-    /** 平台目录订阅（cmdType=Catalog，body=DeviceQuery）。 */
+    /**
+     * 平台目录订阅（cmdType=Catalog，body=DeviceQuery）。
+     *
+     * @param platformId 发起订阅的上级平台编码
+     * @param expires    订阅有效期（秒），由 SIP Expires 头携带
+     * @param query      订阅请求体
+     */
     default void onCatalogSubscribe(String platformId, Integer expires, DeviceQuery query) {}
 
-    /** 平台报警订阅（cmdType=Alarm，body=DeviceAlarmQuery）。 */
+    /**
+     * 平台报警订阅（cmdType=Alarm，body=DeviceAlarmQuery）。
+     *
+     * @param platformId 发起订阅的上级平台编码
+     * @param expires    订阅有效期（秒），由 SIP Expires 头携带
+     * @param query      报警订阅请求体
+     */
     default void onAlarmSubscribe(String platformId, Integer expires, DeviceAlarmQuery query) {}
 
-    /** 平台移动位置订阅（cmdType=MobilePosition，body=DeviceMobileQuery）。 */
+    /**
+     * 平台移动位置订阅（cmdType=MobilePosition，body=DeviceMobileQuery）。
+     *
+     * @param platformId 发起订阅的上级平台编码
+     * @param expires    订阅有效期（秒），由 SIP Expires 头携带
+     * @param query      移动位置订阅请求体
+     */
     default void onMobilePositionSubscribe(String platformId, Integer expires, DeviceMobileQuery query) {}
 
-    /** GB28181-2022 §9.11.1.2 / §A.2.4.13 PTZ 精准位置变化事件订阅（cmdType=PTZPosition，body=PTZPositionQuery）。 */
+    /**
+     * GB28181-2022 §9.11.1.2 / §A.2.4.13 PTZ 精准位置变化事件订阅（cmdType=PTZPosition，body=PTZPositionQuery）。
+     *
+     * @param platformId 发起订阅的上级平台编码
+     * @param expires    订阅有效期（秒），由 SIP Expires 头携带
+     * @param query      PTZ 精确位置订阅请求体
+     */
     default void onPtzPositionSubscribe(String platformId, Integer expires, PTZPositionQuery query) {}
 }
 

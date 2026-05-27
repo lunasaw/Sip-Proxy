@@ -1,15 +1,14 @@
 package io.github.lunasaw.sip.common.sequence;
 
 /**
- * @author luna
- * @date 2023/10/13
+ * 序列号生成器接口，用于生成SIP消息的唯一序列号。
  */
 public interface GenerateSequence {
 
     /**
      * 生成唯一序列
      *
-     * @return
+     * @return 序列号
      */
     Long generateSequence();
 }

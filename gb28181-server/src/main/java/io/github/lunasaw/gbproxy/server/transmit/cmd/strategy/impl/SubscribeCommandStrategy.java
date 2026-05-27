@@ -6,6 +6,9 @@ import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 服务端 SUBSCRIBE 命令策略（1.7.0 dialog-aware），发送目录/移动位置/报警/PTZ 位置订阅请求。
+ */
 @Component("serverSubscribeCommandStrategy")
 public class SubscribeCommandStrategy extends AbstractServerCommandStrategy {
 

@@ -15,9 +15,18 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ClientConfigEvent extends ApplicationEvent {
 
+    /** 本端设备编码（deviceId）。 */
     private final String userId;
+    /** 配置命令体，具体类型由 cmdType 决定。 */
     private final DeviceControlBase config;
 
+    /**
+     * 构造平台配置事件。
+     *
+     * @param source 事件来源对象
+     * @param userId 本端设备编码
+     * @param config 配置命令体
+     */
     public ClientConfigEvent(Object source, String userId, DeviceControlBase config) {
         super(source);
         this.userId = userId;

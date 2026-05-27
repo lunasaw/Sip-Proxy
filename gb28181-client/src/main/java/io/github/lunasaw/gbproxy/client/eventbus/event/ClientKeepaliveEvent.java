@@ -13,9 +13,18 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ClientKeepaliveEvent extends ApplicationEvent {
 
+    /** 本端设备编码（deviceId）。 */
     private final String userId;
+    /** 心跳消息体。 */
     private final KeepaliveControl keepalive;
 
+    /**
+     * 构造平台心跳事件。
+     *
+     * @param source    事件来源对象
+     * @param userId    本端设备编码
+     * @param keepalive 心跳消息体
+     */
     public ClientKeepaliveEvent(Object source, String userId, KeepaliveControl keepalive) {
         super(source);
         this.userId = userId;

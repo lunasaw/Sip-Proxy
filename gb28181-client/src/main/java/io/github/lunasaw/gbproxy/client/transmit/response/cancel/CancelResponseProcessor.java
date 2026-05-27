@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 
 import javax.sip.ResponseEvent;
 
+/**
+ * 客户端 CANCEL 响应处理器，接收 CANCEL 响应并发布 {@link ClientCancelEvent}。
+ */
 @Slf4j
 @Getter
 @Setter

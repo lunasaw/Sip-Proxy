@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 服务端 ACK 命令策略，支持带/不带 SDP body 的 ACK 发送。
+ */
 @Component("serverAckCommandStrategy")
 public class AckCommandStrategy extends AbstractServerCommandStrategy {
 

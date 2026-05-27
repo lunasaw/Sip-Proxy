@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
+ * 流媒体状态通知处理器（cmdType=MediaStatus）。
+ *
  * @author luna
  * @date 2023/10/19
  */

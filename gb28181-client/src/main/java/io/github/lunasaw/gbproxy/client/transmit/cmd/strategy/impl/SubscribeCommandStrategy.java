@@ -6,6 +6,9 @@ import io.github.lunasaw.sip.common.subscribe.SubscribeInfo;
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 SUBSCRIBE 命令发送策略，通过 {@link SipSender#doSubscribeRequest} 发起订阅。
+ */
 @Component("clientSubscribeCommandStrategy")
 public class SubscribeCommandStrategy extends AbstractClientCommandStrategy {
 

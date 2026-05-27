@@ -32,8 +32,7 @@ import io.github.lunasaw.sip.common.layer.SipLayer;
 import lombok.SneakyThrows;
 
 /**
- * @author luna
- * @date 2023/10/13
+ * SIP请求/响应构建工具类，封装JAIN-SIP工厂方法，提供各类头域和消息的创建能力。
  */
 public class SipRequestUtils {
 
@@ -81,6 +80,12 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 向请求添加多个头域。
+     *
+     * @param request 请求
+     * @param headers 头域列表
+     */
     public static void setRequestHeader(Request request, List<Header> headers) {
         if (CollectionUtils.isEmpty(headers)) {
             return;
@@ -135,6 +140,12 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 CallIdHeader（指定 callId，为 null 时自动生成）。
+     *
+     * @param callId Call-ID字符串，为null时自动生成
+     * @return CallIdHeader实例
+     */
     public static CallIdHeader createCallIdHeader(String callId) {
         try {
             if (callId == null) {
@@ -146,14 +157,31 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建新的 Call-ID 字符串。
+     *
+     * @return Call-ID字符串
+     */
     public static String getNewCallId() {
         return getNewCallIdHeader(null, null).getCallId();
     }
 
+    /**
+     * 创建新的 Call-ID 头域（使用UDP Provider）。
+     *
+     * @return CallIdHeader实例
+     */
     public static CallIdHeader getNewCallIdHeader() {
         return getNewCallIdHeader(null, null);
     }
 
+    /**
+     * 创建新的 Call-ID 头域（指定IP和传输协议）。
+     *
+     * @param ip        IP地址，为空时使用默认Provider
+     * @param transport 传输协议（TCP/UDP），为空时使用UDP
+     * @return CallIdHeader实例
+     */
     public static CallIdHeader getNewCallIdHeader(String ip, String transport) {
         if (ObjectUtils.isEmpty(transport)) {
             return SipLayer.getUdpSipProvider().getNewCallId();
@@ -188,11 +216,24 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 Address 对象。
+     *
+     * @param user sip用户
+     * @param host 主机地址 ip:port
+     * @return Address实例
+     */
     public static Address createAddress(String user, String host) {
         SipURI sipUri = createSipUri(user, host);
         return createAddress(sipUri);
     }
 
+    /**
+     * 根据 SipURI 创建 Address 对象。
+     *
+     * @param sipUri SIP URI
+     * @return Address实例
+     */
     public static Address createAddress(SipURI sipUri) {
         return ADDRESS_FACTORY.createAddress(sipUri);
     }
@@ -280,6 +321,11 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建默认 User-Agent 头域（值为 sip-proxy）。
+     *
+     * @return UserAgentHeader实例
+     */
     public static UserAgentHeader createUserAgentHeader() {
         try {
             return createUserAgentHeader("sip-proxy");
@@ -288,6 +334,12 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 User-Agent 头域（指定 agent 列表）。
+     *
+     * @param agent agent字符串数组
+     * @return UserAgentHeader实例
+     */
     public static UserAgentHeader createUserAgentHeader(String... agent) {
         List<String> agents = Lists.newArrayList(agent);
         try {
@@ -297,10 +349,20 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 生成新的 From-Tag 随机字符串。
+     *
+     * @return From-Tag字符串
+     */
     public static String getNewFromTag() {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+    /**
+     * 生成新的 Via-Tag 随机字符串。
+     *
+     * @return Via-Tag字符串
+     */
     public static String getNewViaTag() {
         return "lunaProxy" + RandomStringUtils.randomNumeric(10);
     }
@@ -317,6 +379,12 @@ public class SipRequestUtils {
         return HEADER_FACTORY.createContactHeader(address);
     }
 
+    /**
+     * 创建 SubjectHeader。
+     *
+     * @param subject 主题字符串
+     * @return SubjectHeader实例
+     */
     public static SubjectHeader createSubjectHeader(String subject) {
         try {
             return HEADER_FACTORY.createSubjectHeader(subject);
@@ -325,6 +393,12 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 ExpiresHeader。
+     *
+     * @param expires 过期时间（秒）
+     * @return ExpiresHeader实例
+     */
     public static ExpiresHeader createExpiresHeader(int expires) {
         try {
             return HEADER_FACTORY.createExpiresHeader(expires);
@@ -333,6 +407,13 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 EventHeader（指定事件类型和ID）。
+     *
+     * @param eventType 事件类型
+     * @param eventId   事件ID
+     * @return EventHeader实例
+     */
     public static EventHeader createEventHeader(String eventType, String eventId) {
         try {
             EventHeader eventHeader = HEADER_FACTORY.createEventHeader(eventType);
@@ -343,10 +424,22 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 EventHeader（自动生成事件ID）。
+     *
+     * @param eventType 事件类型
+     * @return EventHeader实例
+     */
     public static EventHeader createEventHeader(String eventType) {
         return createEventHeader(eventType, RandomStrUtil.getValidationCode());
     }
 
+    /**
+     * 创建 SubscriptionStateHeader。
+     *
+     * @param subscriptionState 订阅状态字符串
+     * @return SubscriptionStateHeader实例
+     */
     public static SubscriptionStateHeader createSubscriptionStateHeader(String subscriptionState) {
         try {
             SubscriptionStateHeader subscriptionStateHeader = HEADER_FACTORY.createSubscriptionStateHeader(subscriptionState);
@@ -370,6 +463,19 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建带完整认证参数的 AuthorizationHeader。
+     *
+     * @param scheme    认证方案
+     * @param user      用户名
+     * @param requestUri 请求URI
+     * @param realm     域
+     * @param nonce     随机数
+     * @param qop       质量保护
+     * @param cNonce    客户端随机数
+     * @param response  摘要响应
+     * @return AuthorizationHeader实例
+     */
     public static AuthorizationHeader createAuthorizationHeader(String scheme, String user, URI requestUri, String realm, String nonce, String qop,
         String cNonce, String response) {
 
@@ -393,6 +499,13 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建自定义头域。
+     *
+     * @param name  头域名称
+     * @param value 头域值
+     * @return Header实例
+     */
     public static Header createHeader(String name, String value) {
         try {
             return HEADER_FACTORY.createHeader(name, value);
@@ -441,6 +554,14 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建带头域列表的响应。
+     *
+     * @param statusCode 状态码
+     * @param request    原始请求
+     * @param headers    附加头域列表
+     * @return Response实例
+     */
     public static Response createResponse(int statusCode, Request request, List<Header> headers) {
         try {
             Response response = MESSAGE_FACTORY.createResponse(statusCode, request);
@@ -451,6 +572,12 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 向响应添加多个头域。
+     *
+     * @param response 响应
+     * @param headers  头域列表
+     */
     public static void setResponseHeader(Response response, List<Header> headers) {
         if (CollectionUtils.isEmpty(headers)) {
             return;
@@ -460,6 +587,12 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建 WWWAuthenticateHeader（指定方案）。
+     *
+     * @param scheme 认证方案
+     * @return WWWAuthenticateHeader实例
+     */
     public static WWWAuthenticateHeader createWWWAuthenticateHeader(String scheme) {
         try {
             return HEADER_FACTORY.createWWWAuthenticateHeader(scheme);
@@ -468,6 +601,15 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 创建带完整参数的 WWWAuthenticateHeader。
+     *
+     * @param scheme    认证方案
+     * @param realm     域
+     * @param nonce     随机数
+     * @param algorithm 摘要算法（MD5/SM3）
+     * @return WWWAuthenticateHeader实例
+     */
     public static WWWAuthenticateHeader createWWWAuthenticateHeader(String scheme, String realm, String nonce, String algorithm) {
         try {
             WWWAuthenticateHeader wwwAuthenticateHeader = createWWWAuthenticateHeader(scheme);
@@ -482,11 +624,24 @@ public class SipRequestUtils {
         }
     }
 
+    /**
+     * 设置请求内容。
+     *
+     * @param request     请求
+     * @param contentType 内容类型头
+     * @param content     内容对象
+     */
     @SneakyThrows
     public static void setContent(Request request, ContentTypeHeader contentType, Object content) {
         request.setContent(content, contentType);
     }
 
+    /**
+     * 解析SDP字符串为 SessionDescription 对象。
+     *
+     * @param sdp SDP字符串
+     * @return SessionDescription实例
+     */
     public static SessionDescription createSessionDescription(String sdp) {
         try {
             return SDP_FACTORY.createSessionDescription(sdp);

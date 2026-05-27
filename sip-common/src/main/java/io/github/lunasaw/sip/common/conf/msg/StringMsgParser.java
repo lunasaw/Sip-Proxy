@@ -19,6 +19,9 @@ import gov.nist.javax.sip.message.SIPRequest;
 import gov.nist.javax.sip.message.SIPResponse;
 import gov.nist.javax.sip.parser.*;
 
+/**
+ * 自定义SIP消息解析器，修复GB28181设备发送的非标准消息体解析问题。
+ */
 public class StringMsgParser implements MessageParser {
 
     protected static boolean computeContentLengthFromMessage = false;
@@ -149,6 +152,12 @@ public class StringMsgParser implements MessageParser {
         return message;
     }
 
+    /**
+     * 去除行尾控制字符。
+     *
+     * @param line 原始行字符串
+     * @return 去除尾部控制字符后的字符串
+     */
     protected static String trimEndOfLine(String line) {
         if (line == null)
             return line;
@@ -166,6 +175,15 @@ public class StringMsgParser implements MessageParser {
         return line.substring(0, i + 1);
     }
 
+    /**
+     * 解析SIP消息首行，区分请求行和状态行。
+     *
+     * @param firstLine              首行字符串
+     * @param parseExceptionListener 解析异常监听器
+     * @param msgBuffer              原始消息字节
+     * @return 解析后的SIPMessage
+     * @throws ParseException 解析失败时抛出
+     */
     protected SIPMessage processFirstLine(String firstLine, ParseExceptionListener parseExceptionListener, byte[] msgBuffer) throws ParseException {
         SIPMessage message;
         if (!firstLine.startsWith(SIPConstants.SIP_VERSION_STRING)) {
@@ -207,6 +225,15 @@ public class StringMsgParser implements MessageParser {
         return message;
     }
 
+    /**
+     * 解析单个SIP头域并附加到消息。
+     *
+     * @param header                 头域字符串
+     * @param message                目标SIP消息
+     * @param parseExceptionListener 解析异常监听器
+     * @param rawMessage             原始消息字节
+     * @throws ParseException 解析失败时抛出
+     */
     protected void processHeader(String header, SIPMessage message, ParseExceptionListener parseExceptionListener, byte[] rawMessage) throws ParseException {
         if (header == null || header.length() == 0)
             return;

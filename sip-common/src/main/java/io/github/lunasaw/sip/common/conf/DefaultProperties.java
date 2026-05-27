@@ -12,16 +12,19 @@ import org.springframework.util.ResourceUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 获取sip默认配置
- * 完整配置参考 gov.nist.javax.sip.SipStackImpl，需要下载源码
- * gov/nist/javax/sip/SipStackImpl.class
- * sip消息的解析在 gov.nist.javax.sip.stack.UDPMessageChannel的processIncomingDataPacket 方法
- * 
- * @author luna
+ * SIP协议栈默认配置工厂，从classpath加载基础配置并按需开启日志。
  */
 @Slf4j
 public class DefaultProperties {
 
+    /**
+     * 获取SIP协议栈配置属性。
+     *
+     * @param name   协议栈名称
+     * @param ip     监听IP地址
+     * @param sipLog 是否开启SIP日志
+     * @return 配置属性对象
+     */
     public static Properties getProperties(String name, String ip, boolean sipLog) {
         Properties properties = new Properties();
         properties.setProperty("javax.sip.STACK_NAME", name);

@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 INFO 命令发送策略，通过 {@link SipSender#doInfoRequest} 发送回放控制等 INFO 消息。
+ */
 @Component("clientInfoCommandStrategy")
 public class InfoCommandStrategy extends AbstractClientCommandStrategy {
 

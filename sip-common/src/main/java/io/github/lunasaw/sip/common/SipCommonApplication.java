@@ -4,8 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * @author luna
- * @date 2023/10/12
+ * sip-common 模块启动入口（仅用于独立运行/测试，正常作为库嵌入使用）。
  */
 @SpringBootApplication
 public class SipCommonApplication {

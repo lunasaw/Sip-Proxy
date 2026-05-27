@@ -7,6 +7,8 @@ import io.github.lunasaw.sip.common.utils.SipUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ * GB28181 INVITE SDP body 构建工具类，提供实时点播、历史回放、语音对讲、文件下载及回放控制的 SDP 内容生成。
+ *
  * @author luna
  * @date 2023/11/6
  */
@@ -18,26 +20,59 @@ public class InviteEntity {
     }
 
     /**
-     * 组装subject
+     * 组装 SDP Subject 字段。
      *
-     * @param subId 通道Id
-     * @param ssrc 混淆码
-     * @param userId 设备Id
-     * @return
+     * @param subId  通道 ID
+     * @param ssrc   SSRC 混淆码
+     * @param userId 设备 ID
+     * @return Subject 字符串，格式为 {@code subId:ssrc,userId:0}
      */
     public static String getSubject(String subId, String ssrc, String userId) {
         return String.format("%s:%s,%s:%s", subId, ssrc, userId, 0);
     }
 
+    /**
+     * 构建实时点播 SDP body（简化重载，不使用高级 SDP 和子码流）。
+     *
+     * @param streamModeEnum 流传输模式
+     * @param userId         设备 ID
+     * @param sdpIp          收流 IP
+     * @param mediaPort      收流端口
+     * @param ssrc           SSRC 混淆码
+     * @return SDP 内容
+     */
     public static StringBuffer getInvitePlayBody(StreamModeEnum streamModeEnum, String userId, String sdpIp, Integer mediaPort, String ssrc) {
         return getInvitePlayBody(false, streamModeEnum, userId, sdpIp, mediaPort, ssrc, false, null);
     }
 
+    /**
+     * 构建实时点播 SDP body（支持子码流和厂商扩展）。
+     *
+     * @param streamModeEnum   流传输模式
+     * @param userId           设备 ID
+     * @param sdpIp            收流 IP
+     * @param mediaPort        收流端口
+     * @param ssrc             SSRC 混淆码
+     * @param subStream        是否子码流
+     * @param manufacturerEnum 设备厂商（影响子码流扩展字段格式）
+     * @return SDP 内容
+     */
     public static StringBuffer getInvitePlayBody(StreamModeEnum streamModeEnum, String userId, String sdpIp, Integer mediaPort, String ssrc,
         Boolean subStream, ManufacturerEnum manufacturerEnum) {
         return getInvitePlayBody(false, streamModeEnum, userId, sdpIp, mediaPort, ssrc, subStream, manufacturerEnum);
     }
 
+    /**
+     * 构建实时点播 SDP body（支持高级 SDP 模式）。
+     *
+     * @param seniorSdp      是否使用高级 SDP（部分设备需要扩展编码列表）
+     * @param streamModeEnum 流传输模式
+     * @param userId         设备 ID
+     * @param sdpIp          收流 IP
+     * @param mediaPort      收流端口
+     * @param ssrc           SSRC 混淆码
+     * @return SDP 内容
+     */
     public static StringBuffer getInvitePlayBody(Boolean seniorSdp, StreamModeEnum streamModeEnum, String userId, String sdpIp, Integer mediaPort,
                                                  String ssrc) {
         return getInvitePlayBody(seniorSdp, streamModeEnum, userId, sdpIp, mediaPort, ssrc, false, null);
@@ -50,11 +85,38 @@ public class InviteEntity {
                 null);
     }
 
+    /**
+     * 构建历史回放 SDP body（简化重载）。
+     *
+     * @param streamModeEnum 流传输模式
+     * @param userId         设备 ID
+     * @param sdpIp          收流 IP
+     * @param mediaPort      收流端口
+     * @param ssrc           SSRC 混淆码
+     * @param startTime      回放起始时间（ISO 8601）
+     * @param endTime        回放结束时间（ISO 8601）
+     * @return SDP 内容
+     */
     public static StringBuffer getInvitePlayBackBody(StreamModeEnum streamModeEnum, String userId, String sdpIp, Integer mediaPort, String ssrc,
                                                      String startTime, String endTime) {
         return getInvitePlayBodyBack(false, streamModeEnum, userId, sdpIp, mediaPort, ssrc, false, null, startTime, endTime);
     }
 
+    /**
+     * 构建历史回放 SDP body（完整参数）。
+     *
+     * @param seniorSdp      是否使用高级 SDP
+     * @param streamModeEnum 流传输模式
+     * @param userId         设备 ID
+     * @param sdpIp          收流 IP
+     * @param mediaPort      收流端口
+     * @param ssrc           SSRC 混淆码
+     * @param subStream      是否子码流
+     * @param manufacturer   设备厂商
+     * @param startTime      回放起始时间（ISO 8601）
+     * @param endTime        回放结束时间（ISO 8601）
+     * @return SDP 内容
+     */
     public static StringBuffer getInvitePlayBodyBack(Boolean seniorSdp, StreamModeEnum streamModeEnum, String userId, String sdpIp, Integer mediaPort,
                                                      String ssrc, Boolean subStream, ManufacturerEnum manufacturer, String startTime, String endTime) {
 
@@ -73,6 +135,22 @@ public class InviteEntity {
      * @param subStream [可选] 是否子码流
      * @param manufacturer [可选] 设备厂商
      * @return
+     */
+    /**
+     * 构建通用 INVITE SDP body（实时点播或历史回放，由 inviteSessionNameEnum 区分）。
+     *
+     * @param inviteSessionNameEnum 会话类型（PLAY/PLAY_BACK）
+     * @param seniorSdp             是否使用高级 SDP
+     * @param streamModeEnum        流传输模式
+     * @param userId                设备 ID
+     * @param sdpIp                 收流 IP
+     * @param mediaPort             收流端口
+     * @param ssrc                  SSRC 混淆码
+     * @param subStream             是否子码流
+     * @param manufacturer          设备厂商
+     * @param startTime             回放起始时间（ISO 8601，仅 PLAY_BACK 时有效）
+     * @param endTime               回放结束时间（ISO 8601，仅 PLAY_BACK 时有效）
+     * @return SDP 内容
      */
     public static StringBuffer getInvitePlayBody(InviteSessionNameEnum inviteSessionNameEnum, Boolean seniorSdp, StreamModeEnum streamModeEnum,
                                                  String userId, String sdpIp, Integer mediaPort,
@@ -148,6 +226,13 @@ public class InviteEntity {
         return content;
     }
 
+    /**
+     * 向 SDP 内容追加 SSRC 行（y=ssrc）。
+     *
+     * @param content SDP 内容缓冲区
+     * @param ssrc    SSRC 混淆码
+     * @return 追加后的缓冲区
+     */
     public static StringBuffer addSsrc(StringBuffer content, String ssrc) {
         content.append("y=").append(ssrc).append("\r\n");// ssrc
         return content;
@@ -232,6 +317,14 @@ public class InviteEntity {
         return content;
     }
 
+    /**
+     * 向 SDP 内容追加子码流扩展行（a=streamMode 或 a=streamprofile）。
+     *
+     * @param content      SDP 内容缓冲区
+     * @param subStream    是否子码流
+     * @param manufacturer 设备厂商（影响扩展字段格式）
+     * @return 追加后的缓冲区
+     */
     public static StringBuffer addSubStream(StringBuffer content, Boolean subStream, ManufacturerEnum manufacturer) {
         if (ManufacturerEnum.TP_LINK.equals(manufacturer)) {
             if (subStream) {
@@ -251,14 +344,20 @@ public class InviteEntity {
 
     // ======================== 以下是回放控制 ========================
 
+    /**
+     * 回放暂停（不带 CSeq，自动生成）。
+     *
+     * @return RTSP 控制消息字符串
+     */
     public static String playPause() {
         return playPause(null);
     }
 
     /**
-     * 回放暂停
+     * 回放暂停（指定 CSeq）。
      *
-     * @param cseq
+     * @param cseq CSeq 序号，为空时自动生成
+     * @return RTSP 控制消息字符串
      */
     public static String playPause(String cseq) {
         if (StringUtils.isBlank(cseq)) {
@@ -272,15 +371,20 @@ public class InviteEntity {
         return content.toString();
     }
 
+    /**
+     * 回放恢复（不带 CSeq，自动生成）。
+     *
+     * @return RTSP 控制消息字符串
+     */
     public static String playNow() {
         return playNow(null);
     }
 
     /**
-     * 回放恢复
+     * 回放恢复（指定 CSeq）。
      *
-     * @param cseq
-     * @return
+     * @param cseq CSeq 序号，为空时自动生成
+     * @return RTSP 控制消息字符串
      */
     public static String playNow(String cseq) {
         if (StringUtils.isBlank(cseq)) {
@@ -294,16 +398,22 @@ public class InviteEntity {
         return content.toString();
     }
 
+    /**
+     * 回放定位（不带 CSeq，自动生成）。
+     *
+     * @param seekTime 定位时间（秒）
+     * @return RTSP 控制消息字符串
+     */
     public static String playRange(long seekTime) {
         return playRange(null, seekTime);
     }
 
     /**
-     * 回放定位
+     * 回放定位（指定 CSeq）。
      *
-     * @param cseq
-     * @param seekTime
-     * @return
+     * @param cseq     CSeq 序号，为空时自动生成
+     * @param seekTime 定位时间（秒）
+     * @return RTSP 控制消息字符串
      */
     public static String playRange(String cseq, long seekTime) {
         if (StringUtils.isBlank(cseq)) {
@@ -317,16 +427,22 @@ public class InviteEntity {
         return content.toString();
     }
 
+    /**
+     * 回放倍速（不带 CSeq，自动生成）。
+     *
+     * @param speed 倍速值（如 2.0 表示 2 倍速）
+     * @return RTSP 控制消息字符串
+     */
     public static String playSpeed(Double speed) {
         return playSpeed(null, speed);
     }
 
     /**
-     * 回放倍速
+     * 回放倍速（指定 CSeq）。
      *
-     * @param cseq
-     * @param speed
-     * @return
+     * @param cseq  CSeq 序号，为空时自动生成
+     * @param speed 倍速值
+     * @return RTSP 控制消息字符串
      */
     public static String playSpeed(String cseq, Double speed) {
         if (StringUtils.isBlank(cseq)) {

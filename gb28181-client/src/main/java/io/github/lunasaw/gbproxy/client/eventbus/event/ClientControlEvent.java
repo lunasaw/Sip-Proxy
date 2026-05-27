@@ -21,9 +21,18 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ClientControlEvent extends ApplicationEvent {
 
+    /** 本端设备编码（deviceId）。 */
     private final String userId;
+    /** 控制命令体，具体类型由 cmdType 决定。 */
     private final DeviceControlBase command;
 
+    /**
+     * 构造平台控制事件。
+     *
+     * @param source  事件来源对象
+     * @param userId  本端设备编码
+     * @param command 控制命令体
+     */
     public ClientControlEvent(Object source, String userId, DeviceControlBase command) {
         super(source);
         this.userId = userId;

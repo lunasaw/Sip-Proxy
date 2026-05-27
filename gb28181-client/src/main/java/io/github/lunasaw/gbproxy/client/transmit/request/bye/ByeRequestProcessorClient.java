@@ -17,6 +17,9 @@ import org.springframework.stereotype.Component;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * 客户端 BYE 请求处理器，接收平台下发的 BYE 请求，自动回 200 OK 并发布 {@link ClientByeEvent}。
+ */
 @Component("byeRequestProcessorClient")
 @Getter
 @Setter

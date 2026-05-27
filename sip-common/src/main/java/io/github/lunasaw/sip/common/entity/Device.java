@@ -5,8 +5,7 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * @author luna
- * @date 2023/10/12
+ * SIP设备抽象基类，封装设备的网络地址、传输协议等公共属性。
  */
 @Data
 public abstract class Device {
@@ -61,6 +60,11 @@ public abstract class Device {
      */
     private String charset;
 
+    /**
+     * 获取字符集，未设置时默认返回 UTF-8。
+     *
+     * @return 字符集名称
+     */
     public String getCharset() {
         if (this.charset == null) {
             return "UTF-8";
@@ -68,10 +72,20 @@ public abstract class Device {
         return charset;
     }
 
+    /**
+     * 设置 WAN 地址字符串。
+     *
+     * @param hostAddress 地址字符串，格式为 ip:port
+     */
     public void setHostAddress(String hostAddress) {
         this.hostAddress = hostAddress;
     }
 
+    /**
+     * 获取 WAN 地址字符串，未设置时由 ip 和 port 拼接。
+     *
+     * @return 地址字符串，格式为 ip:port
+     */
     public String getHostAddress() {
         if (StringUtils.isBlank(hostAddress)) {
             return ip + ":" + port;

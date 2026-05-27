@@ -5,15 +5,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @author luna
- * @date 2023/10/20
+ * SIP设备会话，关联发送方与接收方设备信息。
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class DeviceSession {
 
+    /** 用户ID。 */
     String userId;
+    /** SIP设备编号。 */
     String sipId;
 
     public DeviceSession(String userId, String sipId) {
@@ -21,7 +22,9 @@ public class DeviceSession {
         this.sipId = sipId;
     }
 
+    /** 发送方设备信息。 */
     private FromDevice fromDevice;
 
+    /** 接收方设备信息。 */
     private ToDevice toDevice;
 }

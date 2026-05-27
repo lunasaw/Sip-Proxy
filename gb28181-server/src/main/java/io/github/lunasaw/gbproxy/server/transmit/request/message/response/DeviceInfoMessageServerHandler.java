@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import javax.sip.RequestEvent;
 
 /**
- * 设备信息消息处理器
+ * 设备信息应答处理器（cmdType=DeviceInfo）。
  *
  * @author luna
  * @date 2023/10/19

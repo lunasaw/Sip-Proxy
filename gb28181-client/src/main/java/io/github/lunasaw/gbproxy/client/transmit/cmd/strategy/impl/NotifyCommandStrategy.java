@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 NOTIFY 命令发送策略，通过 {@link SipSender#doNotifyRequest} 发送订阅通知。
+ */
 @Component("clientNotifyCommandStrategy")
 public class NotifyCommandStrategy extends AbstractClientCommandStrategy {
 

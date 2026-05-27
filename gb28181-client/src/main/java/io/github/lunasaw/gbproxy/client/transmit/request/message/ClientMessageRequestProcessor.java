@@ -15,10 +15,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 客户端MESSAGE请求处理器
- * 负责处理客户端收到的MESSAGE请求，专注于协议层面处理
- *
- * @author luna
+ * 客户端 MESSAGE 请求处理器，负责接收并分发平台下发的 MESSAGE 请求。
  */
 @Component("clientMessageRequestProcessor")
 @Getter

@@ -5,6 +5,8 @@ import lombok.Data;
 import java.util.Date;
 
 /**
+ * 设备注册信息，由 {@code ServerRegisterRequestProcessor} 在 REGISTER 成功后填充并随事件传递。
+ *
  * @author luna
  * @date 2023/10/18
  */

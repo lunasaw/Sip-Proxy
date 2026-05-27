@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 ACK 命令发送策略，通过 {@link SipSender#doAckRequest} 确认 INVITE 200 OK。
+ */
 @Component("clientAckCommandStrategy")
 public class AckCommandStrategy extends AbstractClientCommandStrategy {
 

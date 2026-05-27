@@ -7,8 +7,7 @@ import lombok.Setter;
 import java.util.Random;
 
 /**
- * @author luna
- * @date 2023/11/6
+ * INVITE 响应实体，封装设备侧回复 INVITE 时所需的 SDP 参数，并提供 SDP 内容构造工具方法。
  */
 @Getter
 @Setter
@@ -50,14 +49,46 @@ public class InviteResponseEntity {
         System.out.println(content);
     }
 
+    /**
+     * 构造历史回放 INVITE 应答 SDP 内容。
+     *
+     * @param userId    设备编码
+     * @param mediaIp   媒体 IP
+     * @param localPort 本地端口
+     * @param startTime 回放开始时间（Unix 时间戳）
+     * @param endTime   回放结束时间（Unix 时间戳）
+     * @param ssrc      SSRC 标识
+     * @return SDP 内容
+     */
     public static StringBuffer getAckPlayBackBody(String userId, String mediaIp, int localPort, long startTime, long endTime, String ssrc) {
         return getAckBody(InviteSessionNameEnum.PLAY_BACK, userId, mediaIp, localPort, startTime, endTime, ssrc);
     }
 
+    /**
+     * 构造实时点播 INVITE 应答 SDP 内容。
+     *
+     * @param userId    设备编码
+     * @param mediaIp   媒体 IP
+     * @param localPort 本地端口
+     * @param ssrc      SSRC 标识
+     * @return SDP 内容
+     */
     public static StringBuffer getAckPlayBody(String userId, String mediaIp, int localPort, String ssrc) {
         return getAckBody(InviteSessionNameEnum.PLAY, userId, mediaIp, localPort, 0, 0, ssrc);
     }
 
+    /**
+     * 构造 INVITE 应答 SDP 内容（通用）。
+     *
+     * @param sessionName 会话类型（实时点播 / 历史回放）
+     * @param userId      设备编码
+     * @param mediaIp     媒体 IP
+     * @param localPort   本地端口，为 0 时随机分配
+     * @param startTime   回放开始时间（Unix 时间戳），实时点播时传 0
+     * @param endTime     回放结束时间（Unix 时间戳），实时点播时传 0
+     * @param ssrc        SSRC 标识
+     * @return SDP 内容
+     */
     public static StringBuffer getAckBody(InviteSessionNameEnum sessionName, String userId, String mediaIp, int localPort, long startTime, long endTime, String ssrc) {
         StringBuffer content = new StringBuffer(200);
         content.append("v=0\r\n");

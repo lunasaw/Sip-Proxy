@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.server.transmit.cmd.strategy.AbstractServerComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 服务端 REGISTER 命令策略，用于向上级平台发起注册请求。
+ */
 @Component("serverRegisterCommandStrategy")
 public class RegisterCommandStrategy extends AbstractServerCommandStrategy {
 

@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 MESSAGE 命令发送策略，通过 {@link SipSender#doMessageRequest} 发送 GB28181 业务消息。
+ */
 @Component("clientMessageCommandStrategy")
 public class MessageCommandStrategy extends AbstractClientCommandStrategy {
 

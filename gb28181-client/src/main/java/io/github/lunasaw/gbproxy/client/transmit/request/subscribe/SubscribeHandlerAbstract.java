@@ -34,6 +34,12 @@ public abstract class SubscribeHandlerAbstract extends MessageHandlerAbstract {
         return SubscribeRequestProcessor.METHOD + "Root";
     }
 
+    /**
+     * 从 SUBSCRIBE 请求事件中构造设备会话信息。
+     *
+     * @param event SUBSCRIBE 请求事件
+     * @return 包含本端和目标设备信息的会话对象
+     */
     public DeviceSession getDeviceSession(RequestEvent event) {
         SIPRequest sipRequest = (SIPRequest) event.getRequest();
 

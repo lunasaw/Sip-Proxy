@@ -16,11 +16,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
- * SIP代理客户端自动配置类
- * 使用 @DependsOn 确保在所有默认处理器创建完成后再进行处理器注册
- * 
- * @author luna
- * @date 2023/10/16
+ * SIP 代理客户端自动配置类，负责将所有 MESSAGE 和 SUBSCRIBE 处理器注册到对应的处理器链。
  */
 @Slf4j
 @Component

@@ -20,11 +20,24 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class ClientSubscribeEvent extends ApplicationEvent {
 
+    /** 本端设备编码（deviceId）。 */
     private final String userId;
+    /** 发起订阅的上级平台 SIP 编码。 */
     private final String sipId;
+    /** 订阅有效期（秒），由 SIP Expires 头携带。 */
     private final Integer expires;
+    /** 订阅请求体，具体类型由 cmdType 决定。 */
     private final XmlBean body;
 
+    /**
+     * 构造平台订阅事件。
+     *
+     * @param source  事件来源对象
+     * @param userId  本端设备编码
+     * @param sipId   发起订阅的上级平台 SIP 编码
+     * @param expires 订阅有效期（秒）
+     * @param body    订阅请求体
+     */
     public ClientSubscribeEvent(Object source, String userId, String sipId, Integer expires, XmlBean body) {
         super(source);
         this.userId = userId;

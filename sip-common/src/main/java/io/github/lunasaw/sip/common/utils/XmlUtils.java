@@ -23,11 +23,17 @@ import com.google.common.base.Joiner;
 import lombok.SneakyThrows;
 
 /**
- * @author luna
- * @date 2023/10/15
+ * XML工具类，提供JAXB序列化/反序列化及GB28181 XML消息解析能力。
  */
 public class XmlUtils {
 
+    /**
+     * 将对象序列化为XML字符串。
+     *
+     * @param charset 字符集
+     * @param object  待序列化对象
+     * @return XML字符串
+     */
     @SneakyThrows
     public static String toString(String charset, Object object) {
         JAXBContext jaxbContext = JAXBContext.newInstance(object.getClass());
@@ -40,6 +46,14 @@ public class XmlUtils {
         return writer.toString();
     }
 
+    /**
+     * 将XML字符串反序列化为指定类型对象（指定字符集）。
+     *
+     * @param xmlStr  XML字符串
+     * @param clazz   目标类型
+     * @param charset 字符集
+     * @return 反序列化对象
+     */
     @SneakyThrows
     public static <T> Object parseObj(String xmlStr, Class<T> clazz, String charset) {
         JAXBContext jaxbContext = JAXBContext.newInstance(clazz);
@@ -47,16 +61,38 @@ public class XmlUtils {
         return unmarshaller.unmarshal(new StringReader(new String(xmlStr.getBytes(charset), charset)));
     }
 
+    /**
+     * 将XML字符串反序列化为指定类型对象（UTF-8）。
+     *
+     * @param xmlStr XML字符串
+     * @param clazz  目标类型
+     * @return 反序列化对象
+     */
     @SneakyThrows
     public static <T> Object parseObj(String xmlStr, Class<T> clazz) {
         return parseObj(xmlStr, clazz, "UTF-8");
     }
 
+    /**
+     * 从资源文件解析XML为指定类型对象（UTF-8）。
+     *
+     * @param resource 资源路径
+     * @param clazz    目标类型
+     * @return 反序列化对象
+     */
     @SneakyThrows
     public static <T> Object parseFile(String resource, Class<T> clazz) {
         return parseFile(resource, clazz, StandardCharsets.UTF_8);
     }
 
+    /**
+     * 从资源文件解析XML为指定类型对象（指定字符集）。
+     *
+     * @param resource 资源路径
+     * @param clazz    目标类型
+     * @param charset  字符集
+     * @return 反序列化对象
+     */
     @SneakyThrows
     public static <T> Object parseFile(String resource, Class<T> clazz, Charset charset) {
         File file = ResourceUtils.getFile(resource);
@@ -66,6 +102,12 @@ public class XmlUtils {
         return parseObj(join, clazz);
     }
 
+    /**
+     * 从XML字符串中提取 CmdType 元素的文本值。
+     *
+     * @param xmlStr XML字符串
+     * @return CmdType值，不存在时返回null
+     */
     @SneakyThrows
     public static String getCmdType(String xmlStr) {
         SAXReader reader = new SAXReader();
@@ -109,6 +151,12 @@ public class XmlUtils {
     }
 
 
+    /**
+     * 从XML字符串中提取根元素名称。
+     *
+     * @param xmlStr XML字符串
+     * @return 根元素名称
+     */
     @SneakyThrows
     public static String getRootType(String xmlStr) {
         SAXReader reader = new SAXReader();

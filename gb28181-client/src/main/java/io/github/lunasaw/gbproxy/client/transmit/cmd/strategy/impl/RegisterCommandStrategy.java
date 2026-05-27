@@ -5,6 +5,9 @@ import io.github.lunasaw.gbproxy.client.transmit.cmd.strategy.AbstractClientComm
 import io.github.lunasaw.sip.common.transmit.SipSender;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 REGISTER 命令发送策略，通过 {@link SipSender#doRegisterRequest} 发起注册或注销。
+ */
 @Component("clientRegisterCommandStrategy")
 public class RegisterCommandStrategy extends AbstractClientCommandStrategy {
 

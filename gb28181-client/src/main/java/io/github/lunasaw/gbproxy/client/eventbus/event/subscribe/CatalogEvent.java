@@ -6,11 +6,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * @author luna
+ * 目录订阅变更事件，定义目录条目状态变更类型常量。
  */
 @Getter
 @Setter
 public class CatalogEvent extends ApplicationEvent {
+    /**
+     * 构造目录事件。
+     *
+     * @param source 事件来源对象
+     */
     public CatalogEvent(Object source) {
         super(source);
     }

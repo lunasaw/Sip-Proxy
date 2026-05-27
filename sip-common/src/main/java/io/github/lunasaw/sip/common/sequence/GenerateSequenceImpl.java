@@ -6,11 +6,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author luna
- * @date 2023/10/13
+ * 基于时间戳的序列号生成器实现。
  */
 public class GenerateSequenceImpl implements GenerateSequence {
 
+    /**
+     * 获取基于当前时间戳的序列号。
+     *
+     * @return 序列号
+     */
     public static long getSequence() {
         long timestamp = System.currentTimeMillis();
         return (timestamp & 0x3FFF) % Integer.MAX_VALUE;

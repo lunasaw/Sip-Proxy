@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
+/**
+ * 客户端 BYE 响应处理器，接收 BYE 响应并发布 {@link ClientByeEvent}。
+ */
 @Slf4j
 @Getter
 @Setter

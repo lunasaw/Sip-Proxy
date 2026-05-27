@@ -15,6 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
+/**
+ * 服务端 SUBSCRIBE 响应处理器，收到订阅响应后发布 {@link ServerQueryResponseEvent}。
+ */
 @Slf4j
 @Getter
 @Setter
