@@ -9,9 +9,9 @@ set -euo pipefail
 
 PATTERN='gb28181|GB28181|gbproxy|Catalog|MobilePosition|GbSession|GbSip|GbUtil'
 
-# 排除注释行（行首可有空白 + // 或 *）
+# 排除注释行（grep -rEn 输出格式为 file:line:content，匹配 content 部分以可选空白开头 + // 或 *）
 hits=$(grep -rEn "$PATTERN" sip-common/src/main/java --include="*.java" \
-       | grep -vE '^\s*//|^\s*\*' || true)
+       | grep -vE ':\s*(//|\*)' || true)
 
 if [ -n "$hits" ]; then
   echo "❌ sip-common 存在 GB28181 耦合："

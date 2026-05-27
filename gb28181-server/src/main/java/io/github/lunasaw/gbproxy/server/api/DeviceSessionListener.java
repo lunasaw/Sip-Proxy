@@ -34,7 +34,13 @@ public interface DeviceSessionListener {
     /**
      * 服务端收到设备主动发起的 INVITE（如语音对讲场景）。
      * 业务方收到后可异步准备 SDP，通过 {@code transactionContextKey} 取回 RequestEvent 完成回包。
+     *
+     * @param rawSdp 原始 SDP 文本（UTF-8 解码自 INVITE body），1.7.3 引入。
+     *               业务方需要把 SDP 透传给 ZLM/SRS 推流时取此参数，避免
+     *               {@code GbSessionDescription} 反向序列化丢字段（自定义 a= 行、y=ssrc 等）。
+     *               INVITE 无 body 或解析失败时为 null。
      */
     default void onServerInvite(String callId, String fromUserId, String toUserId,
+                                String rawSdp,
                                 GbSessionDescription sessionDescription, String transactionContextKey) {}
 }

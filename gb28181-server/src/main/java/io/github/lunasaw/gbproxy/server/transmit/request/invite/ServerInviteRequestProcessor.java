@@ -70,14 +70,16 @@ public class ServerInviteRequestProcessor extends SipRequestProcessorAbstract {
             SipTransactionRegistry.TransactionContextInfo ctx =
                     SipTransactionRegistry.createContext(evt, evt.getServerTransaction());
 
-            // 3. 解析 SDP 并发布事件
+            // 3. 解析 SDP 并发布事件。rawSdp 同时透传给业务侧，业务方需直接转给 ZLM/SRS 推流时用此参数
+            String rawSdp = null;
             GbSessionDescription sessionDescription = null;
             byte[] rawContent = request.getRawContent();
             if (rawContent != null) {
-                sessionDescription = sdpParser.parse(new String(rawContent, StandardCharsets.UTF_8));
+                rawSdp = new String(rawContent, StandardCharsets.UTF_8);
+                sessionDescription = sdpParser.parse(rawSdp);
             }
             publisher.publishEvent(ServerSessionEvent.serverInvite(this, callId, fromUserId, toUserId,
-                    sessionDescription, ctx.getContextKey()));
+                    rawSdp, sessionDescription, ctx.getContextKey()));
         } catch (Exception e) {
             log.error("处理INVITE请求异常: evt = {}", evt, e);
             ResponseCmd.sendResponse(Response.SERVER_INTERNAL_ERROR, "Internal Server Error", evt);

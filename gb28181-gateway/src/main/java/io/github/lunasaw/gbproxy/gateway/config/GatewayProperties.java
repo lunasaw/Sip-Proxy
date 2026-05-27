@@ -1,4 +1,4 @@
-package io.github.lunasaw.gbproxy.test.gateway;
+package io.github.lunasaw.gbproxy.gateway.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -15,9 +15,13 @@ import java.util.Map;
  *
  * <p>开发 / 小规模部署用静态配置；生产建议改为基于 K8s Endpoints 或 Nacos/Consul
  * 的动态服务发现，但 Bean 名仍为 {@code nodeAddressMap} 以保持注入兼容。
+ *
+ * <p>配置前缀：{@code gb28181.gateway.*}（v1.8.0 起）。
+ *
+ * @author luna
  */
 @Data
-@ConfigurationProperties("gateway")
+@ConfigurationProperties("gb28181.gateway")
 public class GatewayProperties {
 
     /**
@@ -33,7 +37,7 @@ public class GatewayProperties {
 
     /**
      * INVITE 上下文在共享存储（Redis / 内存）中的存活时间，毫秒。
-     * 默认 30s 与 RFC 3261 Timer B 对齐；调大此值前请阅读 §7。
+     * 默认 30s 与 RFC 3261 Timer B 对齐。
      */
     private long inviteContextTtlMs = 30_000L;
 

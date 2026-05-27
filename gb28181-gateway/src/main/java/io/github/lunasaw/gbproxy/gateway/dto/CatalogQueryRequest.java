@@ -1,4 +1,4 @@
-package io.github.lunasaw.gbproxy.test.gateway.dto;
+package io.github.lunasaw.gbproxy.gateway.dto;
 
 import lombok.Data;
 

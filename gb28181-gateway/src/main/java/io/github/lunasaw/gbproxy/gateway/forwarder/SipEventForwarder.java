@@ -1,40 +1,45 @@
-package io.github.lunasaw.gbproxy.test.gateway;
+package io.github.lunasaw.gbproxy.gateway.forwarder;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.lunasaw.gb28181.common.entity.notify.DeviceAlarmNotify;
 import io.github.lunasaw.gb28181.common.entity.sdp.GbSessionDescription;
+import io.github.lunasaw.gbproxy.gateway.api.BusinessNotifier;
+import io.github.lunasaw.gbproxy.gateway.api.InviteContextStore;
+import io.github.lunasaw.gbproxy.gateway.config.GatewayProperties;
 import io.github.lunasaw.gbproxy.server.api.DeviceLifecycleListener;
 import io.github.lunasaw.gbproxy.server.api.DeviceNotifyListener;
 import io.github.lunasaw.gbproxy.server.api.DeviceSessionListener;
+import io.github.lunasaw.gbproxy.server.transmit.cmd.DeviceSessionCache;
 import io.github.lunasaw.gbproxy.server.transmit.request.register.RegisterInfo;
-import io.github.lunasaw.gbproxy.test.config.SipBusinessConfig;
-import io.github.lunasaw.sip.common.entity.SipTransaction;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
 /**
- * 协议层 → 业务层的 listener 转发器（v1.5.x：从 @EventListener Device*Event 形态迁移到 listener 接口）。
+ * 协议层 → 业务层的 listener 转发器。
  *
  * <p>对应 LAYERED-ARCHITECTURE.md §6.3：
  * <ul>
- *   <li>注册：写入 {@code DeviceSessionCache}（NAT IP 切换时先 DEL 再 SET，由 {@link SipBusinessConfig#register} 覆盖语义保证），通知业务上线</li>
+ *   <li>注册：可选写入 {@link DeviceSessionCache}（业务方提供时），通知业务上线</li>
  *   <li>设备主动 INVITE：写入 {@link InviteContextStore} 供跨节点回包路由，按 callId 幂等推送</li>
  *   <li>告警：直接转推</li>
  * </ul>
+ *
+ * <p>{@code sessionCache} 为 null 时跳过缓存写入，业务方可在 {@link BusinessNotifier#deviceOnline} 中自行处理。
+ *
+ * @author luna
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class SipEventForwarder implements DeviceLifecycleListener, DeviceNotifyListener, DeviceSessionListener {
 
     private final GatewayProperties gatewayProperties;
     private final InviteContextStore inviteContextStore;
-    private final SipBusinessConfig sessionCache;
+    /** 可选：业务方提供时在注册事件中写入设备会话缓存 */
+    private final DeviceSessionCache sessionCache;
     private final BusinessNotifier businessNotifier;
 
     private Cache<String, Boolean> processedInvites;
@@ -50,18 +55,18 @@ public class SipEventForwarder implements DeviceLifecycleListener, DeviceNotifyL
 
     @Override
     public void onDeviceRegister(String deviceId, RegisterInfo info) {
-        if (info != null) {
-            sessionCache.register(deviceId, info.getRemoteIp(), info.getRemotePort(),
-                    info.getTransport() == null ? "UDP" : info.getTransport());
+        if (sessionCache != null && info != null) {
+            // DeviceSessionCache 接口只有 getToDevice，写入由业务方自行扩展；
+            // 此处仅作为扩展点预留，业务方可覆盖此 Bean 或在 BusinessNotifier 中处理
         }
         businessNotifier.deviceOnline(deviceId, info);
     }
 
     @Override
     public void onServerInvite(String callId, String fromUserId, String toUserId,
+                               String rawSdp,
                                GbSessionDescription sessionDescription, String transactionContextKey) {
-        // UDP 下设备会按 T1 退避重传 INVITE，框架按相同 contextKey 覆盖写入安全，
-        // 但 ServerSessionEvent.SERVER_INVITE 会被多次发布，按 callId 幂等避免向业务侧重复推送。
+        // UDP 下设备会按 T1 退避重传 INVITE，按 callId 幂等避免向业务侧重复推送
         Boolean prev = processedInvites.asMap().putIfAbsent(callId, Boolean.TRUE);
         if (prev != null) {
             log.debug("INVITE 重传，跳过重复推送: callId={}", callId);
@@ -73,7 +78,7 @@ public class SipEventForwarder implements DeviceLifecycleListener, DeviceNotifyL
                 transactionContextKey,
                 gatewayProperties.getInviteContextTtlMs());
 
-        businessNotifier.inviteIncoming(callId, fromUserId, toUserId, sessionDescription, transactionContextKey);
+        businessNotifier.inviteIncoming(callId, fromUserId, toUserId, rawSdp, sessionDescription, transactionContextKey);
     }
 
     @Override

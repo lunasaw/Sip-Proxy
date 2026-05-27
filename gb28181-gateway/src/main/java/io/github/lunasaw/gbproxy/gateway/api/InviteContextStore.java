@@ -1,13 +1,14 @@
-package io.github.lunasaw.gbproxy.test.gateway;
+package io.github.lunasaw.gbproxy.gateway.api;
 
 /**
  * INVITE 事务上下文跨节点路由存储。
  *
  * <p>对应 LAYERED-ARCHITECTURE.md §5.3 方案 A：以 {@code callId} 为键存
- * {@code "{nodeId}:{contextKey}"}，让业务侧只感知 callId 即可路由回正确节点。
+ * {@code (nodeId, ctxKey)} 二元组，让业务侧只感知 callId 即可路由回正确节点。
  *
  * <p>生产环境必须落 Redis Sentinel/Cluster（见 §3 SPOF 警告）。本接口的
- * 默认实现 {@link InMemoryInviteContextStore} 仅用于单机演示与单测。
+ * 默认实现 {@link io.github.lunasaw.gbproxy.gateway.store.InMemoryInviteContextStore}
+ * 仅用于单机演示与单测。
  *
  * <p><strong>错误语义约定</strong>（与 §6.4 注脚一致）：实现方负责把后端故障
  * （如 Redis 不可达、网络超时）抛成
@@ -15,6 +16,8 @@ package io.github.lunasaw.gbproxy.test.gateway;
  * {@link org.springframework.http.HttpStatus#SERVICE_UNAVAILABLE}，以便
  * {@code /sip/invite/response} 直接返回 503 触发业务侧 200ms × 3 短重试；
  * 不要让底层异常冒成 500，否则业务侧无法识别"可重试"语义。
+ *
+ * @author luna
  */
 public interface InviteContextStore {
 
@@ -29,12 +32,18 @@ public interface InviteContextStore {
     void save(String callId, String nodeId, String ctxKey, long ttlMs);
 
     /**
-     * 取出 callId 对应的 {@code "{nodeId}:{contextKey}"}，已过期返回 null。
+     * 取出 callId 对应的 {@link InviteContext}，已过期或不存在返回 null。
      */
-    String find(String callId);
+    InviteContext find(String callId);
 
     /**
      * 主动删除——业务回包成功或事务终止时调用，让 callId 复用更可控。
      */
     void remove(String callId);
+
+    /**
+     * INVITE 上下文路由二元组：标识接收 INVITE 的节点 + 该节点上 SipTransactionRegistry 的上下文键。
+     */
+    record InviteContext(String nodeId, String ctxKey) {
+    }
 }

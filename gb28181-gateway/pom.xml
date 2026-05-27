@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.lunasaw</groupId>
+        <artifactId>sip-proxy</artifactId>
+        <version>1.7.2</version>
+    </parent>
+
+    <version>1.7.2</version>
+    <artifactId>gb28181-gateway</artifactId>
+    <packaging>jar</packaging>
+    <name>gb28181-gateway</name>
+    <description>GB28181 网关模块：把 LAYERED-ARCHITECTURE §6 描述的业务方网关参考实现升级为正式 Maven 依赖</description>
+    <url>https://github.com/lunasaw/gb28181-proxy</url>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- 强依赖：server 的 ServerCommandSender、4 个 listener 接口 -->
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>gb28181-server</artifactId>
+            <version>${gb28181-proxy.version}</version>
+        </dependency>
+
+        <!-- INVITE 重传幂等缓存���已在父 pom dependencyManagement 中） -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- spring-web / spring-webmvc：HTTP API 用，optional 让业务方按需引入 web starter -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 测试 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

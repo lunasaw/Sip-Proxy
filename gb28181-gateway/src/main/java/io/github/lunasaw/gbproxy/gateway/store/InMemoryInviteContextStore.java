@@ -1,7 +1,9 @@
-package io.github.lunasaw.gbproxy.test.gateway;
+package io.github.lunasaw.gbproxy.gateway.store;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.lunasaw.gbproxy.gateway.api.InviteContextStore;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 
@@ -9,11 +11,16 @@ import java.time.Duration;
  * 单进程内存版 {@link InviteContextStore}。
  *
  * <p>仅用于：单节点演示、单元测试、本地开发。多节点部署必须替换为 Redis 实现，
- * 否则跨节点 INVITE 回包会路由失败（参见 §3 状态分层约束）。
+ * 否则跨节点 INVITE 回包会路由失败（参见 LAYERED-ARCHITECTURE.md §3 状态分层约束）。
+ *
+ * <p>构造时无条件 {@code log.warn}：业务方多节点部署忘记替换会立即看到告警。
+ *
+ * @author luna
  */
+@Slf4j
 public class InMemoryInviteContextStore implements InviteContextStore {
 
-    private final Cache<String, String> store;
+    private final Cache<String, InviteContext> store;
 
     public InMemoryInviteContextStore(long defaultTtlMs) {
         // Caffeine 的 expireAfterWrite 是 cache 级配置，无法逐 key 设置，
@@ -22,16 +29,17 @@ public class InMemoryInviteContextStore implements InviteContextStore {
                 .expireAfterWrite(Duration.ofMillis(defaultTtlMs))
                 .maximumSize(100_000)
                 .build();
+        log.warn("InMemoryInviteContextStore active — replace with Redis implementation before multi-node deployment");
     }
 
     @Override
     public void save(String callId, String nodeId, String ctxKey, long ttlMs) {
         // 单机版本忽略 ttlMs（受 cache 级 expireAfterWrite 控制）
-        store.put(callId, nodeId + ":" + ctxKey);
+        store.put(callId, new InviteContext(nodeId, ctxKey));
     }
 
     @Override
-    public String find(String callId) {
+    public InviteContext find(String callId) {
         return store.getIfPresent(callId);
     }
 

@@ -1,4 +1,4 @@
-package io.github.lunasaw.gbproxy.test.gateway.dto;
+package io.github.lunasaw.gbproxy.gateway.dto;
 
 import io.github.lunasaw.gb28181.common.entity.control.instruction.enums.PTZControlEnum;
 import lombok.Data;

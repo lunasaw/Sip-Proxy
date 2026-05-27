@@ -167,7 +167,7 @@ public class ServerListenerAdapter {
                 case BYE -> l.onBye(e.getDeviceId());
                 case BYE_ERROR -> l.onByeError(e.getDeviceId(), e.getErrorMessage());
                 case SERVER_INVITE -> l.onServerInvite(e.getCallId(), e.getFromUserId(), e.getToUserId(),
-                        e.getSessionDescription(), e.getTransactionContextKey());
+                        e.getRawSdp(), e.getSessionDescription(), e.getTransactionContextKey());
             }
         }
     }
