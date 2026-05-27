@@ -8,7 +8,10 @@ SIP Proxy is a GB28181-2016 communication framework built on Java 17 and Spring 
 
 It is delivered as a **Maven library**, not a standalone service. Business systems (typically a `sip-gateway` layer the user implements on top) embed it in-process and interact via Spring Events (inbound) and `CommandSender` beans (outbound). A single JVM can act as platform server (`gb28181-server`) and device client (`gb28181-client`) simultaneously for cascading scenarios.
 
-Current version: **1.5.0** (see `CHANGELOG.md` for breaking changes vs 1.4.x; v1.5.0 删除 4 个 client 业务接口 + 10 个旧 client 事件，新增 listener 化业务 API。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md))。
+Current version: **1.7.0** (see `CHANGELOG.md`). Recent breaking changes worth knowing before touching outbound code:
+
+- **1.7.0** — Outbound dialog rewrite. `BYE` and `SUBSCRIBE` refresh/unsubscribe are now dialog-aware: `ServerCommandSender.deviceBye(callId)` (deviceId removed), `ClientCommandSender.sendByeCommand(callId)`, `SipSender.doByeRequest(callId)` (old `(FromDevice, ToDevice)` overload **deleted**, not deprecated). Calls without an established dialog throw `DialogNotFoundException` instead of getting a silent `481`. New `DialogRegistry` + `DialogRegistryCleaner` are core to INVITE/SUBSCRIBE flows. See [doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md).
+- **1.5.0** — Listener-layered API. Removed 4 client business handler interfaces + 10 old client events; added `QueryListener` / `ControlListener` / `ConfigListener` / `SubscribeListener` / `NotifyListener` (client) and `DeviceResponseListener` / `DeviceNotifyListener` / `DeviceLifecycleListener` / `DeviceSessionListener` (server). See [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) and [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md).
 
 ## Build and Development Commands
 
@@ -63,6 +66,17 @@ SIP Message
 ### Outbound Commands
 
 - **`ClientCommandSender`** / **`ServerCommandSender`** — strategy-pattern command senders for outbound SIP messages. `ServerCommandSender` requires `DeviceSessionCache` to look up device sessions.
+
+### Dialog-Aware Outbound (1.7.0+)
+
+INVITE and SUBSCRIBE go through **stateful** transmission (`SipMessageTransmitter.transmitStateful` / `transmitStatefulPreRegister`), which uses a `ClientTransaction` so JAIN-SIP auto-creates a `Dialog`. The dialog is recorded in `DialogRegistry` (in-process, keyed by `callId`, with `kind=INVITE|SUBSCRIBE` and `expiresAtMs`).
+
+- **BYE** must reference an existing dialog: `deviceBye(callId)` / `sendByeCommand(callId)` / `doByeRequest(callId)`. No dialog → `DialogNotFoundException`. Dialog cleanup: `AbstractSipListener.processDialogTerminated` → `DialogRegistry.remove` (INVITE primary path).
+- **SUBSCRIBE refresh / unsubscribe** must also be dialog-aware: `refreshSubscribe(callId, expires)` / `unsubscribe(callId)` on both senders, plus `SipSender.doSubscribeRefresh(callId, content, expires)` and `CommandContext.forSubscribeRefresh(...)`.
+- **`DialogRegistryCleaner`** (`@Scheduled` 60s) sweeps expired SUBSCRIBE entries because RFC 6665 §4.4.1 case 3 has no `DialogTerminatedEvent`.
+- **INVITE 200 OK ACK** uses `dialog.sendAck` (see `InviteResponseProcessor.sendAck`), symmetric with BYE.
+
+**Implication for new outbound logic:** if you're adding any in-dialog request (re-INVITE, UPDATE, INFO, NOTIFY-from-server, etc.), use the stateful path and look up the dialog from `DialogRegistry` — never construct a fresh `From`/`To` pair without the to-tag.
 
 ### Event Bus & Listener API
 
@@ -169,4 +183,6 @@ Key docs in `doc/` (consult before non-trivial changes):
 - `PROTOCOL-DECOUPLING-PLAN.md` — sip-common / gb28181-common boundary rules (1.3.0)
 - `BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md` — 1.3.0 removal of `*Handler` interfaces in favor of pure Spring Events
 - `INVITE-REFACTOR-PLAN.md` — INVITE async refactor (1.3.0)
+- `LISTENER-LAYERED-DESIGN.md` / `LISTENER-MIGRATION-GUIDE.md` — 1.5.0 listener API (canonical for new business code)
+- `OUTBOUND-DIALOG-PLAN.md` — 1.7.0 dialog-aware BYE / SUBSCRIBE refresh (canonical for outbound flows)
 - `GB28181-2016.md` / `GBT-28181-2022.md` — protocol references

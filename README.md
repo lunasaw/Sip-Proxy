@@ -4,7 +4,7 @@
 [![GitHub license](https://img.shields.io/badge/MIT_License-blue.svg)](https://raw.githubusercontent.com/lunasaw/gb28181-proxy/master/LICENSE)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html)
-[![Version](https://img.shields.io/badge/version-1.5.x-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.7.0-blue.svg)](CHANGELOG.md)
 
 [项目文档](https://lunasaw.github.io/gb28181-proxy/) | [问题反馈](https://github.com/lunasaw/gb28181-proxy/issues) | [CHANGELOG](CHANGELOG.md)
 
@@ -12,7 +12,11 @@
 
 **核心定位**：纯协议层框架，屏蔽 SIP 协议细节。业务方实现 [Listener 接口](#二listener-接口业务方主入口)（推荐）或监听 [Layer 1 协议事件](#三layer-1-协议事件跨切层) 接收消息，通过 `ClientCommandSender` / `ServerCommandSender` 发送命令，**不直接接触 JAIN-SIP**。框架内置 GB28181-2016 + GB/T 28181-2022 协议实现，单 JVM 可同时启用平台服务端（`gb28181-server`）和设备客户端（`gb28181-client`），支持级联代理场景。
 
-> **1.5.x 架构主线**：业务接口完全 listener 化（client 5 个 listener + server 4 个 listener，全部默认方法、按需 override）；server 端 32 个 `Device*Event` 已收敛为 4 个 `Server*Event` + 强类型 payload；client 端 4 个旧 `*Handler` 接口与 10 个细粒度 query/config event 已删除；GB/T 28181-2022 命令集（设备升级、抓拍、PTZ 精准、SD 卡、看守位、巡航轨迹、目标跟踪、报警订阅、语音对讲、视频下载等）全量落地。详见 [CHANGELOG.md](CHANGELOG.md)、[doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md)。
+> **架构主线**：
+> - **1.7.0 — 出站 Dialog 维护**：BYE / SUBSCRIBE 续订 / 退订改为 dialog-aware。`ServerCommandSender.deviceBye(deviceId, callId)` → `deviceBye(callId)`，`ClientCommandSender.sendByeCommand(FromDevice, ToDevice)` → `sendByeCommand(callId)`，`SipSender.doByeRequest(FromDevice, ToDevice)` **直接删除**改 `doByeRequest(callId)`。无 dialog 时抛 `DialogNotFoundException` 而非吞 `481`。新增进程内 `DialogRegistry` + `DialogRegistryCleaner`，INVITE / SUBSCRIBE 改走 stateful 发送，自动建立 JAIN-SIP Dialog；新增 `refreshSubscribe(callId, ...)` / `unsubscribe(callId)` API 替代历史"重发 SUBSCRIBE"做法。详见 [doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md)。
+> - **1.5.x — Listener 化业务接口**：业务接口完全 listener 化（client 5 个 listener + server 4 个 listener，全部默认方法、按需 override）；server 端 32 个 `Device*Event` 已收敛为 4 个 `Server*Event` + 强类型 payload；client 端 4 个旧 `*Handler` 接口与 10 个细粒度 query/config event 已删除；GB/T 28181-2022 命令集（设备升级、抓拍、PTZ 精准、SD 卡、看守位、巡航轨迹、目标跟踪、报警订阅、语音对讲、视频下载等）全量落地。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md)。
+>
+> 完整版本历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 模块结构
 
@@ -86,14 +90,14 @@ sip-proxy 不是独立服务，而是嵌入到业务方实现的 **sip-gateway**
 <dependency>
     <groupId>io.github.lunasaw</groupId>
     <artifactId>gb28181-server</artifactId>
-    <version>1.5.x</version>
+    <version>1.7.0</version>
 </dependency>
 
 <!-- 设备客户端 -->
 <dependency>
     <groupId>io.github.lunasaw</groupId>
     <artifactId>gb28181-client</artifactId>
-    <version>1.5.x</version>
+    <version>1.7.0</version>
 </dependency>
 ```
 
@@ -150,7 +154,7 @@ sip:
 
 ## 业务接入：三层架构
 
-sip-proxy v1.5.x 把入站消息处理拆成三层，业务方主入口在 **L2 Listener 接口**，跨切层走 **L1 Layer 1 协议事件**：
+sip-proxy 把入站消息处理拆成三层（listener 三层模型自 v1.5.0 起作为主线），业务方主入口在 **L2 Listener 接口**，跨切层走 **L1 Layer 1 协议事件**：
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -323,19 +327,58 @@ String callId = serverCommandSender.deviceInvitePlayBack(deviceId, mediaIp, medi
 String callId = serverCommandSender.deviceInviteTalk(deviceId, mediaIp, mediaPort, StreamModeEnum.UDP);
 String callId = serverCommandSender.deviceInviteDownload(deviceId, mediaIp, mediaPort, startMs, endMs, downloadSpeed, StreamModeEnum.UDP);
 String callId = serverCommandSender.deviceInvitePlayBackControl(deviceId, PlayActionEnums.PAUSE);
-String callId = serverCommandSender.deviceBye(deviceId, originalCallId);
+serverCommandSender.deviceBye(callId);   // 1.7.0+：dialog-aware，必须先 INVITE 200 OK
+
+// SUBSCRIBE 续订 / 退订（1.7.0+，dialog-aware）
+serverCommandSender.refreshSubscribe(callId, 3600);              // Catalog/PTZPosition：保留原 SubscribeContent
+serverCommandSender.refreshSubscribe(callId, content, 3600);     // MobilePosition/Alarm：附携新 content（如新 Interval）
+serverCommandSender.unsubscribe(callId);                          // Expires=0，等价退订
 
 // 语音广播（§9.12.1）
 String callId = serverCommandSender.deviceBroadcast(deviceId);
 ```
 
 > v1.5.1 起 `ServerCommandSender` 31 个 `@Deprecated` 静态门面方法已删除，业务侧需注入 bean 调用同名实例方法。
+>
+> v1.7.0 起 `deviceBye(deviceId, callId)` 改为 `deviceBye(callId)`、`SipSender.doByeRequest(FromDevice, ToDevice)` 直接删除。详见下文「Dialog-Aware 出站」与 [doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md)。
 
 #### `ClientCommandSender`（设备 → 平台）
 
 设备侧主动上报与应答（注册、心跳、Catalog 通知、报警上报、抓拍完成通知、升级结果通知、视频上传通知等）。绝大部分查询应答由 `ClientListenerAdapter` 在 `QueryListener` 返回非 null 时自动调用，业务方一般无需直接接触。
 
-### 四、INVITE 异步回包模型（设备主动 INVITE）
+### 四、Dialog-Aware 出站（v1.7.0+）
+
+INVITE 与 SUBSCRIBE 走 **stateful 发送**（`SipMessageTransmitter.transmitStateful` / `transmitStatefulPreRegister`），通过 `ClientTransaction` 让 JAIN-SIP 自动建立 `Dialog`，同时记录到进程内 `DialogRegistry`（按 `callId` 索引，含 `kind=INVITE|SUBSCRIBE` 与 `expiresAtMs`）。
+
+**约束**：
+
+- **BYE 必须有已建立的 dialog**：`deviceBye(callId)` / `sendByeCommand(callId)` / `doByeRequest(callId)`。无 dialog 则抛 `DialogNotFoundException`，**不会被设备 `481` 静默吞掉**。
+- **SUBSCRIBE 续订 / 退订必须 dialog-aware**：业务方调 `refreshSubscribe(callId, expires)` / `unsubscribe(callId)`，**禁止历史"重发新 SUBSCRIBE"做法**——会在设备侧产生孤儿订阅持续浪费带宽。
+- **INVITE 200 OK 的 ACK** 改用 `dialog.sendAck`（见 `InviteResponseProcessor.sendAck`），与 BYE 路径对称。
+
+**Dialog 清理路径**：
+
+| 场景 | 触发方式 | 路径 |
+|------|---------|------|
+| INVITE 主���径（BYE 后） | JAIN-SIP `DialogTerminatedEvent` | `AbstractSipListener.processDialogTerminated` → `DialogRegistry.remove` |
+| SUBSCRIBE 自然过期 | 兜底定时清理（RFC 6665 §4.4.1 case 3 无 `DialogTerminatedEvent`） | `DialogRegistryCleaner` `@Scheduled` 60s 跑一次 |
+
+**业务侧调用模板**：
+
+```java
+try {
+    commandSender.deviceBye(callId);
+} catch (DialogNotFoundException e) {
+    // dialog 已不存在（对端先发 BYE / INVITE 还未 200 OK / callId 错误）
+    log.warn("BYE 失败：dialog 不存在 callId={}", callId, e);
+}
+```
+
+**为什么需要先 deprecated 桥接的形式被否决**：旧 BYE API（`deviceBye(deviceId, callId)`）会构造缺 to-tag 的 `From`/`To`，设备直接返回 `481 Call leg/Transaction does not exist`，长期被静默吞掉。1.7.0 选择**直接删除**让编译期一次性暴露所有调用点，强制业务侧迁移到 dialog-aware 路径。
+
+> ⚠️ **新增任何 in-dialog 出站请求**（re-INVITE、UPDATE、INFO、server-side NOTIFY 等）必须走 stateful path 并从 `DialogRegistry` 取出 dialog，**不要**自己拼 `From`/`To` 头。
+
+### 五、INVITE 异步回包模型（设备主动 INVITE）
 
 设备主动发起的 INVITE（如语音对讲）需要业务方准备 SDP，框架采用**两步异步**模型：
 
@@ -359,7 +402,7 @@ String callId = serverCommandSender.deviceBroadcast(deviceId);
 
 > ⚠️ **设备 Timer B 限制**：即使框架侧 `extendContext` 续期到 90 秒，设备侧（INVITE 客户端）按 RFC 3261 §17.1.1.2 在 `Timer B = 64*T1 = 32s` 后会放弃事务。业务处理时间应控制在 **30s 内直接回包**；30~60s 需主动发 `180 Ringing` + `extendContext`；> 60s 改为先回 200 OK + 占位 SDP，后续走 re-INVITE。详见 [doc/LAYERED-ARCHITECTURE.md §7](doc/LAYERED-ARCHITECTURE.md)。
 
-### 五、协议层扩展点（进阶）
+### 六、协议层扩展点（进阶）
 
 业务方一般只需实现 `DeviceSessionCache` / `*DeviceSupplier` + listener。少数高级场景才需要扩展协议层：
 
@@ -393,6 +436,7 @@ SIP Message
 | 状态类型 | 存储位置 | 说明 |
 |---------|---------|------|
 | `ServerTransaction` / `SipTransactionRegistry` | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化、持有 socket 引用；同设备消息必须打同节点 |
+| `DialogRegistry`（出站 dialog 注册表，1.7.0+） | **进程内**（不可外化） | 持有 JAIN-SIP `Dialog` 引用，BYE / SUBSCRIBE refresh 必须打到原 INVITE / SUBSCRIBE 所在节点；与 SIP 事务状态同生命周期 |
 | `DeviceSessionCache`（设备注册信息） | **Redis**（共享，需高可用） | 业务方实现，节点间共享，节点故障后新节点可接管 |
 | `ServerDeviceSupplier`（设备信息） | **Redis**（共享，需高可用） | 业务方实现，读 Redis |
 | 设备订阅状态 | 业务方自管（client 端协议层 `SubscribeRegistry` 内化） | 框架 1.3.0 已删除全局 `SubscribeHolder`；client 端 SUBSCRIBE 200 OK 由 `SubscribeRegistry.put()` 内部维护 |
@@ -423,6 +467,7 @@ SIP Message
 3. 配置 `external-ip` 为 VIP，确保 SIP 包内 `Via` / `Contact` 头是集群可达地址
 4. 实现 `InviteContextStore`（参考 [`InMemoryInviteContextStore`](gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/InMemoryInviteContextStore.java) 改 Redis 版），处理 INVITE 异步回包跨节点路由
 5. 装配 `nodeAddressMap` Bean（K8s Endpoints / Nacos / Consul），将 `nodeId` 映射到内网地址
+6. **保证 BYE / SUBSCRIBE refresh 路由到原节点**：`DialogRegistry` 进程内持有 dialog，VIP 源 IP 哈希已能保证设备主动 BYE 落到原节点；业务方主动调 `deviceBye(callId)` / `refreshSubscribe(callId, ...)` 时，需在 sip-gateway HTTP 入口校验当前节点是否持有该 callId 的 dialog（同 INVITE 路由表，复用 `InviteContextStore` 的 `{nodeId}` 映射），否则转发到目标节点
 
 ## 构建与测试
 
@@ -484,6 +529,7 @@ bash scripts/check-sip-common-purity.sh
 
 | 文档 | 内容 |
 |------|------|
+| [OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md) | 出站 Dialog 维护方案（v1.7.0 主干，BYE / SUBSCRIBE refresh dialog-aware） |
 | [LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) | Listener 化业务接口分层设计（v1.5.0 主干） |
 | [LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md) | v1.4.0 → v1.5.0 业务侧迁移指南 |
 | [PROTOCOL-LAYERING-MATRIX.md](doc/PROTOCOL-LAYERING-MATRIX.md) | L0/L1/L2 三层协议栈逐 cmdType 落地矩阵（v1.5.6 基于代码事实） |
