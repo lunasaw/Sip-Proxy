@@ -10,8 +10,8 @@ It is delivered as a **Maven library**, not a standalone service. Business syste
 
 Current version: **1.7.0** (see `CHANGELOG.md`). Recent breaking changes worth knowing before touching outbound code:
 
-- **1.7.0** — Outbound dialog rewrite. `BYE` and `SUBSCRIBE` refresh/unsubscribe are now dialog-aware: `ServerCommandSender.deviceBye(callId)` (deviceId removed), `ClientCommandSender.sendByeCommand(callId)`, `SipSender.doByeRequest(callId)` (old `(FromDevice, ToDevice)` overload **deleted**, not deprecated). Calls without an established dialog throw `DialogNotFoundException` instead of getting a silent `481`. New `DialogRegistry` + `DialogRegistryCleaner` are core to INVITE/SUBSCRIBE flows. See [doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md).
-- **1.5.0** — Listener-layered API. Removed 4 client business handler interfaces + 10 old client events; added `QueryListener` / `ControlListener` / `ConfigListener` / `SubscribeListener` / `NotifyListener` (client) and `DeviceResponseListener` / `DeviceNotifyListener` / `DeviceLifecycleListener` / `DeviceSessionListener` (server). See [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) and [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md).
+- **1.7.0** — Outbound dialog rewrite. `BYE` and `SUBSCRIBE` refresh/unsubscribe are now dialog-aware: `ServerCommandSender.deviceBye(callId)` (deviceId removed), `ClientCommandSender.sendByeCommand(callId)`, `SipSender.doByeRequest(callId)` (old `(FromDevice, ToDevice)` overload **deleted**, not deprecated). Calls without an established dialog throw `DialogNotFoundException` instead of getting a silent `481`. New `DialogRegistry` + `DialogRegistryCleaner` are core to INVITE/SUBSCRIBE flows. See [doc/plans/1.7.0/OUTBOUND-DIALOG-PLAN.md](doc/plans/1.7.0/OUTBOUND-DIALOG-PLAN.md).
+- **1.5.0** — Listener-layered API. Removed 4 client business handler interfaces + 10 old client events; added `QueryListener` / `ControlListener` / `ConfigListener` / `SubscribeListener` / `NotifyListener` (client) and `DeviceResponseListener` / `DeviceNotifyListener` / `DeviceLifecycleListener` / `DeviceSessionListener` (server). See [doc/architecture/LISTENER-LAYERED-DESIGN.md](doc/architecture/LISTENER-LAYERED-DESIGN.md) and [doc/architecture/LISTENER-MIGRATION-GUIDE.md](doc/architecture/LISTENER-MIGRATION-GUIDE.md).
 
 ## Build and Development Commands
 
@@ -94,7 +94,7 @@ INVITE and SUBSCRIBE go through **stateful** transmission (`SipMessageTransmitte
 
 QueryListener 通过 `ObjectProvider#getIfUnique()` 强制单 bean —— 多实例 fail fast；缺失时首次告警一次后静默走默认空响应。Control / Config / Subscribe / Notify listener 全部调用（观察者模式）。
 
-历史接口 `MessageRequestHandler` / `DeviceControlRequestHandler` / `SubscribeRequestHandler` / `CustomMessageRequestHandler` 已在 v1.5.0 删除。详见 [doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md) 与 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md)。
+历史接口 `MessageRequestHandler` / `DeviceControlRequestHandler` / `SubscribeRequestHandler` / `CustomMessageRequestHandler` 已在 v1.5.0 删除。详见 [doc/architecture/LISTENER-LAYERED-DESIGN.md](doc/architecture/LISTENER-LAYERED-DESIGN.md) 与 [doc/architecture/LISTENER-MIGRATION-GUIDE.md](doc/architecture/LISTENER-MIGRATION-GUIDE.md)。
 
 ### Bootstrapping
 
@@ -138,7 +138,7 @@ This is enforced in CI by `scripts/check-sip-common-purity.sh`, which fails the 
 gb28181 | GB28181 | gbproxy | Catalog | MobilePosition | GbSession | GbSip | GbUtil
 ```
 
-When working in `sip-common`, route GB28181 logic into `gb28181-common` (e.g. `GbSdpUtils.parseGbSdp`, `GbUtil.generateGB28181Code`). See `doc/PROTOCOL-DECOUPLING-PLAN.md`.
+When working in `sip-common`, route GB28181 logic into `gb28181-common` (e.g. `GbSdpUtils.parseGbSdp`, `GbUtil.generateGB28181Code`). See `doc/plans/1.3.0/PROTOCOL-DECOUPLING-PLAN.md`.
 
 ### Test Setup Pattern
 
@@ -163,7 +163,7 @@ Use separate client/server device configurations in tests to avoid port/identity
 
 ## Horizontal Scaling Constraints
 
-When working on multi-node features, respect this state-locality rule (see `doc/HORIZONTAL-SCALING.md` and `doc/LAYERED-ARCHITECTURE.md`):
+When working on multi-node features, respect this state-locality rule (see `doc/architecture/HORIZONTAL-SCALING.md` and `doc/architecture/LAYERED-ARCHITECTURE.md`):
 
 | State | Where it lives | Notes |
 |-------|----------------|-------|
@@ -178,11 +178,14 @@ When working on multi-node features, respect this state-locality rule (see `doc/
 
 Key docs in `doc/` (consult before non-trivial changes):
 
-- `LAYERED-ARCHITECTURE.md` — sip-proxy ↔ sip-gateway ↔ business server architecture
-- `HORIZONTAL-SCALING.md` — multi-node deployment, state locality, VIP topology
-- `PROTOCOL-DECOUPLING-PLAN.md` — sip-common / gb28181-common boundary rules (1.3.0)
-- `BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md` — 1.3.0 removal of `*Handler` interfaces in favor of pure Spring Events
-- `INVITE-REFACTOR-PLAN.md` — INVITE async refactor (1.3.0)
-- `LISTENER-LAYERED-DESIGN.md` / `LISTENER-MIGRATION-GUIDE.md` — 1.5.0 listener API (canonical for new business code)
-- `OUTBOUND-DIALOG-PLAN.md` — 1.7.0 dialog-aware BYE / SUBSCRIBE refresh (canonical for outbound flows)
-- `GB28181-2016.md` / `GBT-28181-2022.md` — protocol references
+- `architecture/LAYERED-ARCHITECTURE.md` — sip-proxy ↔ sip-gateway ↔ business server architecture
+- `architecture/HORIZONTAL-SCALING.md` — multi-node deployment, state locality, VIP topology
+- `plans/1.3.0/PROTOCOL-DECOUPLING-PLAN.md` — sip-common / gb28181-common boundary rules (1.3.0)
+- `plans/1.3.0/BREAKING-CHANGE-REMOVE-HANDLER-INTERFACE.md` — 1.3.0 removal of `*Handler` interfaces in favor of pure Spring Events
+- `plans/1.3.0/INVITE-REFACTOR-PLAN.md` — INVITE async refactor (1.3.0)
+- `architecture/LISTENER-LAYERED-DESIGN.md` / `architecture/LISTENER-MIGRATION-GUIDE.md` — 1.5.0 listener API (canonical for new business code)
+- `plans/1.7.0/OUTBOUND-DIALOG-PLAN.md` — 1.7.0 dialog-aware BYE / SUBSCRIBE refresh (canonical for outbound flows)
+- `protocol/2016/GB28181-2016.md` / `protocol/2022/GBT-28181-2022.md` — protocol references
+- `architecture/PROTOCOL-LAYERING-MATRIX.md` — L0/L1/L2 cmdType matrix (kept evergreen, edit before code)
+- `plans/1.6.0/FRONT-END-CONTROL-PROTOCOL-PLAN.md` — §A.3 PTZ binary instruction (1.6.0)
+- `plans/1.8.0/GB28181-GATEWAY-MODULE-PLAN.md` — gb28181-gateway 模块化方案 (1.7.3 + 1.8.0)

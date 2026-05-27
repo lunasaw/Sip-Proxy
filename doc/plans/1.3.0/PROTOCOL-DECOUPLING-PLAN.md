@@ -66,27 +66,27 @@
 
 | # | 位置 | 问题 |
 |---|------|------|
-| 1 | [SipUtils.java:188](../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/SipUtils.java#L188) | `parseSdp()` 强制返回 `GbSessionDescription` |
-| 2 | [SipUtils.java:147](../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/SipUtils.java#L147) | `generateGB28181Code()` 出现在通用工具类 |
-| 3 | [GbSessionDescription.java](../sip-common/src/main/java/io/github/lunasaw/sip/common/entity/GbSessionDescription.java) | GB 专用 SDP（含 ssrc、mediaDescription）放在通用层 |
-| 4 | [GbSipDate.java](../sip-common/src/main/java/io/github/lunasaw/sip/common/entity/GbSipDate.java) | GB 专用日期格式放在通用层 |
+| 1 | [SipUtils.java:188](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/SipUtils.java#L188) | `parseSdp()` 强制返回 `GbSessionDescription` |
+| 2 | [SipUtils.java:147](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/SipUtils.java#L147) | `generateGB28181Code()` 出现在通用工具类 |
+| 3 | [GbSessionDescription.java](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/entity/GbSessionDescription.java) | GB 专用 SDP（含 ssrc、mediaDescription）放在通用层 |
+| 4 | [GbSipDate.java](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/entity/GbSipDate.java) | GB 专用日期格式放在通用层 |
 
 ### 2.2 P1：包含 GB 业务概念（建议改）
 
 | # | 位置 | 问题 |
 |---|------|------|
-| 5 | [SubscribeHolder.java](../sip-common/src/main/java/io/github/lunasaw/sip/common/subscribe/SubscribeHolder.java) | `catalogMap` / `mobilePositionMap` / `putCatalogSubscribe` 等业务字段写在通用层。**全仓库零调用，确认为死代码** |
-| 6 | [NtpTimeSyncScheduler.java:19,32](../sip-common/src/main/java/io/github/lunasaw/sip/common/service/impl/NtpTimeSyncScheduler.java#L19) | 配置 key 是 `sip.gb28181.time-sync`，与类所在包不一致（`sip.common`）。全仓库 yml/properties 实际无人配置此 key |
-| 7 | [SipRequestUtils.java:285](../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/SipRequestUtils.java#L285) | UserAgent 默认值写死 `"gbproxy"` |
-| 8 | [Constant.java:13](../sip-common/src/main/java/io/github/lunasaw/sip/common/constant/Constant.java#L13) | `AGENT = "LunaSaw-GB28181-Proxy"` 硬编码到通用层 |
+| 5 | [SubscribeHolder.java](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/subscribe/SubscribeHolder.java) | `catalogMap` / `mobilePositionMap` / `putCatalogSubscribe` 等业务字段写在通用层。**全仓库零调用，确认为死代码** |
+| 6 | [NtpTimeSyncScheduler.java:19,32](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/service/impl/NtpTimeSyncScheduler.java#L19) | 配置 key 是 `sip.gb28181.time-sync`，与类所在包不一致（`sip.common`）。全仓库 yml/properties 实际无人配置此 key |
+| 7 | [SipRequestUtils.java:285](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/SipRequestUtils.java#L285) | UserAgent 默认值写死 `"gbproxy"` |
+| 8 | [Constant.java:13](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/constant/Constant.java#L13) | `AGENT = "LunaSaw-GB28181-Proxy"` 硬编码到通用层 |
 
 ### 2.3 P2：注释和文档（清理类）
 
 | # | 位置 | 问题 |
 |---|------|------|
-| 9 | [SipCommonProperties.java:8](../sip-common/src/main/java/io/github/lunasaw/sip/common/config/SipCommonProperties.java#L8) | 类注释 `"GB28181通用配置属性类"` |
-| 10 | [SipRequestProcessorAbstract.java:100](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/event/request/SipRequestProcessorAbstract.java#L100) | 注释 `"// GB28181协议要求：..."` |
-| 11 | [DynamicTask.java:104](../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/DynamicTask.java#L104) | 注释中提及 `cycleForCatalog` |
+| 9 | [SipCommonProperties.java:8](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/config/SipCommonProperties.java#L8) | 类注释 `"GB28181通用配置属性类"` |
+| 10 | [SipRequestProcessorAbstract.java:100](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/event/request/SipRequestProcessorAbstract.java#L100) | 注释 `"// GB28181协议要求：..."` |
+| 11 | [DynamicTask.java:104](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/utils/DynamicTask.java#L104) | 注释中提及 `cycleForCatalog` |
 
 ---
 
@@ -147,7 +147,7 @@ public class GbSdpUtils {
 
 #### 步骤 3：迁移 `generateGB28181Code` / `genSsrc`
 
-合并到既有 [GbUtil.java](../gb28181-common/src/main/java/io/github/lunasaw/gb28181/common/entity/utils/GbUtil.java)（已存在 `generateGbCode` 等方法），保持工具集中。
+合并到既有 [GbUtil.java](../../../gb28181-common/src/main/java/io/github/lunasaw/gb28181/common/entity/utils/GbUtil.java)（已存在 `generateGbCode` 等方法），保持工具集中。
 
 #### 步骤 4：调用方更新（4 处）
 

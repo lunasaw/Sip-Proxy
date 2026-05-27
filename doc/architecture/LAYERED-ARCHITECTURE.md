@@ -2,7 +2,7 @@
 
 > 版本：2.5 | 日期：2026-05-24
 
-> ✅ **实施状态**：v1.3.0 协议层改造已落地，且 sip-gateway 业务侧参考实现已落到 [gb28181-test/.../gateway/](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/)（含 `GatewayProperties`、`InviteContextStore` + `InMemoryInviteContextStore`、`SipEventForwarder`、`SipCommandController`、`BusinessNotifier` 抽象 + `NoopBusinessNotifier`、`GatewayConfig`）。`SipTransactionRegistry`、`DeviceSessionCache`、`external-ip`、`@EnableSipServer`、INVITE 异步化、`extendContext` 续期、`ServerDeviceSupplier.authenticate`、BYE 200 OK 协议合规、Handler 接口全量删除均已完成（详见第八、九节对照表）。生产部署仍需将 `InMemoryInviteContextStore` 替换为 Redis 实现、`NoopBusinessNotifier` 替换为实际 HTTP/MQ 推送、`nodeAddressMap` 替换为 K8s/Nacos 动态发现。
+> ✅ **实施状态**：v1.3.0 协议层改造已落地，且 sip-gateway 业务侧参考实现已落到 [gb28181-test/.../gateway/](../../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/)（含 `GatewayProperties`、`InviteContextStore` + `InMemoryInviteContextStore`、`SipEventForwarder`、`SipCommandController`、`BusinessNotifier` 抽象 + `NoopBusinessNotifier`、`GatewayConfig`）。`SipTransactionRegistry`、`DeviceSessionCache`、`external-ip`、`@EnableSipServer`、INVITE 异步化、`extendContext` 续期、`ServerDeviceSupplier.authenticate`、BYE 200 OK 协议合规、Handler 接口全量删除均已完成（详见第八、九节对照表）。生产部署仍需将 `InMemoryInviteContextStore` 替换为 Redis 实现、`NoopBusinessNotifier` 替换为实际 HTTP/MQ 推送、`nodeAddressMap` 替换为 K8s/Nacos 动态发现。
 >
 > v2.4 → v2.5 变更：补充 `InviteContextStore` 接口的 503 错误语义约定，`SipCommandController.inviteResponse` 增加 store 故障兜底（未受控 `RuntimeException` 一律转 `503 Service Unavailable`，避免冒成 500 让业务侧无法识别"可重试"语义），同步 §3、§6.4。
 >
@@ -86,7 +86,7 @@
 | 状态类型 | 存储位置 | 说明 |
 |---------|---------|------|
 | `ServerTransaction` / `SipTransactionRegistry`（**入站** INVITE 事务上下文） | **进程内**（不可外化） | JAIN-SIP 实现类不可序列化，且持有 socket 引用；同一设备消息必须打同一节点 |
-| `DialogRegistry`（**出站** INVITE / SUBSCRIBE dialog 引用，1.7.0+） | **进程内**（不可外化） | JAIN-SIP `Dialog` 持有 socket / transaction 引用，与 `SipTransactionRegistry` 同构。INVITE 由 `processDialogTerminated` 主路径清理，SUBSCRIBE 由 `DialogRegistryCleaner` 定时清理。详见 [`OUTBOUND-DIALOG-PLAN.md`](OUTBOUND-DIALOG-PLAN.md) §5 |
+| `DialogRegistry`（**出站** INVITE / SUBSCRIBE dialog 引用，1.7.0+） | **进程内**（不可外化） | JAIN-SIP `Dialog` 持有 socket / transaction 引用，与 `SipTransactionRegistry` 同构。INVITE 由 `processDialogTerminated` 主路径清理，SUBSCRIBE 由 `DialogRegistryCleaner` 定时清理。详见 [`OUTBOUND-DIALOG-PLAN.md`](../plans/1.7.0/OUTBOUND-DIALOG-PLAN.md) §5 |
 | `DeviceSessionCache`（设备注册信息） | **Redis**（共享，需高可用） | 业务方实现，节点间共享，节点故障后新节点可接管 |
 | `ServerDeviceSupplier`（设备信息） | **Redis**（共享，需高可用） | 业务方实现，读 Redis |
 | 设备订阅状态 | 业务方自管 | 框架不再提供 `SubscribeHolder`（v1.3.0 已移除），由业务方根据需要存 Redis 或自行管理 |
@@ -464,7 +464,7 @@ public Map<String, String> nodeAddressMap(GatewayProperties props) {
 
 ## 八、sip-proxy 框架层配套改造
 
-为支持上述分层架构，框架层需完成以下改造（详见 [INVITE-REFACTOR-PLAN.md](INVITE-REFACTOR-PLAN.md) v1.1）：
+为支持上述分层架构，框架层需完成以下改造（详见 [INVITE-REFACTOR-PLAN.md](../plans/1.3.0/INVITE-REFACTOR-PLAN.md) v1.1）：
 
 | 改造项 | 目的 | 状态 |
 |--------|------|------|
@@ -487,26 +487,26 @@ public Map<String, String> nodeAddressMap(GatewayProperties props) {
 
 | 方案要素 | 代码位置 | 状态 |
 |---------|---------|------|
-| `SipTransactionRegistry`（进程内事务上下文） | [`sip-common/.../SipTransactionRegistry.java`](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipTransactionRegistry.java) | ✅ 就绪 |
+| `SipTransactionRegistry`（进程内事务上下文） | [`sip-common/.../SipTransactionRegistry.java`](../../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipTransactionRegistry.java) | ✅ 就绪 |
 | `SipTransactionRegistry.extendContext` 续期接口 | 同上 | ✅ 就绪 |
-| `DeviceSessionCache` 接口 | [`gb28181-server/.../DeviceSessionCache.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/cmd/DeviceSessionCache.java) | ✅ 就绪 |
-| `ServerCommandSender` 注入 `DeviceSessionCache` | [`gb28181-server/.../ServerCommandSender.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/cmd/ServerCommandSender.java) | ✅ 就绪 |
-| `external-ip/port` NAT 配置 | [`SipServerProperties.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/config/SipServerProperties.java) | ✅ 就绪 |
-| `@EnableSipServer` / `@EnableSipClient` 注解 | [`EnableSipServer.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/config/EnableSipServer.java) | ✅ 就绪 |
-| `DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword` | [`DigestServerAuthenticationHelper.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/DigestServerAuthenticationHelper.java) | ✅ 就绪（业务方直接调用即可） |
-| `ClientInviteEvent.transactionContextKey` 字段 | [`ClientInviteEvent.java`](../gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/eventbus/event/ClientInviteEvent.java) | ✅ 就绪 |
-| `InviteRequestProcessor`（client）发布事件 | [`InviteRequestProcessor.java`](../gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/transmit/request/invite/InviteRequestProcessor.java) | ✅ 100 Trying + 发 `ClientInviteEvent` |
-| `ServerInviteRequestProcessor` 异步化 | [`ServerInviteRequestProcessor.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/invite/ServerInviteRequestProcessor.java) | ✅ 100 Trying + 发 `ServerInviteEvent` |
-| `ServerInviteEvent` 类 | [`ServerInviteEvent.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/event/ServerInviteEvent.java) | ✅ 就绪 |
-| `ClientInfoEvent` 类 | [`ClientInfoEvent.java`](../gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/eventbus/event/ClientInfoEvent.java) | ✅ 就绪 |
-| `ServerDeviceSupplier.authenticate(userId, SIPRequest)` | [`ServerDeviceSupplier.java`](../sip-common/src/main/java/io/github/lunasaw/sip/common/service/ServerDeviceSupplier.java) | ✅ 就绪 |
-| `ServerRegisterRequestProcessor` 鉴权改造 | [`ServerRegisterRequestProcessor.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/ServerRegisterRequestProcessor.java) | ✅ 调 `serverDeviceSupplier.authenticate`，删除空串 `extractPassword` |
-| `ByeRequestProcessorServer` 200 OK 协议合规 | [`ByeRequestProcessorServer.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/bye/ByeRequestProcessorServer.java) | ✅ 收到 BYE 立即回 200 OK 再发事件 |
-| `ServerInfoRequestProcessor` 事件化 | [`ServerInfoRequestProcessor.java`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/info/ServerInfoRequestProcessor.java) | ✅ 删除 handler，直接发 `DeviceInfoRequestEvent` |
+| `DeviceSessionCache` 接口 | [`gb28181-server/.../DeviceSessionCache.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/cmd/DeviceSessionCache.java) | ✅ 就绪 |
+| `ServerCommandSender` 注入 `DeviceSessionCache` | [`gb28181-server/.../ServerCommandSender.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/cmd/ServerCommandSender.java) | ✅ 就绪 |
+| `external-ip/port` NAT 配置 | [`SipServerProperties.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/config/SipServerProperties.java) | ✅ 就绪 |
+| `@EnableSipServer` / `@EnableSipClient` 注解 | [`EnableSipServer.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/config/EnableSipServer.java) | ✅ 就绪 |
+| `DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword` | [`DigestServerAuthenticationHelper.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/DigestServerAuthenticationHelper.java) | ✅ 就绪（业务方直接调用即可） |
+| `ClientInviteEvent.transactionContextKey` 字段 | [`ClientInviteEvent.java`](../../gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/eventbus/event/ClientInviteEvent.java) | ✅ 就绪 |
+| `InviteRequestProcessor`（client）发布事件 | [`InviteRequestProcessor.java`](../../gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/transmit/request/invite/InviteRequestProcessor.java) | ✅ 100 Trying + 发 `ClientInviteEvent` |
+| `ServerInviteRequestProcessor` 异步化 | [`ServerInviteRequestProcessor.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/invite/ServerInviteRequestProcessor.java) | ✅ 100 Trying + 发 `ServerInviteEvent` |
+| `ServerInviteEvent` 类 | [`ServerInviteEvent.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/event/ServerInviteEvent.java) | ✅ 就绪 |
+| `ClientInfoEvent` 类 | [`ClientInfoEvent.java`](../../gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/eventbus/event/ClientInfoEvent.java) | ✅ 就绪 |
+| `ServerDeviceSupplier.authenticate(userId, SIPRequest)` | [`ServerDeviceSupplier.java`](../../sip-common/src/main/java/io/github/lunasaw/sip/common/service/ServerDeviceSupplier.java) | ✅ 就绪 |
+| `ServerRegisterRequestProcessor` 鉴权改造 | [`ServerRegisterRequestProcessor.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/ServerRegisterRequestProcessor.java) | ✅ 调 `serverDeviceSupplier.authenticate`，删除空串 `extractPassword` |
+| `ByeRequestProcessorServer` 200 OK 协议合规 | [`ByeRequestProcessorServer.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/bye/ByeRequestProcessorServer.java) | ✅ 收到 BYE 立即回 200 OK 再发事件 |
+| `ServerInfoRequestProcessor` 事件化 | [`ServerInfoRequestProcessor.java`](../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/info/ServerInfoRequestProcessor.java) | ✅ 删除 handler，直接发 `DeviceInfoRequestEvent` |
 | Handler 接口清理（`*ProcessorHandler` / `InviteRequestHandler` / `InfoRequestHandler` 等） | gb28181-server / gb28181-client | ✅ 全部删除，业务方一律 `@EventListener` |
 | `SubscribeHolder` / `SubscribeTask` | sip-common | ✅ 已删除（v1.3.0），下放业务方 |
-| `nodeAddressMap` 装配示例 | [`gb28181-test/.../gateway/GatewayProperties.java`](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/GatewayProperties.java) | ✅ 参考实现就绪（gb28181-test 模块），生产仍需替换为 K8s/Nacos 动态发现 |
-| sip-gateway 参考实现（`SipEventForwarder` / `SipCommandController` / `InviteContextStore`） | [`gb28181-test/.../gateway/`](../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/) | ✅ 单机参考实现就绪，多节点须替换 `InviteContextStore` 为 Redis 实现 |
-| `DialogRegistry`（出站 INVITE / SUBSCRIBE dialog 注册表，1.7.0+） | [`sip-common/.../DialogRegistry.java`](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/DialogRegistry.java) | ✅ 1.7.0 就绪，Entry 含 `expiresAtMs` / `kind`；INVITE 由 `processDialogTerminated` 清理，SUBSCRIBE 由 `DialogRegistryCleaner` 定时清理 |
-| `SipSender.doByeRequest(String callId)` / `doSubscribeRefresh(callId, content, expires)` | [`sip-common/.../SipSender.java`](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipSender.java) | ✅ 1.7.0 dialog-aware 入口，旧 `doByeRequest(FromDevice, ToDevice)` 已删除 |
+| `nodeAddressMap` 装配示例 | [`gb28181-test/.../gateway/GatewayProperties.java`](../../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/GatewayProperties.java) | ✅ 参考实现就绪（gb28181-test 模块），生产仍需替换为 K8s/Nacos 动态发现 |
+| sip-gateway 参考实现（`SipEventForwarder` / `SipCommandController` / `InviteContextStore`） | [`gb28181-test/.../gateway/`](../../gb28181-test/src/main/java/io/github/lunasaw/gbproxy/test/gateway/) | ✅ 单机参考实现就绪，多节点须替换 `InviteContextStore` 为 Redis 实现 |
+| `DialogRegistry`（出站 INVITE / SUBSCRIBE dialog 注册表，1.7.0+） | [`sip-common/.../DialogRegistry.java`](../../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/DialogRegistry.java) | ✅ 1.7.0 就绪，Entry 含 `expiresAtMs` / `kind`；INVITE 由 `processDialogTerminated` 清理，SUBSCRIBE 由 `DialogRegistryCleaner` 定时清理 |
+| `SipSender.doByeRequest(String callId)` / `doSubscribeRefresh(callId, content, expires)` | [`sip-common/.../SipSender.java`](../../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipSender.java) | ✅ 1.7.0 dialog-aware 入口，旧 `doByeRequest(FromDevice, ToDevice)` 已删除 |
 

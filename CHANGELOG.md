@@ -4,7 +4,7 @@
 
 ## [1.7.0] - 2026-05-25
 
-### 🚨 BREAKING CHANGES — 出站 Dialog 维护（[doc/OUTBOUND-DIALOG-PLAN.md](doc/OUTBOUND-DIALOG-PLAN.md)）
+### 🚨 BREAKING CHANGES — 出站 Dialog 维护（[doc/plans/1.7.0/OUTBOUND-DIALOG-PLAN.md](doc/plans/1.7.0/OUTBOUND-DIALOG-PLAN.md)）
 
 修复出站 BYE 不携带 to-tag 导致设备返回 `481 Call leg/Transaction does not exist` 的协议合规问题。同源同病的 SUBSCRIBE 续订 / 退订也一并改造为 dialog-aware 路径，避免长期被掩盖的协议错误（详见方案文档 v1.2 §3.2.10–§3.2.14）。
 
@@ -79,7 +79,7 @@ try {
 
 ## [1.5.0] - 2026-05-24
 
-### Added — Listener 化业务接口分层（[doc/LISTENER-LAYERED-DESIGN.md](doc/LISTENER-LAYERED-DESIGN.md)）
+### Added — Listener 化业务接口分层（[doc/architecture/LISTENER-LAYERED-DESIGN.md](doc/architecture/LISTENER-LAYERED-DESIGN.md)）
 
 业务方接入完全脱离 SIP 协议细节，统一为 listener interface 模式：
 
@@ -168,7 +168,7 @@ try {
 
 ### Migration Guide（业务侧 v1.4.0 → v1.5.0）
 
-详见 [doc/LISTENER-MIGRATION-GUIDE.md](doc/LISTENER-MIGRATION-GUIDE.md)。
+详见 [doc/architecture/LISTENER-MIGRATION-GUIDE.md](doc/architecture/LISTENER-MIGRATION-GUIDE.md)。
 
 业务侧约 20-30 个类受影响（以 voglander 为基准），集中在原 `MessageRequestHandler` / `DeviceControlRequestHandler` / `SubscribeRequestHandler` 实现类与对应 `@EventListener` 散点。
 
@@ -256,7 +256,7 @@ try {
 ### BREAKING CHANGES
 
 本次为协议解耦主版本升级，**不保留兼容期逻辑**。详见
-[doc/PROTOCOL-DECOUPLING-PLAN.md](doc/PROTOCOL-DECOUPLING-PLAN.md)。
+[doc/plans/1.3.0/PROTOCOL-DECOUPLING-PLAN.md](doc/plans/1.3.0/PROTOCOL-DECOUPLING-PLAN.md)。
 
 - **`SipUtils.parseSdp()` 返回类型变更**：由 `GbSessionDescription` 变为标准
   `SdpSessionDescription`，y= / f= 字段剥离逻辑下沉到 gb28181-common。

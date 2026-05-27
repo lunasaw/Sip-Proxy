@@ -6,7 +6,7 @@
 > - [LAYERED-ARCHITECTURE.md](LAYERED-ARCHITECTURE.md) — 业务侧 sip-gateway 的部署 / 状态切分 / 横向扩展
 > - [LISTENER-LAYERED-DESIGN.md](LISTENER-LAYERED-DESIGN.md) — 三层 listener 接口的设计动机与决策
 > - [PROTOCOL-LAYERING-MATRIX.md](PROTOCOL-LAYERING-MATRIX.md) — 每个 cmdType 的 L0 类 / L1 事件 / L2 listener 方法对应表
-> - [PROTOCOL-DECOUPLING-PLAN.md](PROTOCOL-DECOUPLING-PLAN.md) — sip-common 与 GB28181 解耦边界
+> - [PROTOCOL-DECOUPLING-PLAN.md](../plans/1.3.0/PROTOCOL-DECOUPLING-PLAN.md) — sip-common 与 GB28181 解耦边界
 > - [HORIZONTAL-SCALING.md](HORIZONTAL-SCALING.md) — 多节点部署、状态本地性、VIP 拓扑
 >
 > 历史变更：

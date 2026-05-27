@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  *
  * <p>本测试针对的是历史 SUBSCRIBE 续订 / 退订因不带 to-tag 触发设备 481 的协议合规问题（见
- * {@code doc/OUTBOUND-DIALOG-PLAN.md} v1.2 §3.2.10–§3.2.14）。
+ * {@code doc/plans/1.7.0/OUTBOUND-DIALOG-PLAN.md} v1.2 §3.2.10–§3.2.14）。
  */
 @SpringBootTest(classes = TestApplication.class)
 @ActiveProfiles("test")

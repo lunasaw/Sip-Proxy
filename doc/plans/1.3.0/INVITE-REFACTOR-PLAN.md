@@ -4,7 +4,7 @@
 >
 > ✅ **实施状态**：v1.2 已合入。本方案描述的协议层改造（INVITE 异步化、INFO 事件化、BYE 200 OK 修复、REGISTER 鉴权下沉到 `ServerDeviceSupplier.authenticate`、`SipTransactionRegistry.extendContext`、`*Handler` 接口全量删除）均已落地，集成测试 `RegistrationFlowTest` / `InvitePlayFlowTest` / `AlarmFlowTest` 通过。
 >
-> v1.2 → v1.3 变更：本方案聚焦**入站 INVITE 异步化**，**出站方向**的 dialog 维护（出站 BYE / SUBSCRIBE refresh 不带 to-tag 触发设备 481）由独立方案 [`OUTBOUND-DIALOG-PLAN.md`](OUTBOUND-DIALOG-PLAN.md)（v1.2，1.7.0 落地）覆盖。两方案正交：本方案管入站事务上下文 (`SipTransactionRegistry`)，OUTBOUND-DIALOG-PLAN 管出站 dialog 引用 (`DialogRegistry`)。
+> v1.2 → v1.3 变更：本方案聚焦**入站 INVITE 异步化**，**出站方向**的 dialog 维护（出站 BYE / SUBSCRIBE refresh 不带 to-tag 触发设备 481）由独立方案 [`OUTBOUND-DIALOG-PLAN.md`](../1.7.0/OUTBOUND-DIALOG-PLAN.md)（v1.2，1.7.0 落地）覆盖。两方案正交：本方案管入站事务上下文 (`SipTransactionRegistry`)，OUTBOUND-DIALOG-PLAN 管出站 dialog 引用 (`DialogRegistry`)。
 >
 > v1.1 → v1.2 变更：补充摘要鉴权下沉、`extendContext` 续期接口、INVITE 重传幂等约束、BYE 200 OK 协议合规修复、`ServerDeviceSupplier` 方法改名为 `authenticate` 避免与现有 `checkDevice(RequestEvent)` 语义冲突；新增 `ClientDeviceSupplier.checkDevice` 用于同 JVM 同时启用 client/server 时按 To-Header 隔离两侧 INVITE 处理。
 
@@ -177,7 +177,7 @@ public void process(RequestEvent evt) {
 
 `ByeRequestProcessorServer` 当前已发事件，但仍依赖 `ServerByeProcessorHandler.validateDevicePermission()`。
 
-该接口的默认实现永远返回 `true`，无实际价值。**同时存在协议合规 bug**：当前实现**根本没发 200 OK**（参见 [ByeRequestProcessorServer.java:37-58](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/bye/ByeRequestProcessorServer.java#L37-L58)），违反 RFC 3261 §15.1.2。本次顺手修复。
+该接口的默认实现永远返回 `true`，无实际价值。**同时存在协议合规 bug**：当前实现**根本没发 200 OK**（参见 [ByeRequestProcessorServer.java:37-58](../../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/bye/ByeRequestProcessorServer.java#L37-L58)），违反 RFC 3261 §15.1.2。本次顺手修复。
 
 改造方案：
 
@@ -227,9 +227,9 @@ public void process(RequestEvent evt) {
 
 #### 3.6.1 摘要鉴权落地（关键 bug 修复）
 
-当前 [`ServerRegisterRequestProcessor.java:155-159`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/ServerRegisterRequestProcessor.java#L155-L159) 的 `extractPassword` 直接 `return ""`——这意味着**即使业务方实现了 `validatePassword`，收到的 password 永远是空串，鉴权形同虚设**。本次必须修复。
+当前 [`ServerRegisterRequestProcessor.java:155-159`](../../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/ServerRegisterRequestProcessor.java#L155-L159) 的 `extractPassword` 直接 `return ""`——这意味着**即使业务方实现了 `validatePassword`，收到的 password 永远是空串，鉴权形同虚设**。本次必须修复。
 
-GB28181 设备使用 HTTP Digest 鉴权，请求头 `Authorization` 中携带的不是密码而是 `response = MD5(HA1:nonce[:nc:cnonce:qop]:HA2)`。框架已有 [`DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword(request, plainPassword)`](../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/DigestServerAuthenticationHelper.java) 完成全部摘要计算和比对，业务方只需提供明文密码即可。
+GB28181 设备使用 HTTP Digest 鉴权，请求头 `Authorization` 中携带的不是密码而是 `response = MD5(HA1:nonce[:nc:cnonce:qop]:HA2)`。框架已有 [`DigestServerAuthenticationHelper.doAuthenticatePlainTextPassword(request, plainPassword)`](../../../gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/register/DigestServerAuthenticationHelper.java) 完成全部摘要计算和比对，业务方只需提供明文密码即可。
 
 #### 3.6.2 改造方案
 
@@ -328,7 +328,7 @@ public class GatewayServerDeviceSupplier implements ServerDeviceSupplier {
 
 ### 5.1 命名冲突说明
 
-现有 [`ServerDeviceSupplier.java:45`](../sip-common/src/main/java/io/github/lunasaw/sip/common/service/ServerDeviceSupplier.java#L45) 已有方法 `checkDevice(RequestEvent evt)`，语义是**判断 To-Header userId 是否等于本机 serverFromDevice.userId**（即"这条消息是否发给我"），与"密码鉴权"完全不同。**不能复用 `checkDevice` 名称做重载**，否则业务方实现时极易混淆。
+现有 [`ServerDeviceSupplier.java:45`](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/service/ServerDeviceSupplier.java#L45) 已有方法 `checkDevice(RequestEvent evt)`，语义是**判断 To-Header userId 是否等于本机 serverFromDevice.userId**（即"这条消息是否发给我"），与"密码鉴权"完全不同。**不能复用 `checkDevice` 名称做重载**，否则业务方实现时极易混淆。
 
 ### 5.2 新增 `authenticate` 方法
 
@@ -366,7 +366,7 @@ public interface ServerDeviceSupplier extends DeviceSupplier {
 
 ### 6.1 现状问题
 
-[`SipTransactionRegistry.TransactionContextInfo.checkAndUpdateValidity()`](../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipTransactionRegistry.java) 写死 `age > 32000` 即标记无效，且 `createTime` 是 `final` 字段，业务方无法续期。
+[`SipTransactionRegistry.TransactionContextInfo.checkAndUpdateValidity()`](../../../sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/SipTransactionRegistry.java) 写死 `age > 32000` 即标记无效，且 `createTime` 是 `final` 字段，业务方无法续期。
 
 异步 INVITE 场景下，业务方查媒体服务器、申请流端口等耗时常见 5~20s，但偶发抖动可能逼近或超过 30s。一旦触发硬超时，`getContext(callId)` 返回 null，回包失败、业务必须重新发起 INVITE，用户体验差。
 

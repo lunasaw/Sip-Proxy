@@ -3,7 +3,7 @@
 # 校验 sip-common 模块协议纯净性：禁止出现 GB28181 专用关键词。
 # CI 在 mvn verify 阶段调用；任意命中即让构建失败。
 #
-# 边界规则参考：doc/PROTOCOL-DECOUPLING-PLAN.md §五
+# 边界规则参考：doc/plans/1.3.0/PROTOCOL-DECOUPLING-PLAN.md §五
 
 set -euo pipefail
 
