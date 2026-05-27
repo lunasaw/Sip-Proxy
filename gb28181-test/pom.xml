@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-proxy</artifactId>
-        <version>1.7.0</version>
+        <version>1.7.2</version>
     </parent>
 
     <version>${gb28181-proxy.version}</version>
@@ -181,6 +181,19 @@
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <!--
+                gb28181-test 是测试/示例模块（spring-boot repackage 打 fat jar），
+                不发布到 Maven Central。nexus-staging-maven-plugin 不认 maven-deploy-plugin 的 skip，
+                必须用自己的 skipNexusStagingDeployMojo 单独关闭。
+            -->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.7.0</version>
+                <configuration>
+                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
             <!--
