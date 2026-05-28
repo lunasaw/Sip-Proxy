@@ -1,0 +1,2 @@
+io.github.lunasaw.sipgateway.core.config.GatewayCoreAutoConfiguration
+io.github.lunasaw.sipgateway.gb28181.config.Gb28181GatewayAutoConfiguration
