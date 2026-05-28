@@ -10,11 +10,9 @@
     <packaging>pom</packaging>
     <modules>
         <module>sip-common</module>
-        <module>gb28181-client</module>
-        <module>gb28181-server</module>
+        <module>sip-gb28181</module>
         <module>gb28181-gateway</module>
         <module>gb28181-test</module>
-        <module>gb28181-common</module>
     </modules>
     <name>sip-proxy</name>
     <description>轻量级SIP框架封装</description>

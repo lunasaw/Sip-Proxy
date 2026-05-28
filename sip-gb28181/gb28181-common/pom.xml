@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.github.lunasaw</groupId>
-        <artifactId>sip-proxy</artifactId>
+        <artifactId>sip-gb28181</artifactId>
         <version>1.7.2</version>
     </parent>
 
