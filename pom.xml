@@ -6,11 +6,12 @@
 
     <groupId>io.github.lunasaw</groupId>
     <artifactId>sip-proxy</artifactId>
-    <version>1.7.2</version>
+    <version>1.8.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>sip-common</module>
         <module>sip-gb28181</module>
+        <module>sip-gateway</module>
         <module>gb28181-gateway</module>
         <module>sip-test</module>
     </modules>
@@ -27,8 +28,8 @@
         <app.profiles>${project.name}</app.profiles>
         <sip.version>1.3.0-91</sip.version>
         <dom4j.version>2.1.4</dom4j.version>
-        <sip-proxy-common.version>1.7.2</sip-proxy-common.version>
-        <gb28181-proxy.version>1.7.2</gb28181-proxy.version>
+        <sip-proxy-common.version>1.8.0</sip-proxy-common.version>
+        <gb28181-proxy.version>1.8.0</gb28181-proxy.version>
         <skywalking.version>9.1.0</skywalking.version>
         <guava.version>32.1.3-jre</guava.version>
         <caffeine.version>3.1.8</caffeine.version>
@@ -95,7 +96,36 @@
 
             <dependency>
                 <groupId>io.github.lunasaw</groupId>
+                <artifactId>gb28181-server</artifactId>
+                <version>${sip-proxy-common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>gb28181-client</artifactId>
+                <version>${sip-proxy-common.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
                 <artifactId>gb28181-gateway</artifactId>
+                <version>${gb28181-proxy.version}</version>
+            </dependency>
+
+            <!-- sip-gateway 父聚合新增 3 个子模块（BOM 不在此处 import，避免循环） -->
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>gateway-core</artifactId>
+                <version>${gb28181-proxy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>gateway-gb28181</artifactId>
+                <version>${gb28181-proxy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>sip-gateway-spring-boot-starter</artifactId>
                 <version>${gb28181-proxy.version}</version>
             </dependency>
 
@@ -233,6 +263,18 @@
                             <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
                             <arguments>
                                 <argument>${maven.multiModuleProjectDirectory}/scripts/check-business-no-base-parser.sh</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check-gateway-core-purity</id>
+                        <phase>verify</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            <arguments>
+                                <argument>${maven.multiModuleProjectDirectory}/scripts/check-gateway-core-purity.sh</argument>
                             </arguments>
                         </configuration>
                     </execution>

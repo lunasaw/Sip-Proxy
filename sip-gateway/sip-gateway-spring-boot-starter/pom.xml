@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.lunasaw</groupId>
+        <artifactId>sip-gateway</artifactId>
+        <version>1.8.0</version>
+    </parent>
+
+    <artifactId>sip-gateway-spring-boot-starter</artifactId>
+    <name>sip-gateway-spring-boot-starter</name>
+    <description>SIP Gateway 一键接入 Starter</description>
+
+    <dependencies>
+        <!-- 核心，必带 -->
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>gateway-core</artifactId>
+        </dependency>
+
+        <!-- 已发布的协议适配器，默认启用 -->
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>gateway-gb28181</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

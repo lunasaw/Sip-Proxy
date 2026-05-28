@@ -10,14 +10,15 @@
         <version>1.8.0</version>
     </parent>
 
-    <artifactId>sip-gb28181</artifactId>
+    <artifactId>sip-gateway</artifactId>
     <packaging>pom</packaging>
-    <name>sip-gb28181</name>
-    <description>GB28181 协议栈父聚合（common / client / server）</description>
+    <name>sip-gateway</name>
+    <description>SIP Gateway 父聚合：协议中立网关内核 + 多协议适配器</description>
 
     <modules>
-        <module>gb28181-common</module>
-        <module>gb28181-client</module>
-        <module>gb28181-server</module>
+        <module>gateway-core</module>
+        <module>gateway-gb28181</module>
+        <module>sip-gateway-bom</module>
+        <module>sip-gateway-spring-boot-starter</module>
     </modules>
 </project>
