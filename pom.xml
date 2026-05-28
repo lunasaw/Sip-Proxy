@@ -12,7 +12,7 @@
         <module>sip-common</module>
         <module>sip-gb28181</module>
         <module>gb28181-gateway</module>
-        <module>gb28181-test</module>
+        <module>sip-test</module>
     </modules>
     <name>sip-proxy</name>
     <description>轻量级SIP框架封装</description>
