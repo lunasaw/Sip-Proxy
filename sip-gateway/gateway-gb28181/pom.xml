@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.lunasaw</groupId>
+        <artifactId>sip-gateway</artifactId>
+        <version>1.8.0</version>
+    </parent>
+
+    <artifactId>gateway-gb28181</artifactId>
+    <name>gateway-gb28181</name>
+    <description>GB28181 协议适配器</description>
+
+    <dependencies>
+        <!-- 强依赖：协议中立内核 -->
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>gateway-core</artifactId>
+        </dependency>
+
+        <!-- 强依赖：gb28181-server -->
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>gb28181-server</artifactId>
+        </dependency>
+
+        <!-- Caffeine 缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- spring-web (optional) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- 测试 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

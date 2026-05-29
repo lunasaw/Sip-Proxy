@@ -11,8 +11,8 @@ set -euo pipefail
 PATTERN='io\.github\.lunasaw\.sip\.common\.sdp\.Rfc4566SdpParser|io\.github\.lunasaw\.sip\.common\.utils\.SipUtils\.parseSdp'
 
 hits=$(grep -rEn "$PATTERN" \
-       gb28181-client/src/main/java \
-       gb28181-server/src/main/java \
+       sip-gb28181/gb28181-client/src/main/java \
+       sip-gb28181/gb28181-server/src/main/java \
        --include="*.java" 2>/dev/null \
        | grep -vE '^\s*//|^\s*\*' || true)
 

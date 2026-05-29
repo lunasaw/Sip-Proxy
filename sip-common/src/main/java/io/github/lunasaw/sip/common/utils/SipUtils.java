@@ -31,37 +31,73 @@ import io.github.lunasaw.sip.common.entity.RemoteAddressInfo;
 import io.github.lunasaw.sip.common.entity.SipTransaction;
 
 /**
- * @author luna
+ * SIP工具类，提供从SIP消息中提取用户ID、地址、事务信息等常用操作。
  */
 public class SipUtils {
 
     // NTP时间戳偏移量 (1900年1月1日到1970年1月1日的秒数)
     private static final long NTP_TIMESTAMP_OFFSET = 2208988800L;
 
+    /**
+     * 从响应的 To 头域提取用户ID。
+     *
+     * @param response SIP响应
+     * @return 用户ID
+     */
     public static String getUserIdFromToHeader(Response response) {
         ToHeader toHeader = (ToHeader)response.getHeader(ToHeader.NAME);
         return getUserIdFromHeader(toHeader);
     }
 
+    /**
+     * 从响应的 From 头域提取用户ID。
+     *
+     * @param response SIP响应
+     * @return 用户ID
+     */
     public static String getUserIdFromFromHeader(Response response) {
         FromHeader fromHeader = (FromHeader)response.getHeader(FromHeader.NAME);
         return getUserIdFromHeader(fromHeader);
     }
 
+    /**
+     * 从请求的 To 头域提取用户ID。
+     *
+     * @param request SIP请求
+     * @return 用户ID
+     */
     public static String getUserIdFromToHeader(Request request) {
         ToHeader toHeader = (ToHeader)request.getHeader(ToHeader.NAME);
         return getUserIdFromHeader(toHeader);
     }
 
+    /**
+     * 从请求的 From 头域提取用户ID。
+     *
+     * @param request SIP请求
+     * @return 用户ID
+     */
     public static String getUserIdFromFromHeader(Request request) {
         FromHeader fromHeader = (FromHeader)request.getHeader(FromHeader.NAME);
         return getUserIdFromHeader(fromHeader);
     }
 
+    /**
+     * 从请求 URI 提取用户部分。
+     *
+     * @param request SIP请求
+     * @return 用户部分字符串
+     */
     public static String getUser(Request request) {
         return ((SipUri)request.getRequestURI()).getUser();
     }
 
+    /**
+     * 从 SIPResponse 提取 SIP 事务信息。
+     *
+     * @param response SIP响应
+     * @return SipTransaction实例
+     */
     public static SipTransaction getSipTransaction(SIPResponse response) {
         SipTransaction sipTransaction = new SipTransaction();
         sipTransaction.setCallId(response.getCallIdHeader().getCallId());
@@ -71,6 +107,12 @@ public class SipUtils {
         return sipTransaction;
     }
 
+    /**
+     * 从 SIPRequest 提取 SIP 事务信息。
+     *
+     * @param request SIP请求
+     * @return SipTransaction实例
+     */
     public static SipTransaction getSipTransaction(SIPRequest request) {
         SipTransaction sipTransaction = new SipTransaction();
         sipTransaction.setCallId(request.getCallIdHeader().getCallId());
@@ -80,20 +122,44 @@ public class SipUtils {
         return sipTransaction;
     }
 
+    /**
+     * 从地址头域提取用户ID。
+     *
+     * @param headerAddress 地址头域
+     * @return 用户ID
+     */
     public static String getUserIdFromHeader(HeaderAddress headerAddress) {
         AddressImpl address = (AddressImpl)headerAddress.getAddress();
         SipUri uri = (SipUri)address.getURI();
         return uri.getUser();
     }
 
+    /**
+     * 从 RequestEvent 提取 Call-ID。
+     *
+     * @param requestEvent 请求事件
+     * @return Call-ID字符串
+     */
     public static String getCallId(RequestEvent requestEvent) {
         return ((SIPRequest)requestEvent.getRequest()).getCallIdHeader().getCallId();
     }
 
+    /**
+     * 从 SIPRequest 提取 Call-ID。
+     *
+     * @param request SIP请求
+     * @return Call-ID字符串
+     */
     public static String getCallId(SIPRequest request) {
         return request.getCallIdHeader().getCallId();
     }
 
+    /**
+     * 从 SIPRequest 获取远端地址信息（默认从 Via 头域获取）。
+     *
+     * @param request SIP请求
+     * @return 远端地址信息
+     */
     public static RemoteAddressInfo getRemoteAddressFromRequest(SIPRequest request) {
         return getRemoteAddressFromRequest(request, false);
     }
@@ -141,11 +207,26 @@ public class SipUtils {
         return new RemoteAddressInfo(remoteAddress, remotePort);
     }
 
+    /**
+     * 将 RequestEvent 的消息体解析为指定类型对象。
+     *
+     * @param event   请求事件
+     * @param charset 字符集
+     * @param clazz   目标类型
+     * @return 解析后的对象
+     */
     public static <T> T parseRequest(RequestEvent event, String charset, Class<T> clazz) {
         SIPRequest sipRequest = (SIPRequest)event.getRequest();
         return getObj(charset, clazz, sipRequest.getRawContent());
     }
 
+    /**
+     * 将 RequestEvent 的消息体解析为字符串。
+     *
+     * @param event   请求事件
+     * @param charset 字符集
+     * @return 消息体字符串
+     */
     public static String parseRequest(RequestEvent event, String charset) {
         SIPRequest sipRequest = (SIPRequest)event.getRequest();
         byte[] rawContent = sipRequest.getRawContent();
@@ -155,6 +236,14 @@ public class SipUtils {
         return StringTools.toEncodedString(rawContent, Charset.forName(charset));
     }
 
+    /**
+     * 将字节数组解析为指定类型对象。
+     *
+     * @param charset    字符集
+     * @param clazz      目标类型
+     * @param rawContent 原始字节内容
+     * @return 解析后的对象
+     */
     public static <T> T getObj(String charset, Class<T> clazz, byte[] rawContent) {
         if (StringUtils.isBlank(charset)) {
             charset = Constant.UTF_8;
@@ -164,10 +253,25 @@ public class SipUtils {
         return (T)o;
     }
 
+    /**
+     * 将 ResponseEvent 的消息体解析为指定类型对象（UTF-8）。
+     *
+     * @param evt    响应事件
+     * @param tClass 目标类型
+     * @return 解析后的对象
+     */
     public static <T> T parseResponse(ResponseEvent evt, Class<T> tClass) {
         return parseResponse(evt, null, tClass);
     }
 
+    /**
+     * 将 ResponseEvent 的消息体解析为指定类型对象（指定字符集）。
+     *
+     * @param evt     响应事件
+     * @param charset 字符集
+     * @param clazz   目标类型
+     * @return 解析后的对象
+     */
     public static <T> T parseResponse(ResponseEvent evt, String charset, Class<T> clazz) {
         Response response = evt.getResponse();
         return getObj(charset, clazz, response.getRawContent());

@@ -112,6 +112,12 @@ public class DynamicTask {
         }
     }
 
+    /**
+     * 停止指定key的定时任务。
+     *
+     * @param key 任务ID
+     * @return 是否成功停止
+     */
     public boolean stop(String key) {
         if (ObjectUtils.isEmpty(key)) {
             return false;
@@ -125,6 +131,12 @@ public class DynamicTask {
         return result;
     }
 
+    /**
+     * 判断指定key的任务是否存在。
+     *
+     * @param key 任务ID
+     * @return 是否存在
+     */
     public boolean contains(String key) {
         if (ObjectUtils.isEmpty(key)) {
             return false;
@@ -132,10 +144,21 @@ public class DynamicTask {
         return futureMap.get(key) != null;
     }
 
+    /**
+     * 获取所有任务的key集合。
+     *
+     * @return 任务key集合
+     */
     public Set<String> getAllKeys() {
         return futureMap.keySet();
     }
 
+    /**
+     * 获取指定key的任务Runnable。
+     *
+     * @param key 任务ID
+     * @return Runnable，不存在时返回null
+     */
     public Runnable get(String key) {
         if (ObjectUtils.isEmpty(key)) {
             return null;
@@ -159,6 +182,12 @@ public class DynamicTask {
         }
     }
 
+    /**
+     * 判断指定key的任务是否存活（未完成且未取消）。
+     *
+     * @param key 任务ID
+     * @return 是否存活
+     */
     public boolean isAlive(String key) {
         return futureMap.get(key) != null && !futureMap.get(key).isDone() && !futureMap.get(key).isCancelled();
     }

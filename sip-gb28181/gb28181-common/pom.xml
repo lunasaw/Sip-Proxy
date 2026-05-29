@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.lunasaw</groupId>
+        <artifactId>sip-gb28181</artifactId>
+        <version>1.8.0</version>
+    </parent>
+
+    <version>1.8.0</version>
+    <artifactId>gb28181-common</artifactId>
+    <packaging>jar</packaging>
+    <name>gb28181-common</name>
+    <description>轻量级Gb28181框架模型</description>
+    <url>https://github.com/lunasaw/gb28181-proxy</url>
+
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>sip-common</artifactId>
+            <version>${sip-proxy-common.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.lunasaw</groupId>
+            <artifactId>luna-common</artifactId>
+        </dependency>
+        <!-- Jakarta XML Bind API - 符合Java 17和项目规范 -->
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <!-- Jakarta XML Bind Implementation -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>4.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.25.0-GA</version>
+        </dependency>
+    </dependencies>
+</project>

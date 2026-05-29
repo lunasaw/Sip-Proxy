@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 
 import gov.nist.core.StackLogger;
 
+/**
+ * JAIN-SIP StackLogger 实现，将协议栈日志桥接到 SLF4J。
+ */
 @Component
 public class StackLoggerImpl implements StackLogger {
 

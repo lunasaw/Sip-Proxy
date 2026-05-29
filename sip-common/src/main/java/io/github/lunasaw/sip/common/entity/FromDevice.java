@@ -6,10 +6,7 @@ import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.Data;
 
 /**
- * 继承这个类，自定义参数
- * 
- * @author luna
- * @date 2023/10/12
+ * SIP消息发送方设备，继承Device并携带fromTag和User-Agent标识。
  */
 @Data
 public class FromDevice extends Device {
@@ -25,6 +22,14 @@ public class FromDevice extends Device {
     private String agent;
 
 
+    /**
+     * 创建默认 UDP/TCP_PASSIVE 模式的 FromDevice 实例，自动生成 fromTag 和 User-Agent。
+     *
+     * @param userId 用户ID
+     * @param ip     本地IP
+     * @param port   本地端口
+     * @return FromDevice实例
+     */
     public static FromDevice getInstance(String userId, String ip, int port) {
         FromDevice fromDevice = new FromDevice();
         fromDevice.setUserId(userId);

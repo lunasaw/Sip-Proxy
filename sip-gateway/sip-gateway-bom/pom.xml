@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.lunasaw</groupId>
+        <artifactId>sip-gateway</artifactId>
+        <version>1.8.0</version>
+    </parent>
+
+    <artifactId>sip-gateway-bom</artifactId>
+    <packaging>pom</packaging>
+    <name>sip-gateway-bom</name>
+    <description>SIP Gateway BOM：依赖管理入口</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 1.8.0 已发布 -->
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>gateway-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>gateway-gb28181</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.lunasaw</groupId>
+                <artifactId>sip-gateway-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- 占位：未来协议子模块在此追加 -->
+            <!--
+            <dependency><artifactId>gateway-onvif</artifactId>...</dependency>     1.10.0
+            <dependency><artifactId>gateway-gt1078</artifactId>...</dependency>    1.11.0
+            -->
+        </dependencies>
+    </dependencyManagement>
+</project>

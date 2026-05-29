@@ -8,8 +8,7 @@ import io.github.lunasaw.sip.common.entity.FromDevice;
 import io.github.lunasaw.sip.common.utils.SipUtils;
 
 /**
- * @author luna
- * @date 2023/10/17
+ * SIP用户生成器接口，提供发送方和接收方设备信息的获取能力。
  */
 public interface SipUserGenerate {
 

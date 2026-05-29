@@ -9,21 +9,32 @@ import io.github.lunasaw.sip.common.transmit.event.result.DeviceNotFoundEvent;
 import lombok.Data;
 
 /**
- * 事件结果
- * 
- * @author luna
+ * SIP事件结果，封装响应、超时、事务终止、会话终止等各类事件的统一结果。
+ *
+ * @param <T> 原始事件类型
  */
 @Data
 public class EventResult<T> {
+    /** HTTP状态码，超时/终止类事件为 -1024。 */
     public int             statusCode;
+    /** 事件结果类型。 */
     public EventResultType type;
+    /** 结果描述信息。 */
     public String          msg;
+    /** 关联的 Call-ID。 */
     public String          callId;
+    /** 关联的 SIP Dialog。 */
     public Dialog dialog;
+    /** 原始事件对象。 */
     public T               event;
 
     public EventResult() {}
 
+    /**
+     * 根据原始事件构造结果，自动识别事件类型并提取 callId、状态码等信息。
+     *
+     * @param event 原始事件对象
+     */
     public EventResult(T event) {
         this.event = event;
         if (event instanceof ResponseEvent) {

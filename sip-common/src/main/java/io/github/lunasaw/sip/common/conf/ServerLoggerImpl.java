@@ -10,6 +10,9 @@ import gov.nist.core.StackLogger;
 import gov.nist.javax.sip.message.SIPMessage;
 import gov.nist.javax.sip.stack.SIPTransactionStack;
 
+/**
+ * JAIN-SIP ServerLogger 实现，将SIP消息日志输出到框架日志系统。
+ */
 public class ServerLoggerImpl implements ServerLogger {
 
     protected StackLogger stackLogger;

@@ -16,8 +16,7 @@ import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.Data;
 
 /**
- * @author luna
- * @date 2023/10/13
+ * SIP消息体，封装构建一次SIP请求或响应所需的全部字段。
  */
 @Data
 public class SipMessage {
@@ -63,6 +62,11 @@ public class SipMessage {
      */
     private Integer statusCode;
 
+    /**
+     * 构建 MESSAGE 请求消息体，内容类型为 Application/MANSCDP+xml。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getMessageBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.MESSAGE);
@@ -74,6 +78,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 INVITE 请求消息体，内容类型为 APPLICATION/SDP。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getInviteBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.INVITE);
@@ -85,6 +94,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 BYE 请求消息体。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getByeBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.BYE);
@@ -95,6 +109,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 SUBSCRIBE 请求消息体，内容类型为 Application/MANSCDP+xml。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getSubscribeBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.SUBSCRIBE);
@@ -106,6 +125,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 INFO 请求消息体，内容类型为 Application/MANSRTSP。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getInfoBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.INFO);
@@ -117,6 +141,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 NOTIFY 请求消息体，内容类型为 Application/MANSCDP+xml。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getNotifyBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.NOTIFY);
@@ -128,6 +157,12 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 基于 SIPResponse 构建 ACK 请求消息体，序号取自响应的 CSeq。
+     *
+     * @param sipResponse SIP响应
+     * @return SipMessage实例
+     */
     public static SipMessage getAckBody(SIPResponse sipResponse) {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.ACK);
@@ -137,6 +172,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 ACK 请求消息体，自动生成序号。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getAckBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.ACK);
@@ -147,6 +187,11 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建 REGISTER 请求消息体。
+     *
+     * @return SipMessage实例
+     */
     public static SipMessage getRegisterBody() {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setMethod(Request.REGISTER);
@@ -157,6 +202,12 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 构建响应消息体。
+     *
+     * @param statusCode HTTP状态码
+     * @return SipMessage实例
+     */
     public static SipMessage getResponse(int statusCode) {
         SipMessage sipMessage = new SipMessage();
         sipMessage.setViaTag(SipRequestUtils.getNewViaTag());
@@ -167,6 +218,12 @@ public class SipMessage {
         return sipMessage;
     }
 
+    /**
+     * 向消息头列表追加一个自定义头。
+     *
+     * @param header 要追加的头
+     * @return 当前SipMessage实例（支持链式调用）
+     */
     public SipMessage addHeader(Header header) {
         if (CollectionUtils.isEmpty(headers)) {
             headers = new ArrayList<>(java.util.Arrays.asList(header));

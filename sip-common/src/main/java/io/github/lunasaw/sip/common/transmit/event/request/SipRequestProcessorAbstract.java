@@ -70,6 +70,10 @@ public abstract class SipRequestProcessorAbstract implements SipRequestProcessor
 
         // 解析xml
         byte[] rawContent = request.getRawContent();
+        if (rawContent == null) {
+            log.warn("doMessageHandForEvt::请求体为空, method={}", request.getMethod());
+            return;
+        }
         String xmlStr = StringTools.toEncodedString(rawContent, Charset.forName(charset));
 
         log.info("开始处理消息 doMessageHandForEvt::fromDevice = {}, xmlStr = {}", JSON.toJSONString(fromDevice), xmlStr);

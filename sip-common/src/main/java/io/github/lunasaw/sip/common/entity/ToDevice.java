@@ -3,8 +3,7 @@ package io.github.lunasaw.sip.common.entity;
 import lombok.Data;
 
 /**
- * @author luna
- * @date 2023/10/12
+ * SIP消息接收方设备，继承Device并携带对话标识、订阅等字段。
  */
 @Data
 public class ToDevice extends Device {
@@ -23,12 +22,23 @@ public class ToDevice extends Device {
 
     private Integer expires;
 
+    /** 订阅事件类型。 */
     private String eventType;
 
+    /** 订阅事件ID。 */
     private String eventId;
 
+    /** 会话唯一标识 Call-ID。 */
     private String callId;
 
+    /**
+     * 创建默认 UDP/TCP_PASSIVE 模式的 ToDevice 实例。
+     *
+     * @param userId 用户ID
+     * @param ip     目标IP
+     * @param port   目标端口
+     * @return ToDevice实例
+     */
     public static ToDevice getInstance(String userId, String ip, int port) {
         ToDevice toDevice = new ToDevice();
         toDevice.setUserId(userId);

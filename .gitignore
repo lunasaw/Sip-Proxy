@@ -39,5 +39,6 @@ build/
 
 .idea/
 
-*/logs/*
-*/logs/
+### Runtime logs (any depth) ###
+logs/
+*.log

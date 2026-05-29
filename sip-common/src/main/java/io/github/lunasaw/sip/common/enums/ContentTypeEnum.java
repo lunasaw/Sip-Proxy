@@ -9,10 +9,8 @@ import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.SneakyThrows;
 
 /**
- * 消息体类型
- * @author luna
+ * SIP消息体内容类型枚举，缓存对应的 ContentTypeHeader 实例。
  */
-
 public enum ContentTypeEnum {
 
     /**
@@ -40,6 +38,12 @@ public enum ContentTypeEnum {
         this.subtype = subtype;
     }
 
+    /**
+     * 根据 ContentTypeHeader 查找对应枚举值。
+     *
+     * @param header ContentTypeHeader
+     * @return 匹配的枚举值，不存在时返回null
+     */
     public static ContentTypeEnum fromContentTypeHeader(ContentTypeHeader header) {
         for (ContentTypeEnum contentType : values()) {
             if (contentType.type.equals(header.getContentType())
@@ -50,6 +54,12 @@ public enum ContentTypeEnum {
         return null;
     }
 
+    /**
+     * 根据字符串查找对应枚举值（忽略大小写）。
+     *
+     * @param contentType 内容类型字符串，格式为 type/subtype
+     * @return 匹配的枚举值，不存在时返回null
+     */
     public static ContentTypeEnum fromString(String contentType) {
         for (ContentTypeEnum contentTypeEnum : values()) {
             if (contentTypeEnum.toString().equalsIgnoreCase(contentType)) {
@@ -59,6 +69,11 @@ public enum ContentTypeEnum {
         return null;
     }
 
+    /**
+     * 获取对应的 ContentTypeHeader 实例（带缓存）。
+     *
+     * @return ContentTypeHeader实例
+     */
     @SneakyThrows
     public ContentTypeHeader getContentTypeHeader() {
         String key = toString();
