@@ -2,7 +2,18 @@
 
 本文档记录 sip-proxy 各版本的对外可见变更。版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
-## [1.8.0] - 2026-05-28
+## [1.8.0] - 2026-05-29
+
+### 🚨 BREAKING CHANGES — 老 `gb28181-gateway` 模块下线 + 1.8.0 兼容 shim 移除
+
+本期是 1.8.0 **最终版**，一次性切换到新 sip-gateway 父聚合形态：
+
+- **`gb28181-gateway/` 模块整体删除**：1.7.x 业务方网关参考实现完全下线，请迁移到 `sip-gateway-spring-boot-starter`
+- **包名搬家**：`io.github.lunasaw.gbproxy.gateway.*` → `io.github.lunasaw.sipgateway.{core,gb28181}.*`
+- **HTTP 路径改前缀**：`/sip/*` → `/gateway/*`（老路径全部删除）
+- **type 强制三段式**：`GatewayDispatchController` 不再做"无前缀自动补 `gb28181.`"shim，未知 type 直接 404
+- **`BusinessNotifier` 接口签名变更**：3 方法（`deviceOnline` / `inviteIncoming` / `alarm`）→ 1 方法 `notify(GatewayEvent)` envelope
+- **配置 namespace 重组**：部分 `gateway.*` 键名搬到 `gateway.gb28181.*`
 
 ### ✨ Features — sip-gateway 父聚合 + envelope 协议化（[doc/plans/1.8.0/](doc/plans/1.8.0/)）
 
@@ -26,15 +37,14 @@ sip-proxy/sip-gateway/                                ← 父聚合（packaging=
   - `GatewayEvent{type, deviceId, correlationId, timestampMs, payload, nodeId}`：gateway → 业务回调
 - **SPI 接口**（7 个）
   - `CommandHandler`、`@CommandMapping`、`CommandSpec`、`ParamBinding`、`ProtocolModule`、`TransactionContextStore<K,V>`、`BusinessNotifier`
-- **核心实现**（4 个��
-  - `CommandHandlerRegistry` 跨协议聚合，启动期 fail-fast（type 重复 / 命名空间不一致）
+- **核心实现**（4 个）
+  - `CommandHandlerRegistry` 跨协议聚合，启动期 fail-fast（type 重复 / 命名空间不一致 / 注解签名错）；分两步装配（构造期注册 ProtocolModule 静态表，`SmartInitializingSingleton.afterSingletonsInstantiated()` 扫注解）避免循环依赖
   - `ReflectiveCommandHandler` 表驱动（启动期反射查找方法）
   - `MethodInvokerHandler` 注解方法运行期适配
   - `PayloadCodec` fastjson2 二次反序列化封装
 - **Web 层** `GatewayDispatchController`
-  - `POST /gateway/command` 协议中立分发
+  - `POST /gateway/command` 协议中立分发（未知 type → 404）
   - `GET /gateway/whoami` 节点身份探测
-  - 1.8.0 兼容 shim：无前缀 type 自动补 `gb28181.`（1.10.0 移除）
 - **Notifier**：`NoopBusinessNotifier`（默认日志，启动 warn）+ `AbstractProtocolBusinessNotifier`（按 protocol 分发）
 
 **GB28181 适配器（`gateway-gb28181`）：**
@@ -116,21 +126,61 @@ Content-Type: application/json
 
 ### 🛡️ CI 守门
 
-- 新增 `scripts/check-gateway-core-purity.sh`：在 `mvn verify` 阶段检查 `gateway-core/src/main/java` 的 import 语句不含 GB28181/ONVIF/GT1078/RTSP 等协议关键字，强制��心壳协议中立。
+- 新增 `scripts/check-gateway-core-purity.sh`：在 `mvn verify` 阶段检查 `gateway-core/src/main/java` 的 import 语句不含 GB28181/ONVIF/GT1078/RTSP 等协议关键字，强制核心壳协议中立。
 - `CommandHandlerRegistry` 启动期 fail-fast：① type 重复（含跨协议）② ProtocolModule 自报 protocol 与 spec.type 前缀不一致 ③ `@CommandMapping` 方法签名不符 `(GatewayCommand) → String`。
 
-### 📦 Migration
+### 📦 Migration Guide（必读）
 
-**1.7.x 用户从 `gb28181-test/...gateway/` 复制代码的：**
+**1.7.x 用户必须做的迁移：**
 
-1. 删除复制的 14 个文件
-2. 引入 `<dependency>sip-gateway-spring-boot-starter</dependency>`
-3. 包名 `io.github.lunasaw.gbproxy.gateway.*` → `io.github.lunasaw.sipgateway.{core,gb28181}.*`
-4. `BusinessNotifier` 老 3 方法（`deviceOnline`/`inviteIncoming`/`alarm`）→ 新 `notify(GatewayEvent)` 单方法 envelope
-5. HTTP 路径 `/sip/*` → `/gateway/*`
-6. type 字符串改三段式（兼容 shim 在 1.10.0 移除）
+1. 删除 `gb28181-gateway` 依赖：
 
-**老 `gb28181-gateway` 模块兼容期保留**：1.8.0 不删除，与新 `sip-gateway/` 并存一个版本，1.9.0 移除（届时业务方应已迁移到 starter）。
+   ```diff
+   - <dependency>
+   -     <groupId>io.github.lunasaw</groupId>
+   -     <artifactId>gb28181-gateway</artifactId>
+   - </dependency>
+   + <dependency>
+   +     <groupId>io.github.lunasaw</groupId>
+   +     <artifactId>sip-gateway-spring-boot-starter</artifactId>
+   + </dependency>
+   ```
+
+2. 包名 / 接口替换：
+
+   ```diff
+   - import io.github.lunasaw.gbproxy.gateway.api.BusinessNotifier;
+   - import io.github.lunasaw.gbproxy.gateway.config.GatewayProperties;
+   - import io.github.lunasaw.gbproxy.gateway.store.InMemoryInviteContextStore;
+   + import io.github.lunasaw.sipgateway.core.api.BusinessNotifier;
+   + import io.github.lunasaw.sipgateway.core.config.GatewayProperties;
+   + import io.github.lunasaw.sipgateway.gb28181.store.InMemoryInviteContextStore;
+   ```
+
+3. `BusinessNotifier` 接口从 3 方法改为 1 方法 envelope：
+
+   ```diff
+   - public class MyNotifier implements BusinessNotifier {
+   -     public void deviceOnline(String deviceId, RegisterInfo info) { ... }
+   -     public void inviteIncoming(String callId, ...) { ... }
+   -     public void alarm(String deviceId, DeviceAlarmNotify notify) { ... }
+   - }
+   + public class MyNotifier extends AbstractProtocolBusinessNotifier {
+   +     @Override
+   +     @Async
+   +     protected void onProtocolEvent(String protocol, GatewayEvent event) {
+   +         switch (event.type()) {
+   +             case "gb28181.Lifecycle.Online" -> ...
+   +             case "gb28181.Session.ServerInvite" -> ...
+   +             case "gb28181.Notify.Alarm" -> ...
+   +         }
+   +     }
+   + }
+   ```
+
+4. HTTP 调用路径全部改：`/sip/*` → `/gateway/command`（envelope 化）+ `/gateway/gb28181/invite/response`（INVITE 回包）
+
+5. type 必须三段式（如 `gb28181.Query.Catalog`），1.8.0 起未知前缀直接 404，无 fallback。
 
 ### 🔧 协议层小升级（1.7.3 内含）
 
@@ -138,7 +188,7 @@ Content-Type: application/json
 
 ### 🔄 仓库版本号
 
-仓库版本从 `1.7.2` 整体升级到 `1.8.0`，所有子模块（sip-common / sip-gb28181/* / gb28181-gateway / sip-test/* / sip-gateway/*）同步升级。
+仓库版本从 `1.7.2` 整体升级到 `1.8.0`，模块从 14 个调整为 13 个（删除老 `gb28181-gateway`，新增 4 个 `sip-gateway/*` 子模块）。
 
 ---
 

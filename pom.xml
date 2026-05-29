@@ -12,7 +12,6 @@
         <module>sip-common</module>
         <module>sip-gb28181</module>
         <module>sip-gateway</module>
-        <module>gb28181-gateway</module>
         <module>sip-test</module>
     </modules>
     <name>sip-proxy</name>
@@ -104,12 +103,6 @@
                 <groupId>io.github.lunasaw</groupId>
                 <artifactId>gb28181-client</artifactId>
                 <version>${sip-proxy-common.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.github.lunasaw</groupId>
-                <artifactId>gb28181-gateway</artifactId>
-                <version>${gb28181-proxy.version}</version>
             </dependency>
 
             <!-- sip-gateway 父聚合新增 3 个子模块（BOM 不在此处 import，避免循环） -->
