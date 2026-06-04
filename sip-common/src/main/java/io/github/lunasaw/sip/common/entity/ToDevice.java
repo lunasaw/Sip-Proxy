@@ -1,5 +1,6 @@
 package io.github.lunasaw.sip.common.entity;
 
+import io.github.lunasaw.sip.common.constant.Constant;
 import lombok.Data;
 
 /**
@@ -32,7 +33,7 @@ public class ToDevice extends Device {
     private String callId;
 
     /**
-     * 创建默认 UDP/TCP_PASSIVE 模式的 ToDevice 实例。
+     * 创建默认 UDP 传输的 ToDevice 实例。
      *
      * @param userId 用户ID
      * @param ip     目标IP
@@ -40,12 +41,24 @@ public class ToDevice extends Device {
      * @return ToDevice实例
      */
     public static ToDevice getInstance(String userId, String ip, int port) {
+        return getInstance(userId, ip, port, Constant.UDP);
+    }
+
+    /**
+     * 创建指定传输协议的 ToDevice 实例。
+     *
+     * @param userId    用户ID
+     * @param ip        目标IP
+     * @param port      目标端口
+     * @param transport 信令传输协议，{@link Constant#UDP} 或 {@link Constant#TCP}
+     * @return ToDevice实例
+     */
+    public static ToDevice getInstance(String userId, String ip, int port, String transport) {
         ToDevice toDevice = new ToDevice();
         toDevice.setUserId(userId);
         toDevice.setIp(ip);
         toDevice.setPort(port);
-        toDevice.setTransport("UDP");
-        toDevice.setStreamMode("TCP_PASSIVE");
+        toDevice.setTransport(transport);
         toDevice.setToTag(null);
         return toDevice;
     }

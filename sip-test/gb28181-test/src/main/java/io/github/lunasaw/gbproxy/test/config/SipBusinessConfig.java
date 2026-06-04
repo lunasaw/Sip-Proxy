@@ -20,8 +20,8 @@ public class SipBusinessConfig implements DeviceSessionCache {
     private final Map<String, ToDevice> cache = new ConcurrentHashMap<>();
 
     public void register(String deviceId, String ip, int port, String transport) {
-        cache.put(deviceId, ToDevice.getInstance(deviceId, ip, port));
-        log.info("device registered: {} -> {}:{}", deviceId, ip, port);
+        cache.put(deviceId, ToDevice.getInstance(deviceId, ip, port, transport));
+        log.info("device registered: {} -> {}:{} ({})", deviceId, ip, port, transport);
     }
 
     public void remove(String deviceId) {

@@ -1,6 +1,7 @@
 package io.github.lunasaw.sip.common.entity;
 
 import io.github.lunasaw.sip.common.config.SipCommonContextHolder;
+import io.github.lunasaw.sip.common.constant.Constant;
 
 import io.github.lunasaw.sip.common.utils.SipRequestUtils;
 import lombok.Data;
@@ -23,7 +24,7 @@ public class FromDevice extends Device {
 
 
     /**
-     * 创建默认 UDP/TCP_PASSIVE 模式的 FromDevice 实例，自动生成 fromTag 和 User-Agent。
+     * 创建默认 UDP 传输的 FromDevice 实例，自动生成 fromTag 和 User-Agent。
      *
      * @param userId 用户ID
      * @param ip     本地IP
@@ -31,12 +32,24 @@ public class FromDevice extends Device {
      * @return FromDevice实例
      */
     public static FromDevice getInstance(String userId, String ip, int port) {
+        return getInstance(userId, ip, port, Constant.UDP);
+    }
+
+    /**
+     * 创建指定传输协议的 FromDevice 实例，自动生成 fromTag 和 User-Agent。
+     *
+     * @param userId    用户ID
+     * @param ip        本地IP
+     * @param port      本地端口
+     * @param transport 信令传输协议，{@link Constant#UDP} 或 {@link Constant#TCP}
+     * @return FromDevice实例
+     */
+    public static FromDevice getInstance(String userId, String ip, int port, String transport) {
         FromDevice fromDevice = new FromDevice();
         fromDevice.setUserId(userId);
         fromDevice.setIp(ip);
         fromDevice.setPort(port);
-        fromDevice.setTransport("UDP");
-        fromDevice.setStreamMode("TCP_PASSIVE");
+        fromDevice.setTransport(transport);
         fromDevice.setFromTag(SipRequestUtils.getNewFromTag());
         fromDevice.setAgent(SipCommonContextHolder.getUserAgent());
         return fromDevice;
