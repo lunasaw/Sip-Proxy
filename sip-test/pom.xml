@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-proxy</artifactId>
-        <version>1.8.0</version>
+        <version>1.8.1</version>
     </parent>
 
     <artifactId>sip-test</artifactId>
@@ -18,4 +18,29 @@
     <modules>
         <module>gb28181-test</module>
     </modules>
+
+    <build>
+        <plugins>
+            <!--
+                sip-test 是测试/示例聚合 pom，连同子模块 gb28181-test 一律不发布到 Maven Central。
+                nexus-staging-maven-plugin 不认 maven-deploy-plugin 的 skip，必须用自己的
+                skipNexusStagingDeployMojo 单独关闭（与 gb28181-test 同款）。
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.7.0</version>
+                <configuration>
+                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
