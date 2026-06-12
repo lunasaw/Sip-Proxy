@@ -2,7 +2,6 @@ package io.github.lunasaw.gbproxy.client.transmit.cmd;
 
 import com.luna.common.check.Assert;
 import com.luna.common.text.RandomStrUtil;
-import io.github.lunasaw.gb28181.common.entity.DeviceAlarm;
 import io.github.lunasaw.gb28181.common.entity.notify.*;
 import io.github.lunasaw.gb28181.common.entity.response.*;
 import io.github.lunasaw.gb28181.common.entity.enums.CmdTypeEnum;
@@ -82,18 +81,6 @@ public class ClientCommandSender implements ApplicationContextAware {
             .role("client").commandType(commandType)
             .fromDevice(from).toDevice(to).body(body)
             .errorEvent(errorEvent).okEvent(okEvent).build());
-    }
-
-    /**
-     * 发送设备告警命令（MESSAGE，body=DeviceAlarm）。
-     *
-     * @param from  本端设备
-     * @param to    目标平台
-     * @param alarm 告警信息
-     * @return 本次请求的 Call-ID
-     */
-    public static String sendAlarmCommand(FromDevice from, ToDevice to, DeviceAlarm alarm) {
-        return send("MESSAGE", from, to, alarm);
     }
 
     /**
