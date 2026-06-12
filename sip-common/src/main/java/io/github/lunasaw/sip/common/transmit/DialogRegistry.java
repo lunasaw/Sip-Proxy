@@ -119,6 +119,34 @@ public final class DialogRegistry {
         return removed == null ? null : removed.dialog;
     }
 
+    /**
+     * 按 callId + dialog 身份移除 —— 仅当注册项持有的 dialog 与传入 dialog 为<b>同一对象</b>时才移除。
+     *
+     * <p>自环场景（同一 JVM、同一 {@code SipStack} 既发 INVITE 又收 INVITE）下，出站 UAC dialog 与
+     * 入站 UAS dialog <b>共享同一 callId</b>，但只有 UAC dialog 注册在本表。若按 callId 盲删
+     * （{@link #remove(String)}），UAS 腿先终结时会触发 {@code DialogTerminatedEvent} 误删仍存活、
+     * 等待发 BYE 的 UAC 项，导致后续 BYE 抛 {@link DialogNotFoundException}。本方法比对 dialog 对象
+     * 身份，仅在终结的正是注册项本身时移除，避免交叉误删。
+     *
+     * @param callId Call-ID
+     * @param dialog 真正终结的 JAIN-SIP Dialog
+     * @return 实际被移除的 dialog；未命中（callId 无项 / dialog 不匹配）返回 null
+     */
+    public static Dialog remove(String callId, Dialog dialog) {
+        if (callId == null || dialog == null) {
+            return null;
+        }
+        Dialog[] holder = new Dialog[1];
+        BY_CALL_ID.computeIfPresent(callId, (k, entry) -> {
+            if (entry.dialog == dialog) {
+                holder[0] = entry.dialog;
+                return null; // 身份匹配 → 移除
+            }
+            return entry; // 非注册项（如自环 UAS 腿）→ 保留
+        });
+        return holder[0];
+    }
+
     public static int size() {
         return BY_CALL_ID.size();
     }

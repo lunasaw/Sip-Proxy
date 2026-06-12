@@ -501,9 +501,13 @@ public abstract class AbstractSipListener implements SipListener {
             CallIdHeader callIdHeader = dialog.getCallId();
             String callId = callIdHeader != null ? callIdHeader.getCallId() : null;
             if (callId != null) {
-                Dialog removed = DialogRegistry.remove(callId);
+                // 身份校验移除：自环（同栈既发又收 INVITE）下 UAC/UAS 共享 callId，
+                // 仅当终结的正是注册项本身才移除，避免 UAS 腿终结误删等待 BYE 的 UAC 项
+                Dialog removed = DialogRegistry.remove(callId, dialog);
                 if (removed != null) {
                     log.debug("DialogTerminatedEvent 清理 DialogRegistry: callId={}", callId);
+                } else {
+                    log.debug("DialogTerminatedEvent 未匹配注册项（自环对端腿或已清理），保留 registry: callId={}", callId);
                 }
             }
         }
