@@ -186,6 +186,7 @@ public class Gb28181WhitelistHandlers {
     public String invitePlay(GatewayCommand cmd) {
         Map<String, Object> p = cmd.payload();
         return sender.deviceInvitePlay(cmd.deviceId(),
+                (String) p.get("channelId"),
                 (String) requireField(p, "mediaIp", cmd.type()),
                 ((Number) requireField(p, "mediaPort", cmd.type())).intValue(),
                 streamMode(p));

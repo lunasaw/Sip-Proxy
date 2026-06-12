@@ -760,6 +760,48 @@ public class ServerCommandSender {
     }
 
     /**
+     * 发送实时点播 INVITE（s=Play），按 GB28181-2016 §9.2 标准寻址到<strong>通道</strong>。
+     *
+     * <p>与 {@link #deviceInvitePlay(String, String, Integer, StreamModeEnum)} 的区别：实时点播的目标是
+     * <strong>视频源（通道）</strong>，故 Request-URI / To 头 / SDP（o=/u=）/ Subject 第一段均用 channelId，
+     * 而信令<strong>传输地址</strong>仍取父设备注册的 ip:port（通道不独立注册）。这通过寻址 ID 与传输地址分离实现：
+     * {@code getToDevice(deviceId)} 取父设备传输地址，{@code to.setUserId(channelId)} 把寻址 ID 覆盖为通道。
+     *
+     * <p><strong>关于回显「污染」</strong>：设备 200 OK 会原样回显 To=channelId，框架
+     * {@code InviteResponseProcessor} 据此发出的 {@code Session.InviteOk} 事件 deviceId 字段即为 channelId。
+     * 这是标准报文的必然结果——业务层应以 <strong>Call-ID</strong> 关联会话、从自身会话上下文取设备/通道身份，
+     * 而非读该事件字段（见 voglander {@code Gb28181ProtocolHandler} 的 callId 查表实现）。
+     *
+     * <p>{@code channelId} 为空时退化为按设备点播（等价于上面的设备级重载），保持向后兼容。
+     *
+     * @param deviceId   父设备 ID（仅用于解析信令传输地址）
+     * @param channelId  通道国标编码（寻址：Request-URI/To/SDP/Subject）；为空则按设备点播
+     * @param sdpIp      收流 IP
+     * @param mediaPort  收��端口
+     * @param streamMode 流传输模式
+     * @return SIP Call-ID
+     */
+    public String deviceInvitePlay(String deviceId, String channelId, String sdpIp, Integer mediaPort, StreamModeEnum streamMode) {
+        if (channelId == null || channelId.isBlank()) {
+            return deviceInvitePlay(deviceId, sdpIp, mediaPort, streamMode);
+        }
+        // 寻址 ID 与传输地址分离（SIP AOR vs Contact）：
+        //   getToDevice(deviceId) —— 用父设备解析信令传输目的地（通道不独立注册，无自己的 ip:port）；
+        //   setUserId(channelId)  —— 把 Request-URI / To 头 user 部分覆盖为通道编码（GB28181 实时点播寻址视频源）。
+        // 报文实际发往父设备 ip:port，但逻辑寻址到通道，符合 GB28181-2016 §9.2 标准。
+        ToDevice to = getToDevice(deviceId);
+        to.setUserId(channelId);
+        to.setStreamMode(streamMode.name());
+        FromDevice from = deviceSupplier.getServerFromDevice();
+        // InviteRequest 用 channelId 构造 SDP：o=/u= 行与 Subject 第一段同样为通道编码。
+        InviteRequest req = new InviteRequest(channelId, streamMode, sdpIp, mediaPort);
+        return factory.getStrategy("server", "INVITE")
+            .execute(CommandContext.builder()
+                .role("server").commandType("INVITE")
+                .fromDevice(from).toDevice(to).content(req.getContent()).build());
+    }
+
+    /**
      * 发送历史回放 INVITE（s=Playback）。
      *
      * @param deviceId   目标设备 ID
