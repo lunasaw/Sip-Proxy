@@ -190,18 +190,10 @@
                 </configuration>
             </plugin>
             <!--
-                gb28181-test 是测试/示例模块（spring-boot repackage 打 fat jar），
-                不发布到 Maven Central。nexus-staging-maven-plugin 不认 maven-deploy-plugin 的 skip，
-                必须用自己的 skipNexusStagingDeployMojo 单独关闭。
+                gb28181-test 是测试/示例模块（spring-boot repackage 打 fat jar），不发布到 Maven Central。
+                跳过发布由父模块 sip-test 的 <skipPublishing>true</skipPublishing> property 继承生效
+                （central-publishing 读取该 property）；maven-deploy-plugin skip=true 为双保险。
             -->
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.7.0</version>
-                <configuration>
-                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
-                </configuration>
-            </plugin>
             <!--
                 跨模块覆盖率汇总：gb28181-test 是集成测试入口，运行时跨模块覆盖
                 sip-common / gb28181-common / gb28181-client / gb28181-server。

@@ -14,6 +14,32 @@
     <packaging>pom</packaging>
     <name>sip-gateway</name>
     <description>SIP Gateway 父聚合：协议中立网关内核 + 多协议适配器</description>
+    <url>https://github.com/lunasaw/gb28181-proxy</url>
+
+    <!--
+        发布到 Maven Central 的硬性元数据要求（url / licenses / scm / developers）。
+        本聚合 pom 是 gateway-* 子模块的直接父级，子模块从此处一跳继承；
+        缺失会导致 Sonatype Central Portal 校验失败（effective model 无 coordinates，
+        url/licenses/依赖版本全报缺失）。与根 pom 保持一致。
+    -->
+    <licenses>
+        <license>
+            <name>Apache 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>luna</name>
+            <id>luna</id>
+            <email>iszychen@gmail.com</email>
+        </developer>
+    </developers>
+    <scm>
+        <url>https://github.com/lunasaw/gb28181-proxy</url>
+        <connection>https://github.com/lunasaw/gb28181-proxy</connection>
+        <developerConnection>https://github.com/lunasaw/gb28181-proxy.git</developerConnection>
+    </scm>
 
     <modules>
         <module>gateway-core</module>

@@ -15,6 +15,11 @@
     <name>sip-test</name>
     <description>SIP 协议栈集成测试父聚合（gb28181-test 等）</description>
 
+    <properties>
+        <!-- 测试/示例聚合，不发布到 Maven Central。central-publishing 读取此 property 跳过本模块及继承者。 -->
+        <skipPublishing>true</skipPublishing>
+    </properties>
+
     <modules>
         <module>gb28181-test</module>
     </modules>
@@ -23,22 +28,14 @@
         <plugins>
             <!--
                 sip-test 是测试/示例聚合 pom，连同子模块 gb28181-test 一律不发布到 Maven Central。
-                nexus-staging-maven-plugin 不认 maven-deploy-plugin 的 skip，必须用自己的
-                skipNexusStagingDeployMojo 单独关闭（与 gb28181-test 同款）。
+                central-publishing-maven-plugin 通过上面 <skipPublishing>true</skipPublishing> 跳过；
+                maven-deploy-plugin skip=true 作为双保险（即便未启用 ossrh profile 也不会误 deploy）。
             -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
                     <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.7.0</version>
-                <configuration>
-                    <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
                 </configuration>
             </plugin>
         </plugins>

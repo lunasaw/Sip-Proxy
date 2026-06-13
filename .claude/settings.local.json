@@ -42,7 +42,17 @@
       "Bash(sed -i '' 's/ResponseCmd\\\\.doResponseCmd\\(Response\\\\.SERVER_INTERNAL_ERROR, e\\\\.getMessage\\(\\), evt\\);/ResponseCmd.sendResponse\\(Response.SERVER_INTERNAL_ERROR, e.getMessage\\(\\), evt\\);/g' /Users/weidian/project/luna/voglander-workstation/sip-proxy/gb28181-client/src/main/java/io/github/lunasaw/gbproxy/client/transmit/request/info/InfoRequestProcessor.java)",
       "Bash(sed -i '' 's/ResponseCmd\\\\.doResponseCmd\\(statusCode, reasonPhrase, requestEvent\\);/ResponseCmd.sendResponse\\(statusCode, reasonPhrase, requestEvent\\);/g' /Users/weidian/project/luna/voglander-workstation/sip-proxy/sip-common/src/main/java/io/github/lunasaw/sip/common/exception/SipExceptionHandler.java)",
       "Bash(sed -i '' -e 's/ResponseCmd\\\\.doResponseCmd\\(Response\\\\.OK, \"OK\", event\\);/ResponseCmd.sendResponse\\(Response.OK, \"OK\", event\\);/g' -e 's/ResponseCmd\\\\.doResponseCmd\\(Response\\\\.SERVER_INTERNAL_ERROR, \"SERVER ERROR\", event\\);/ResponseCmd.sendResponse\\(Response.SERVER_INTERNAL_ERROR, \"SERVER ERROR\", event\\);/g' -e 's/ResponseCmd\\\\.doResponseCmd\\(code, error, event\\);/ResponseCmd.sendResponse\\(code, error, event\\);/g' /Users/weidian/project/luna/voglander-workstation/sip-proxy/sip-common/src/main/java/io/github/lunasaw/sip/common/transmit/event/message/TransactionAwareMessageHandlerAbstract.java)",
-      "Bash(sed -i '' 's/ResponseCmd\\\\.doResponseCmd\\(Response\\\\.NOT_FOUND, event\\);/ResponseCmd.sendResponse\\(Response.NOT_FOUND, event\\);/g' /Users/weidian/project/luna/voglander-workstation/sip-proxy/gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/message/notify/KeepaliveNotifyMessageHandler.java)"
+      "Bash(sed -i '' 's/ResponseCmd\\\\.doResponseCmd\\(Response\\\\.NOT_FOUND, event\\);/ResponseCmd.sendResponse\\(Response.NOT_FOUND, event\\);/g' /Users/weidian/project/luna/voglander-workstation/sip-proxy/gb28181-server/src/main/java/io/github/lunasaw/gbproxy/server/transmit/request/message/notify/KeepaliveNotifyMessageHandler.java)",
+      "Bash(echo \"install 验证已启动 PID=$!\")",
+      "Bash(curl -sS --max-time 15 -o /dev/null -w \"direct: HTTP %{http_code}, time %{time_total}s\\\\n\" \"https://central.sonatype.com/api/v1/publisher/published?namespace=io.github.lunasaw\")",
+      "Bash(curl -sS --max-time 15 --socks5-hostname 127.0.0.1:7890 -o /dev/null -w \"via-socks: HTTP %{http_code}, time %{time_total}s\\\\n\" \"https://central.sonatype.com\")",
+      "Bash(curl -sS --max-time 12 -x http://127.0.0.1:8080 -o /dev/null -w \"http-proxy google: %{http_code}\\\\n\" \"https://google.com\")",
+      "Bash(curl -sS --max-time 12 -x http://127.0.0.1:8080 -o /dev/null -w \"http-proxy sonatype: %{http_code}\\\\n\" \"https://central.sonatype.com\")",
+      "Bash(curl -sS --max-time 12 --socks5-hostname 127.0.0.1:8080 -o /dev/null -w \"socks google: %{http_code}\\\\n\" \"https://google.com\")",
+      "Bash(curl -sS --max-time 12 --socks5-hostname 127.0.0.1:7890 -o /dev/null -w \"socks7890 sonatype: %{http_code}, %{time_total}s\\\\n\" \"https://central.sonatype.com\")",
+      "Bash(curl -sS --max-time 12 --socks5-hostname 127.0.0.1:7890 -o /dev/null -w \"socks7890 google:   %{http_code}, %{time_total}s\\\\n\" \"https://google.com\")",
+      "Bash(curl -sS --max-time 12 -o /dev/null -w \"direct sonatype:    %{http_code}, %{time_total}s\\\\n\" \"https://central.sonatype.com\")",
+      "Bash(nohup mvn clean *)"
     ],
     "deny": []
   }
