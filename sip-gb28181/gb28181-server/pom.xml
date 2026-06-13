@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-gb28181</artifactId>
-        <version>1.8.3</version>
+        <version>1.8.4</version>
     </parent>
 
-    <version>1.8.3</version>
+    <version>1.8.4</version>
     <artifactId>gb28181-server</artifactId>
     <packaging>jar</packaging>
     <name>gb28181-server</name>
