@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-test</artifactId>
-        <version>1.8.3</version>
+        <version>1.8.4</version>
     </parent>
 
     <version>${gb28181-proxy.version}</version>
