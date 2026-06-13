@@ -6,7 +6,7 @@
 
     <groupId>io.github.lunasaw</groupId>
     <artifactId>sip-proxy</artifactId>
-    <version>1.8.2</version>
+    <version>1.8.3</version>
     <packaging>pom</packaging>
     <modules>
         <module>sip-common</module>
@@ -27,8 +27,8 @@
         <app.profiles>${project.name}</app.profiles>
         <sip.version>1.3.0-91</sip.version>
         <dom4j.version>2.1.4</dom4j.version>
-        <sip-proxy-common.version>1.8.2</sip-proxy-common.version>
-        <gb28181-proxy.version>1.8.2</gb28181-proxy.version>
+        <sip-proxy-common.version>1.8.3</sip-proxy-common.version>
+        <gb28181-proxy.version>1.8.3</gb28181-proxy.version>
         <skywalking.version>9.1.0</skywalking.version>
         <guava.version>32.1.3-jre</guava.version>
         <caffeine.version>3.1.8</caffeine.version>
@@ -324,31 +324,26 @@
             </activation>
             <build>
                 <plugins>
-                    <!--这是自动发布的插件-->
+                    <!--
+                        Maven 中央仓库发布插件（Sonatype Central Portal 官方，2025+ 推荐）。
+                        替换老的 nexus-staging-maven-plugin：后者按模块逐个连 Sonatype 做 profile 检查，
+                        多模块下需连 N 次，任一次 TLS 握手卡死即整体 hang（实测 1.7.0 之后发布全失败的根因）。
+                        central-publishing 把全部模块产物打成 1 个 bundle 一次性上传，根治多连接问题。
+                          - extensions=true：接管默认 deploy 行为
+                          - publishingServerId=ossrh：复用 settings.xml 中已有的 ossrh Portal token 凭证
+                          - autoPublish=true：校验通过后自动发布（false 则需到 Portal 手动点 Publish）
+                          - waitUntil=published：构建阻塞到真正发布完成，便于 CI 判定
+                        测试/示例模块（sip-test / gb28181-test）通过 <skipPublishing>true</skipPublishing> 排除。
+                    -->
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.10.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
-                            <!--自动释放，deploy就不需要在仓库中在操作部署了-->
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <goal>deploy</goal>
-                        </configuration>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-release-plugin</artifactId>
-                        <version>2.3.2</version>
-                        <configuration>
-                            <autoVersionSubmodules>true</autoVersionSubmodules>
-                            <useReleaseProfile>false</useReleaseProfile>
-                            <!--正式包release 快照包snapshots-->
-                            <releaseProfiles>snapshots</releaseProfiles>
-                            <goals>deploy</goals>
+                            <publishingServerId>ossrh</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -402,6 +397,9 @@
                             <!--<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>-->
                             <additionalparam>-Xdoclint:none</additionalparam>
                             <aggregate>true</aggregate>
+                            <!-- 关闭模块间 offline 链接自动探测,避免 target/apidocs/package-list 缺失时刷 "Error fetching link" 噪音 -->
+                            <detectLinks>false</detectLinks>
+                            <detectOfflineLinks>false</detectOfflineLinks>
                             <charset>UTF-8</charset><!-- utf-8读取文件 -->
                             <encoding>UTF-8</encoding><!-- utf-8进行编码代码 -->
                             <docencoding>UTF-8</docencoding><!-- utf-8进行编码文档 -->
