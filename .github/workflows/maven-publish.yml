@@ -29,6 +29,16 @@ jobs:
           distribution: 'zulu'
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
 
+      - name: Allow gpg loopback pinentry (Central signing in CI)
+        # pom 用 --pinentry-mode loopback 做非交互签名,需 gpg-agent 显式放行,
+        # 否则 maven-gpg-plugin 报 "Exit code: 2"(agent 拒绝 loopback)
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback"  >> ~/.gnupg/gpg.conf
+          gpgconf --kill gpg-agent || true
+
       - name: Generate Maven settings.xml (ossrh + github_auth servers)
         run: |
           mkdir -p ~/.m2
