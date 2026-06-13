@@ -292,19 +292,14 @@
                     <url>https://maven.pkg.github.com/lunasaw/gb28181-proxy</url>
                 </snapshotRepository>
             </distributionManagement>
-            <repositories>
-                <repository>
-                    <!-- id需要与上面的server对应的id匹配 -->
-                    <id>github_auth</id>
-                    <name>GitHub OWNER Apache Maven Packages</name>
-                    <url>https://maven.pkg.github.com/lunasaw/gb28181-proxy</url>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
+            <!--
+                注意:此处不要再配 <repositories> 指向 GitHub Packages。
+                发布目标(distributionManagement)≠ 依赖来源(repositories)。
+                若把 GitHub Packages 也列为依赖来源,deploy 时 Maven 会去远程查找尚未发布的
+                io.github.lunasaw:sip-proxy:pom:${version},404 → "Could not find artifact ... in github_auth"。
+            -->
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
             </activation>
         </profile>
         <profile>
