@@ -39,7 +39,7 @@ jobs:
           echo "pinentry-mode loopback"  >> ~/.gnupg/gpg.conf
           gpgconf --kill gpg-agent || true
 
-      - name: Generate Maven settings.xml (ossrh + github_auth servers)
+      - name: Generate Maven settings.xml (ossrh + github_auth + gpg passphrase)
         run: |
           mkdir -p ~/.m2
           cat > ~/.m2/settings.xml <<'EOF'
@@ -54,6 +54,16 @@ jobs:
                 <id>github_auth</id>
                 <username>${env.GITHUB_ACTOR}</username>
                 <password>${env.GITHUB_TOKEN}</password>
+              </server>
+              <!--
+                maven-gpg-plugin 默认 passphraseServerId=gpg.passphrase,从此 server 读签名口令。
+                旧 workflow 靠 setup-java 的 gpg-passphrase 输入自动注入此条目;
+                新 workflow 自管 settings.xml,必须显式补回,否则插件拿不到口令 →
+                回退 gpg-agent → 启动 pinentry → CI 无 pinentry → "gpg: signing failed: No pinentry"。
+              -->
+              <server>
+                <id>gpg.passphrase</id>
+                <passphrase>${env.MAVEN_GPG_PASSPHRASE}</passphrase>
               </server>
             </servers>
           </settings>
