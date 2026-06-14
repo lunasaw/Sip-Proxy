@@ -56,9 +56,7 @@ log "解析结果: ${resolved} (bumped=${bumped})"
 
 if [ "$resolved" != "$current" ]; then
   log "写回版本号到整个 reactor: ${current} -> ${resolved}"
-  mvn -q versions:set -DnewVersion="$resolved" -DprocessAllModules=true -DgenerateBackupPoms=false
-  mvn -q versions:set-property -Dproperty=sip-proxy-common.version -DnewVersion="$resolved" -DgenerateBackupPoms=false
-  mvn -q versions:set-property -Dproperty=gb28181-proxy.version  -DnewVersion="$resolved" -DgenerateBackupPoms=false
+  bash "$(dirname "$0")/apply-release-version.sh" "$resolved"
 fi
 
 echo "VERSION=${resolved}"
