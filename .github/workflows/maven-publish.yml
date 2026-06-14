@@ -1,21 +1,29 @@
 name: Release to Maven Central and GitHub Packages
 
-# master 每次 push 即触发一次发布尝试:
-#   - 解析当前版本是否已发布到中央仓库;已发布则 patch+1 直到空位(见 scripts/resolve-release-version.sh)
-#   - 发布到 Maven 中央仓库(ossrh / central-publishing,waitUntil=published 阻塞到真正发布完成)
-#   - 若版本被 bump,则把新版本号 commit 回 master(带 [skip ci],避免触发自身)
-#   - 再发布到 GitHub Packages,并发布 Javadoc
+# master 每次 push 即触发一次发布尝试,拆成两个串行 job:
+#   central   —— 解析版本(已发布则 patch+1)、发布到 Maven 中央仓库、把 bump 后的版本 commit 回 master
+#   github    —— needs central;用 central 解析出的版本对齐工作区,发布到 GitHub Packages 并发布 Javadoc
+#
+# 拆分动机:职责清晰 + 失败隔离。central 的 central-publishing 插件 waitUntil=published 会长时间阻塞,
+# 与 GitHub Packages 发布混在一个 job 里时,日志交织、任一步失败都得整体重跑。拆开后 github job 可单独重跑。
+#
+# 跨 job 约束:GitHub Actions 不同 job 不共享文件系统,且 github job checkout 的是触发时的 SHA
+# (拿不到 central job bump 后 push 的 pom)。因此版本号通过 job output 传递,github job 在本地
+# 用 scripts/apply-release-version.sh 把工作区对齐到该版本,再发布。
 'on':
   push:
     branches:
       - master
 
 jobs:
-  release:
+  central:
+    name: Publish to Maven Central
     runs-on: ubuntu-latest
     permissions:
       contents: write   # 版本 bump 后需 push 回 master
-      packages: write   # 发布到 GitHub Packages
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      bumped: ${{ steps.ver.outputs.bumped }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,7 +47,7 @@ jobs:
           echo "pinentry-mode loopback"  >> ~/.gnupg/gpg.conf
           gpgconf --kill gpg-agent || true
 
-      - name: Generate Maven settings.xml (ossrh + github_auth + gpg passphrase)
+      - name: Generate Maven settings.xml (ossrh + gpg passphrase)
         run: |
           mkdir -p ~/.m2
           cat > ~/.m2/settings.xml <<'EOF'
@@ -49,11 +57,6 @@ jobs:
                 <id>ossrh</id>
                 <username>${env.MAVEN_USERNAME}</username>
                 <password>${env.MAVEN_PASSWORD}</password>
-              </server>
-              <server>
-                <id>github_auth</id>
-                <username>${env.GITHUB_ACTOR}</username>
-                <password>${env.GITHUB_TOKEN}</password>
               </server>
               <!--
                 maven-gpg-plugin 默认 passphraseServerId=gpg.passphrase,从此 server 读签名口令。
@@ -88,6 +91,45 @@ jobs:
           git add -u
           git commit -m "chore(release): 版本号自动递增至 ${{ steps.ver.outputs.version }} [skip ci]"
           git push origin HEAD:master
+
+  github:
+    name: Publish to GitHub Packages
+    needs: central
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Javadoc-publisher 需 push 到 javadoc 分支
+      packages: write   # 发布到 GitHub Packages
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SECRET_KEY }}
+
+      - name: Set up JDK 17
+        # 发 GitHub Packages 不签名(github_auth profile 无 GPG/source/javadoc 插件),故无需 GPG key
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+
+      - name: Generate Maven settings.xml (github_auth)
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<'EOF'
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+            <servers>
+              <server>
+                <id>github_auth</id>
+                <username>${env.GITHUB_ACTOR}</username>
+                <password>${env.GITHUB_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Align working tree to released version
+        # 不同 job 不共享文件系统,且本 job checkout 的是触发 SHA(拿不到 central job bump 后的 pom),
+        # 故用 central job 解析出的版本号在本地写回,确保发布的 GA 坐标与中央仓库一致。
+        run: bash scripts/apply-release-version.sh "${{ needs.central.outputs.version }}"
 
       - name: Publish to GitHub Packages
         run: mvn -B -DskipTests -P github_auth deploy
