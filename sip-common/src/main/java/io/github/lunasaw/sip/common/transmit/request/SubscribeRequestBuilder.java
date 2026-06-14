@@ -51,9 +51,14 @@ public class SubscribeRequestBuilder extends AbstractSipRequestBuilder {
         ContactHeader contactHeader = SipRequestUtils.createContactHeader(fromDevice.getUserId(), fromDevice.getHostAddress());
         request.addHeader(contactHeader);
 
-        // 添加Event头部（如果有的话）
+        // 添加Event头部（如果有的话）。
+        // GB/T 28181-2022 N.4.2：SUBSCRIBE/NOTIFY 的 Event 头域必须携带数字 id（格式 "Catalog; id=num"，见 RFC 6665）。
+        // eventId 为空时回退到自动生成数字 id 的重载，避免 JAIN-SIP Event.setEventId(null) 抛 NPE，并保证 Event 头始终合规。
         if (toDevice.getEventType() != null) {
-            EventHeader eventHeader = SipRequestUtils.createEventHeader(toDevice.getEventType(), toDevice.getEventId());
+            String eventId = toDevice.getEventId();
+            EventHeader eventHeader = (eventId == null || eventId.isEmpty())
+                ? SipRequestUtils.createEventHeader(toDevice.getEventType())
+                : SipRequestUtils.createEventHeader(toDevice.getEventType(), eventId);
             request.addHeader(eventHeader);
         }
     }
