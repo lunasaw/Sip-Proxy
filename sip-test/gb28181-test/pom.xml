@@ -6,10 +6,10 @@
     <parent>
         <groupId>io.github.lunasaw</groupId>
         <artifactId>sip-test</artifactId>
-        <version>1.8.5</version>
+        <version>1.8.6</version>
     </parent>
 
-    <version>1.8.5</version>
+    <version>1.8.6</version>
     <artifactId>gb28181-test</artifactId>
     <packaging>jar</packaging>
     <name>gb28181-test</name>
