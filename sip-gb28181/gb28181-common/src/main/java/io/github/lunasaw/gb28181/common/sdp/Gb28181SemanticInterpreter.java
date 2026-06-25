@@ -68,9 +68,15 @@ public class Gb28181SemanticInterpreter {
             if (mds == null || mds.isEmpty()) {
                 return;
             }
-            Media m = mds.get(0).getMedia();
+            MediaDescription md = mds.get(0);
+            Media m = md.getMedia();
             target.setTransport(TransportEnum.fromProtoToken(m.getProtocol()));
             target.setPort(m.getMediaPort());
+            // a=setup: active|passive (RFC 4145, GB28181 TCP 模式)
+            String setupVal = md.getAttribute("setup");
+            if (setupVal != null) {
+                target.setTcpSetup(setupVal);
+            }
         } catch (Exception e) {
             log.warn("interpret m= failed", e);
         }

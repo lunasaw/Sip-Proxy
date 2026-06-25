@@ -34,6 +34,7 @@ import io.github.lunasaw.gb28181.common.entity.notify.MobilePositionNotify;
 import io.github.lunasaw.gb28181.common.entity.query.CruiseTrackListQuery;
 import io.github.lunasaw.gb28181.common.entity.query.CruiseTrackQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceAlarmQuery;
+import io.github.lunasaw.gb28181.common.entity.query.DeviceMobileQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceQuery;
 import io.github.lunasaw.gb28181.common.entity.query.DeviceRecordQuery;
 import io.github.lunasaw.gb28181.common.entity.query.HomePositionQuery;
@@ -133,6 +134,8 @@ public class TestClientImpl extends ClientGb28181Adapter {
     private volatile DeviceAlarmQuery lastAlarmSubscribe;
     @Getter
     private volatile DeviceQuery lastCatalogSubscribe;
+    @Getter
+    private volatile DeviceMobileQuery lastMobilePositionSubscribe;
 
     // ============ 通知最近一次 ============
     @Getter
@@ -163,6 +166,7 @@ public class TestClientImpl extends ClientGb28181Adapter {
         this.lastCruiseTrackQuery = null;
         this.lastAlarmSubscribe = null;
         this.lastCatalogSubscribe = null;
+        this.lastMobilePositionSubscribe = null;
         this.lastBroadcastNotify = null;
     }
 
@@ -434,6 +438,12 @@ public class TestClientImpl extends ClientGb28181Adapter {
     @Override
     public void onAlarmSubscribe(String platformId, Integer expires, DeviceAlarmQuery query) {
         this.lastAlarmSubscribe = query;
+        signal(query);
+    }
+
+    @Override
+    public void onMobilePositionSubscribe(String platformId, Integer expires, DeviceMobileQuery query) {
+        this.lastMobilePositionSubscribe = query;
         signal(query);
     }
 

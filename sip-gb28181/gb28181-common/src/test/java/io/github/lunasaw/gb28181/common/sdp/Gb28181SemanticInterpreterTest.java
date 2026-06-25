@@ -47,6 +47,39 @@ class Gb28181SemanticInterpreterTest {
         assertThat(gb.getSessionType()).isEqualTo(InviteSessionNameEnum.PLAY_BACK);
         assertThat(gb.getTransport()).isEqualTo(TransportEnum.TCP);
         assertThat(gb.getPort()).isEqualTo(6000);
+        assertThat(gb.getTcpSetup()).isNull();
+    }
+
+    @Test
+    void interpret_tcpActive_setsTcpSetup() throws SdpParseException {
+        GbSessionDescription gb = parseGb("v=0\r\n" +
+                "o=- 0 0 IN IP4 10.0.0.1\r\n" +
+                "s=Play\r\n" +
+                "c=IN IP4 10.0.0.1\r\n" +
+                "t=0 0\r\n" +
+                "m=video 6000 TCP/RTP/AVP 96\r\n" +
+                "a=setup:active\r\n");
+
+        interpreter.interpret(gb);
+
+        assertThat(gb.getTransport()).isEqualTo(TransportEnum.TCP);
+        assertThat(gb.getTcpSetup()).isEqualTo("active");
+    }
+
+    @Test
+    void interpret_tcpPassive_setsTcpSetup() throws SdpParseException {
+        GbSessionDescription gb = parseGb("v=0\r\n" +
+                "o=- 0 0 IN IP4 10.0.0.1\r\n" +
+                "s=Play\r\n" +
+                "c=IN IP4 10.0.0.1\r\n" +
+                "t=0 0\r\n" +
+                "m=video 6000 TCP/RTP/AVP 96\r\n" +
+                "a=setup:passive\r\n");
+
+        interpreter.interpret(gb);
+
+        assertThat(gb.getTransport()).isEqualTo(TransportEnum.TCP);
+        assertThat(gb.getTcpSetup()).isEqualTo("passive");
     }
 
     @Test

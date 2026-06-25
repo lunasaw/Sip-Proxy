@@ -142,11 +142,15 @@ public class ServerCommandSender {
         ToDevice to = getToDevice(deviceId);
         to.setExpires(expires);
         to.setEventType(eventType);
+        // GB/T 28181-2022 N.4.2：Event 头域必须携带数字 id，与 alarm/ptz 订阅保持一致，由 sn() 生成数字事件 ID
+        String eventId = sn();
+        to.setEventId(eventId);
         FromDevice from = deviceSupplier.getServerFromDevice();
         DeviceQuery body = new DeviceQuery(CmdTypeEnum.CATALOG.getType(), sn(), deviceId);
         SubscribeInfo subscribeInfo = new SubscribeInfo();
         subscribeInfo.setEventType(eventType);
         subscribeInfo.setExpires(expires);
+        subscribeInfo.setEventId(eventId);
         return factory.getStrategy("server", "SUBSCRIBE")
             .execute(CommandContext.forSubscribe("server", from, to, subscribeInfo, expires)
                 .toBuilder().body(body).build());
@@ -167,6 +171,10 @@ public class ServerCommandSender {
         ToDevice to = getToDevice(deviceId);
         to.setExpires(expires);
         to.setEventType(eventType);
+        // GB/T 28181-2022 N.4.2：Event 头域必须携带数字 id；调用方未传 eventId 时由 sn() 兜底生成数字事件 ID
+        if (eventId == null || eventId.isEmpty()) {
+            eventId = sn();
+        }
         to.setEventId(eventId);
         FromDevice from = deviceSupplier.getServerFromDevice();
         DeviceMobileQuery body = new DeviceMobileQuery(CmdTypeEnum.MOBILE_POSITION.getType(), sn(), deviceId);
@@ -866,7 +874,23 @@ public class ServerCommandSender {
      * @return SIP Call-ID
      */
     public String deviceInvitePlayBackControl(String deviceId, PlayActionEnums playActionEnums) {
-        String controlBody = playActionEnums.getControlBody();
+        return deviceInvitePlayBackControl(deviceId, playActionEnums, null);
+    }
+
+    /**
+     * 发送回放控制 INFO（暂停/恢复/定位/倍速），携带操作数据。
+     * <p>
+     * 用于 {@link PlayActionEnums#PLAY_RANGE}（Seek，data 为 {@link Long} 秒）与
+     * {@link PlayActionEnums#PLAY_SPEED}（倍速，data 为 {@link Double} 倍率）等需要携带具体值的操作；
+     * data 为 {@code null} 时退化为枚举自带的默认数据（{@link PlayActionEnums#getControlBody()}）。
+     *
+     * @param deviceId        目标设备 ID
+     * @param playActionEnums 回放操作类型
+     * @param data            操作数据（PLAY_RANGE 传 Long 秒，PLAY_SPEED 传 Double 倍率），可为 null
+     * @return SIP Call-ID
+     */
+    public String deviceInvitePlayBackControl(String deviceId, PlayActionEnums playActionEnums, Object data) {
+        String controlBody = data != null ? playActionEnums.getControlBody(data) : playActionEnums.getControlBody();
         Assert.notNull(controlBody, "不支持的操作类型");
         FromDevice from = deviceSupplier.getServerFromDevice();
         ToDevice to = getToDevice(deviceId);
