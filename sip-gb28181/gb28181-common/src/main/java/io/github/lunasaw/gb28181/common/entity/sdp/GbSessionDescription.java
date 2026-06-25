@@ -42,6 +42,12 @@ public class GbSessionDescription extends SdpSessionDescription {
     /** m= 字段端口（冗余便利字段） */
     private Integer port;
 
+    /**
+     * TCP 连接角色（SDP {@code a=setup:} 属性，RFC 4145）。
+     * {@code "active"} — 设备主动连平台；{@code "passive"} — 设备监听等平台连；
+     * {@code null} — UDP 或未携带 a=setup:。
+     */
+    private String tcpSetup;
 
     public GbSessionDescription(SessionDescription sessionDescription) {
         super(sessionDescription);

@@ -227,8 +227,26 @@ public class Gb28181WhitelistHandlers {
     @CommandMapping("gb28181.Invite.PlaybackControl")
     public String invitePlaybackControl(GatewayCommand cmd) {
         Map<String, Object> p = cmd.payload();
-        return sender.deviceInvitePlayBackControl(cmd.deviceId(),
-                JSON.to(PlayActionEnums.class, requireField(p, "action", cmd.type())));
+        PlayActionEnums action = JSON.to(PlayActionEnums.class, requireField(p, "action", cmd.type()));
+        Object data = playbackControlData(action, p.get("data"));
+        return sender.deviceInvitePlayBackControl(cmd.deviceId(), action, data);
+    }
+
+    /**
+     * 归一化回放控制 data：PLAY_RANGE→Long（Seek 秒），PLAY_SPEED→Double（倍率）。
+     * 其余操作（PLAY_RESUME/PLAY_NOW）无 data，返回 null 走枚举默认体。
+     */
+    private static Object playbackControlData(PlayActionEnums action, Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (action == PlayActionEnums.PLAY_RANGE) {
+            return raw instanceof Number ? ((Number) raw).longValue() : Long.parseLong(raw.toString());
+        }
+        if (action == PlayActionEnums.PLAY_SPEED) {
+            return raw instanceof Number ? ((Number) raw).doubleValue() : Double.parseDouble(raw.toString());
+        }
+        return null;
     }
 
     @CommandMapping("gb28181.Invite.Ack")
